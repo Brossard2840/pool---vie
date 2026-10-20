@@ -6,12 +6,12 @@
     "node": ">=18"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "pg": "^8.11.5",
     "dotenv": "^16.4.5",
-    "node-cron": "^3.0.3"
+    "express": "^4.19.2",
+    "pg": "^8.11.5"
   }
 }

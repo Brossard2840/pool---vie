@@ -162,3 +162,24 @@ déjà en partie dans les données si réimportées depuis `pool-draft-reference
 4. Implémenter le système de protection pré-repêchage (article 4 de la convention) et
    la logique de pointage des séries éliminatoires pondérée par ronde (article 7.2).
 5. Mettre à jour `SEASON_ID` chaque saison et revalider les AAV via PuckPedia au besoin.
+
+## 7. Mise à jour — session Claude Code du 2026-10-20
+
+Le repêchage 2026 a eu lieu ; la saison 2026-27 est en cours. Plafond 104 M$, plancher 76,9 M$
+(NHLPA, 6 mai 2026).
+
+Refait dans cette session :
+- **Connexion** : un code d'accès par équipe (généré par le commissaire, haché en base), session
+  dans un témoin signé valide 1 an. Le commissaire (Andybros) entre avec `COMMISSAIRE_CODE`.
+  Les poolers consultent tout et gèrent leur propre « Ma liste » ; les mouvements de joueurs
+  (ajout, libération, échange, fiches) sont réservés au commissaire et inscrits à l'historique.
+- **Stats** : pointage complet des gardiens (V ×2, DP, BL), liaison par identifiant LNH,
+  catalogue de tous les joueurs LNH, mise à jour aux 20 min + `/healthz` pour un service de réveil.
+- **Règles** dans `lib/rules.js` (testées dans `test/`) : best-ball 9/4/2, masse 9/4/2 mieux payés,
+  min/max par position, plancher, salaire max ajoutable par position, égalités (pt/match puis buts).
+- **Interface mobile** installable (PWA) : Classement, Mon équipe, Équipes, Joueurs, Plus
+  (Ma liste, Historique, Commissaire avec codes, import, échange avec aperçu de conformité).
+
+Reste à faire : listes de protection (art. 4), ordre de repêchage et loterie (4.4), choix de
+repêchage échangeables (4.6), retenues salariales (5.3), ballottage et priorité (5.5-5.6),
+séries pondérées par ronde (7.2), Simulations.

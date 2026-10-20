@@ -1,0 +1,17 @@
+{
+  "name": "Pool à vie",
+  "short_name": "Pool à vie",
+  "description": "Pool de hockey dynastie : classement, alignements et masse salariale",
+  "lang": "fr-CA",
+  "start_url": "/#/classement",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1622",
+  "theme_color": "#0b1622",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

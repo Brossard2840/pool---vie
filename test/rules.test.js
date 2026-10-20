@@ -1,0 +1,64 @@
+const test = require('node:test');
+const assert = require('node:assert');
+const rules = require('../lib/rules');
+const nhl = require('../lib/nhl');
+
+const sk = (id, pos, goals, assists, aav) => ({ id, pos, goals, assists, aav, gp: 10, wins: 0, ot_losses: 0, shutouts: 0 });
+
+test('pointage des gardiens (art. 2.1)', () => {
+  // 10 V dont 2 blanchissages, 3 défaites en prolongation/fusillade, 1 passe
+  assert.strictEqual(rules.poolPoints({ pos: 'G', goals: 0, assists: 1, wins: 10, ot_losses: 3, shutouts: 2 }), 1 + 20 + 3 + 2);
+  assert.strictEqual(rules.poolPoints({ pos: 'F', goals: 5, assists: 7, wins: 9 }), 12);
+});
+
+test('seuls les 9/4/2 meilleurs comptent pour les points, les 9/4/2 mieux payés pour la masse', () => {
+  const players = [];
+  for (let i = 0; i < 10; i++) players.push(sk(i, 'F', i, 0, (10 - i) * 1e6)); // le moins payé a le plus de points
+  for (let i = 0; i < 4; i++) players.push(sk(20 + i, 'D', 1, 1, 1e6));
+  players.push({ ...sk(30, 'G', 0, 0, 5e6), wins: 5 }, { ...sk(31, 'G', 0, 0, 4e6), wins: 1 });
+  const s = rules.teamSummary(players, { cap: 104e6, floor: 76.9e6 });
+  // Attaquants : points 1..9 (on exclut celui à 0 pt) = 45
+  assert.strictEqual(s.points, 45 + 4 * 2 + 10 + 2);
+  // Masse : 9 mieux payés des 10 attaquants = (10+...+2) M = 54 M, + 4 M (D) + 9 M (G)
+  assert.strictEqual(s.capUsed, 54e6 + 4e6 + 9e6);
+  assert.ok(s.issues.some(i => i.includes('plancher')));
+  // Ajouter un attaquant pousse hors du calcul le moins bien payé (2 M) : espace + 2 M
+  assert.strictEqual(s.positions.F.maxNewSalary, 104e6 - 67e6 + 2e6);
+  assert.strictEqual(s.positions.F.players.find(p => p.id === 0).counts_points, false);
+  assert.strictEqual(s.positions.F.players.find(p => p.id === 9).counts_cap, false);
+});
+
+test('minimums et maximums par position (art. 1)', () => {
+  const s = rules.teamSummary([sk(1, 'F', 0, 0, 1e6)], { cap: 104e6, floor: 0 });
+  assert.ok(s.issues.some(i => i.startsWith('Attaquants : 1')));
+  assert.ok(s.issues.some(i => i.startsWith('Gardiens : 0')));
+});
+
+test('égalité départagée par points par match puis buts (art. 6.2)', () => {
+  const r = rules.rankTeams([
+    { name: 'A', points: 100, ppg: 1.0, goals: 50 },
+    { name: 'B', points: 100, ppg: 1.2, goals: 10 },
+    { name: 'C', points: 100, ppg: 1.0, goals: 60 }
+  ]);
+  assert.deepStrictEqual(r.map(t => t.name), ['B', 'C', 'A']);
+});
+
+test('saison courante selon la date', () => {
+  assert.strictEqual(rules.currentSeasonId(new Date(2026, 9, 20)), '20262027');
+  assert.strictEqual(rules.currentSeasonId(new Date(2027, 4, 1)), '20262027');
+});
+
+test('noms normalisés et positions', () => {
+  assert.strictEqual(rules.normalizeName('Ryan Nugent-Hopkins'), rules.normalizeName('ryan nugenthopkins'));
+  assert.strictEqual(rules.normalizeName('Tim Stützle'), 'tim stutzle');
+  assert.deepStrictEqual(['C', 'L', 'R', 'D', 'G', 'A', 'x'].map(rules.posGroup), ['F', 'F', 'F', 'D', 'G', 'F', null]);
+});
+
+test('un joueur échangé sur deux lignes est additionné', () => {
+  const rows = nhl.combine([
+    { playerId: 1, skaterFullName: 'X', positionCode: 'C', teamAbbrevs: 'BOS', gamesPlayed: 5, goals: 2, assists: 1 },
+    { playerId: 1, skaterFullName: 'X', positionCode: 'C', teamAbbrevs: 'TOR', gamesPlayed: 3, goals: 1, assists: 0 }
+  ], false);
+  assert.strictEqual(rows.length, 1);
+  assert.deepStrictEqual([rows[0].gp, rows[0].goals, rows[0].assists, rows[0].nhl_team], [8, 3, 1, 'TOR']);
+});

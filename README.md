@@ -1,92 +1,96 @@
 # Pool à vie — Guide de mise en ligne (gratuit)
 
-Cette application a 3 pièces :
-1. **Le code** (déjà prêt, dans ce dossier) — le site que tout le monde va utiliser.
-2. **Une base de données gratuite** (Supabase) — où sont stockés les joueurs, équipes et choix.
-3. **Un hébergement gratuit** (Render) — le "serveur toujours allumé" qui fait tourner le code
-   et met les statistiques à jour automatiquement chaque jour.
+L'application a 3 pièces, toutes gratuites :
+1. **Le code** (ce dossier), déposé sur **GitHub**.
+2. **La base de données** sur **Supabase** : équipes, joueurs, codes d'accès, historique.
+3. **L'hébergement** sur **Render** : le site que tout le monde ouvre sur son téléphone.
 
-Comptez environ 20-30 minutes la première fois. Vous n'aurez plus jamais à refaire ça ensuite.
+Plus un petit service de « réveil » gratuit (**cron-job.org**) qui visite le site aux 10 minutes :
+le serveur gratuit reste éveillé et les stats de la LNH se mettent à jour aux 20 minutes.
+
+Comptez 30 minutes la première fois.
 
 ---
 
 ## Étape 1 — Mettre le code sur GitHub
 
-1. Allez sur [github.com](https://github.com) et créez un compte gratuit si vous n'en avez pas.
-2. Cliquez **New repository**. Nommez-le `pool-a-vie`. Laissez-le "Public" ou "Private" (les
-   deux fonctionnent). Cliquez **Create repository**.
-3. Sur la page du nouveau dépôt, cliquez **uploading an existing file**.
-4. Glissez-déposez TOUS les fichiers de ce dossier (`server.js`, `package.json`, `README.md`,
-   et le dossier `public` avec `index.html` dedans — gardez la structure de dossiers).
-5. Cliquez **Commit changes**.
+1. Créez un compte sur [github.com](https://github.com).
+2. **New repository** → nom `pool-a-vie` → **Private** → **Create repository**.
+3. Cliquez **uploading an existing file** et glissez TOUT le contenu de ce dossier
+   (`server.js`, `package.json`, les dossiers `lib`, `public`, `test`, `data`), puis **Commit changes**.
 
-## Étape 2 — Créer la base de données (Supabase, gratuit)
+## Étape 2 — Base de données (Supabase)
 
-1. Allez sur [supabase.com](https://supabase.com), créez un compte gratuit.
-2. Cliquez **New project**. Donnez-lui un nom (ex. `pool-a-vie`) et un mot de passe
-   (notez-le quelque part, vous en aurez besoin dans une minute).
-3. Attendez ~2 minutes que le projet soit prêt.
-4. Dans le menu de gauche : **Project Settings** (roue dentée) → **Database**.
-5. Sous "Connection string", choisissez l'onglet **URI**. Copiez le lien — il ressemble à :
-   `postgresql://postgres:[VOTRE-MOT-DE-PASSE]@db.xxxxx.supabase.co:5432/postgres`
-6. Remplacez `[VOTRE-MOT-DE-PASSE]` par le mot de passe choisi à l'étape 2. Gardez ce lien
-   de côté — c'est votre `DATABASE_URL`.
+1. Créez un compte sur [supabase.com](https://supabase.com) → **New project** (nom `pool-a-vie`,
+   choisissez un mot de passe et notez-le ; région : *Canada (Central)* ou *East US*).
+2. Une fois le projet prêt, cliquez le bouton **Connect** en haut de la page.
+3. Choisissez **Session pooler** (important : Render ne peut pas utiliser la connexion « Direct »).
+   Copiez l'adresse, qui ressemble à :
+   `postgresql://postgres.xxxxx:[YOUR-PASSWORD]@aws-0-ca-central-1.pooler.supabase.com:5432/postgres`
+4. Remplacez `[YOUR-PASSWORD]` par votre mot de passe. C'est votre **`DATABASE_URL`**.
 
-## Étape 3 — Héberger le site (Render, gratuit)
+## Étape 3 — Hébergement (Render)
 
-1. Allez sur [render.com](https://render.com), créez un compte gratuit (vous pouvez vous
-   connecter directement avec votre compte GitHub, c'est plus simple).
-2. Cliquez **New** → **Web Service**.
-3. Connectez votre dépôt GitHub `pool-a-vie`.
-4. Réglages :
-   - **Name** : `pool-a-vie` (ou ce que vous voulez)
-   - **Runtime** : Node
-   - **Build Command** : `npm install`
-   - **Start Command** : `npm start`
-   - **Instance Type** : Free
-5. Descendez à **Environment Variables**, cliquez **Add Environment Variable** deux fois :
-   - `DATABASE_URL` = le lien copié à l'étape 2
-   - `SEASON_ID` = `20252026` (à changer chaque saison — voir plus bas)
-6. Cliquez **Create Web Service**. Render installe et démarre le site (2-5 minutes).
-7. Une fois prêt, Render vous donne une adresse comme `https://pool-a-vie.onrender.com` —
-   **c'est le lien à partager avec tous vos poolers.**
+1. Créez un compte sur [render.com](https://render.com) avec votre compte GitHub.
+2. **New** → **Web Service** → choisissez le dépôt `pool-a-vie`.
+3. Réglages : Runtime **Node**, Build Command `npm install`, Start Command `npm start`, Instance Type **Free**.
+4. **Environment Variables** :
+   | Nom | Valeur |
+   |---|---|
+   | `DATABASE_URL` | l'adresse copiée à l'étape 2 |
+   | `COMMISSAIRE_CODE` | votre code secret de commissaire (ex. 8 lettres/chiffres) |
+   | `TZ` | `America/Toronto` |
+5. **Create Web Service**. Après 2 à 5 minutes, Render donne l'adresse du site,
+   ex. `https://pool-a-vie.onrender.com`.
 
-## Étape 4 — Configurer votre ligue
+> La saison LNH est détectée automatiquement (à partir de septembre, c'est la nouvelle saison).
+> Plus besoin de changer `SEASON_ID` chaque année ; on peut quand même la forcer dans *Commissaire → Réglages*.
 
-1. Ouvrez le lien de votre site.
-2. Onglet **Réglages** : ajoutez vos 11-14 équipes (une à la fois).
-3. Ajustez le plafond salarial si besoin.
-4. Onglet **Réglages → Import en masse** : collez votre liste de joueurs au format
-   `Nom;Équipe;Position;AAV` (une ligne par joueur).
-5. Onglet **Repêchage** : c'est parti — chaque choix est visible par tous en quelques
-   secondes.
+## Étape 4 — Garder le site éveillé (cron-job.org)
+
+Le serveur gratuit de Render s'endort après 15 minutes sans visite. Pour qu'il reste éveillé
+et que les stats suivent les matchs :
+
+1. Créez un compte sur [cron-job.org](https://cron-job.org).
+2. **Create cronjob** → URL : `https://VOTRE-SITE.onrender.com/healthz` → **Every 10 minutes** → **Create**.
+
+Le forfait gratuit de Render inclut 750 heures par mois, assez pour un site allumé en permanence.
+Les visites régulières empêchent aussi Supabase de mettre le projet en pause (pause après 7 jours sans activité).
+
+## Étape 5 — Configurer la ligue
+
+1. Ouvrez le site, choisissez **Andybros** et entrez votre `COMMISSAIRE_CODE`.
+2. **Plus → Commissaire → Import des alignements** : collez la liste des joueurs
+   (`ÉquipePool;Nom;Position;AAV;Âge;FinContrat`, une ligne par joueur), cochez
+   « Remplacer tous les alignements », puis **Importer**. Les équipes sont créées automatiquement.
+3. **Mettre à jour maintenant** (section Statistiques LNH) pour charger les stats immédiatement.
+4. Pour chaque équipe, **Nouveau code** → **Envoyer au pooler** : le code part par texto ou Messenger
+   avec le lien du site.
+
+## Sur le téléphone
+
+- **iPhone (Safari)** : ouvrir le lien → bouton Partager ⬆︎ → « Sur l'écran d'accueil ».
+- **Android (Chrome)** : ouvrir le lien → menu ⋮ → « Installer l'application ».
+
+L'icône « À VIE » s'ouvre alors en plein écran, comme une vraie application, et reste connectée.
 
 ---
 
-## Comment fonctionne la mise à jour automatique des stats
+## Statistiques
 
-Le site va chercher les statistiques de toute la LNH une fois par jour (vers 6h du matin)
-via l'API publique de la LNH, sans que personne n'ait besoin de rien faire. En plus, chaque
-fois que quelqu'un visite le site, il vérifie si les stats datent de plus de 24h et les
-rafraîchit au besoin — un filet de sécurité utile si le serveur gratuit s'était mis en
-pause. Un bouton **"Rafraîchir maintenant"** est aussi disponible dans l'onglet Classement.
+Source : les statistiques officielles de la LNH (`api.nhle.com`, l'API qu'utilise NHL.com).
+Toute la ligue est lue en quelques appels, aux 20 minutes (`REFRESH_MINUTES` pour changer).
+Les joueurs sont reliés par leur **identifiant LNH**, donc les homonymes (deux Sebastian Aho,
+deux Elias Pettersson) ne se mélangent pas.
 
-## À savoir sur le forfait gratuit de Render
+Un joueur du pool qui n'a pas encore joué cette saison (ex. espoir dans la LAH) apparaît
+« sans fiche LNH » ; il est relié automatiquement à son premier match. Si son nom est écrit
+différemment dans la LNH, ouvrez sa fiche et utilisez **Fusionner**.
 
-Le service gratuit se met en pause après ~15 minutes sans visite, et prend 20-30 secondes
-à se réveiller à la prochaine visite (c'est normal, pas un bris). Si ça devient gênant en
-pleine saison, un forfait payant (~7 $US/mois) élimine complètement cette pause — à évaluer
-selon vos besoins.
+## Développement local
 
-## Changer la saison l'an prochain
-
-Dans Render, allez dans **Environment**, changez `SEASON_ID` pour la nouvelle saison
-(format AAAAAAAA, ex. 2026-2027 → `20262027`), puis redéployez (Render le fait
-automatiquement après un changement de variable d'environnement).
-
-## Si les statistiques ne se mettent pas à jour (0 joueur trouvé)
-
-L'API publique de la LNH peut changer légèrement ses noms de champs avec le temps.
-Dans Render, onglet **Logs**, cherchez la ligne "Stats mises à jour". Si elle indique
-beaucoup de joueurs "manquants", copiez-collez-moi ce message dans la conversation et
-je corrige le code du serveur.
+```bash
+npm install
+DATABASE_URL=postgres://postgres@127.0.0.1:5432/pool COMMISSAIRE_CODE=test npm start
+npm test   # tests des règles (pointage, masse salariale, égalités)
+```
