@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pool à vie</title>
+<style>
+  :root{
+    --ice:#0b1622; --panel:#121f2e; --panel-2:#182838; --line:#233648;
+    --text:#dfe9f2; --dim:#8ea3b8; --gold:#c9a24b; --red:#c0564a; --green:#5ba088;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%, #172a3d 0%, transparent 60%),var(--ice);color:var(--text);min-height:100vh;}
+  .scorebar{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0e1a28,#0b1622);position:sticky;top:0;z-index:20;}
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand .puck{width:10px;height:10px;border-radius:50%;background:var(--gold);display:inline-block;}
+  .brand h1{font-size:15px;letter-spacing:.04em;margin:0;font-weight:700;}
+  .brand .sub{font-size:11px;color:var(--dim);}
+  .cap-readout{font-variant-numeric:tabular-nums;font-size:13px;color:var(--dim);text-align:right;}
+  .cap-readout b{color:var(--gold);font-size:14px;}
+  nav.tabs{display:flex;gap:2px;padding:0 18px;background:var(--panel);border-bottom:1px solid var(--line);overflow-x:auto;}
+  nav.tabs button{background:transparent;border:none;color:var(--dim);padding:12px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;}
+  nav.tabs button.active{color:var(--text);border-bottom-color:var(--gold);}
+  main{padding:16px;max-width:980px;margin:0 auto;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:14px;}
+  .card h2{font-size:13px;color:var(--dim);margin:0 0 10px;font-weight:600;}
+  input[type=text],input[type=number],select,textarea{background:var(--ice);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:6px;font-size:13px;width:100%;}
+  textarea{font-family:ui-monospace,monospace;font-size:12px;min-height:110px;}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+  .row > *{flex:1;min-width:110px;}
+  button.action{background:var(--gold);color:#1a1408;border:none;border-radius:6px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:8px 12px;font-size:13px;cursor:pointer;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;color:var(--dim);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:6px 8px;border-bottom:1px solid var(--line);}
+  td{padding:7px 8px;border-bottom:1px solid #1a2938;vertical-align:middle;}
+  tr:hover td{background:var(--panel-2);}
+  .pos-tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;}
+  .pos-F{background:#2a3f2f;color:#8fd6a4;} .pos-D{background:#2a333f;color:#8fb4d6;} .pos-G{background:#3f2a2a;color:#d68f8f;}
+  .aav{font-variant-numeric:tabular-nums;color:var(--gold);}
+  .empty{color:var(--dim);font-size:13px;padding:20px;text-align:center;}
+  .team-card h3{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between;align-items:center;}
+  .team-card .capline{font-size:12px;color:var(--dim);margin-bottom:8px;}
+  .team-card .capline b{color:var(--text);}
+  .bar{height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:10px;}
+  .bar-fill{height:100%;background:var(--green);} .bar-fill.over{background:var(--red);}
+  .warn{color:var(--red);font-size:12px;margin-top:4px;} .ok{color:var(--green);font-size:12px;margin-top:4px;}
+  .mini{font-size:11px;color:var(--dim);}
+  .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--panel-2);border:1px solid var(--gold);color:var(--text);padding:8px 16px;border-radius:6px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:50;}
+  .toast.show{opacity:1;}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--dim);margin-right:6px;margin-bottom:6px;}
+  .team-select-row{display:flex;gap:6px;align-items:center;}
+  .team-select-row select{width:auto;min-width:130px;}
+</style>
+</head>
+<body>
+
+<div class="scorebar">
+  <div class="brand">
+    <span class="puck"></span>
+    <div><h1>POOL À VIE</h1><div class="sub" id="teamCountLabel">— équipes</div></div>
+  </div>
+  <div class="cap-readout">Plafond salarial<br><b id="capLabel">—</b></div>
+</div>
+
+<nav class="tabs">
+  <button data-tab="draft" class="active">Repêchage</button>
+  <button data-tab="mylist">Ma liste</button>
+  <button data-tab="teams">Équipes</button>
+  <button data-tab="standings">Classement</button>
+  <button data-tab="settings">Réglages / Import</button>
+</nav>
+
+<main>
+  <section id="tab-draft">
+    <div class="card">
+      <h2>Filtrer les joueurs disponibles</h2>
+      <div class="row">
+        <input type="text" id="search" placeholder="Nom du joueur ou équipe LNH…">
+        <select id="posFilter">
+          <option value="">Toutes positions</option>
+          <option value="F">Attaquants</option><option value="D">Défenseurs</option><option value="G">Gardiens</option>
+        </select>
+      </div>
+    </div>
+    <div class="card"><h2 id="availCount">Joueurs disponibles</h2><div id="playerTableWrap"></div></div>
+  </section>
+
+  <section id="tab-mylist" style="display:none">
+    <div class="card">
+      <h2>Rechercher un joueur à ajouter à ma liste</h2>
+      <input type="text" id="mylistSearch" placeholder="Nom du joueur…">
+      <div id="mylistSearchResults" style="margin-top:8px;"></div>
+    </div>
+    <div class="card" id="mylistCard">
+      <h2 id="mylistCount">Ma liste de repêchage</h2>
+      <div id="mylistWrap"></div>
+    </div>
+  </section>
+
+  <section id="tab-teams" style="display:none"><div id="teamsWrap"></div></section>
+
+  <section id="tab-standings" style="display:none">
+    <div class="card">
+      <h2>Classement (buts + passes, best-ball top 9F/4D/2G)</h2>
+      <p class="mini" id="lastUpdateLabel">Dernière mise à jour des statistiques : —</p>
+      <button class="ghost" id="refreshStatsBtn">Rafraîchir les statistiques maintenant</button>
+      <div id="standingsWrap" style="margin-top:12px;"></div>
+    </div>
+  </section>
+
+  <section id="tab-settings" style="display:none">
+    <div class="card">
+      <h2>Équipes de la ligue</h2>
+      <div class="row"><input type="text" id="newTeamName" placeholder="Nom de l'équipe / pooler"><button class="action" id="addTeamBtn">Ajouter</button></div>
+      <div id="teamList"></div>
+    </div>
+    <div class="card">
+      <h2>Plafond salarial</h2>
+      <div class="row"><input type="number" id="capInput" placeholder="Ex : 104000000"><button class="action" id="saveCapBtn">Enregistrer</button></div>
+    </div>
+    <div class="card">
+      <h2>Ajouter un joueur</h2>
+      <div class="row"><input type="text" id="pName" placeholder="Nom du joueur"><input type="text" id="pTeam" placeholder="Équipe LNH"></div>
+      <div class="row">
+        <select id="pPos"><option value="F">Attaquant</option><option value="D">Défenseur</option><option value="G">Gardien</option></select>
+        <input type="number" id="pAav" placeholder="AAV"><button class="action" id="addPlayerBtn">Ajouter</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Import en masse</h2>
+      <p class="mini">Une ligne par joueur : <code>Nom;Équipe;Position(F/D/G);AAV</code></p>
+      <textarea id="bulkImport" placeholder="Connor McDavid;Edmonton;F;12500000"></textarea>
+      <button class="action" id="importBtn">Importer</button>
+      <div id="importMsg" class="mini"></div>
+    </div>
+    <div class="card">
+      <h2>Importer un alignement complet (équipes + choix)</h2>
+      <p class="mini">Format : <code>ÉquipePool;Nom;Position;AAV;Âge;FinContrat</code> (les deux derniers champs sont optionnels)</p>
+      <textarea id="rosterImport" placeholder="Andybros;Leon Draisaitl;F;14000000;30;2033"></textarea>
+      <button class="action" id="rosterImportBtn">Importer l'alignement</button>
+      <div id="rosterImportMsg" class="mini"></div>
+    </div>
+
+    <div class="card">
+      <h2 style="color:var(--red)">Zone de réinitialisation</h2>
+      <p class="mini">Efface tous les choix de repêchage (garde joueurs et équipes).</p>
+      <button class="ghost" id="resetDraftBtn" style="border-color:var(--red);color:var(--red)">Réinitialiser le repêchage</button>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let state = { teams: [], players: [], cap: 104000000, lastUpdate: null };
+
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+function fmt(n){ return '$' + Math.round(n).toLocaleString('fr-CA'); }
+
+async function api(path, opts){
+  const res = await fetch(path, { headers:{'Content-Type':'application/json'}, ...opts });
+  if(!res.ok){ const e = await res.json().catch(()=>({error:'Erreur'})); throw new Error(e.error||'Erreur'); }
+  return res.json();
+}
+
+async function loadState(){
+  state = await api('/api/state');
+  render();
+}
+
+function render(){
+  document.getElementById('teamCountLabel').textContent = `${state.teams.length} équipe(s) — ${state.players.length} joueurs au total`;
+  document.getElementById('capLabel').textContent = fmt(state.cap);
+  document.getElementById('capInput').value = state.cap;
+  document.getElementById('lastUpdateLabel').textContent =
+    'Dernière mise à jour des statistiques : ' + (state.lastUpdate ? new Date(state.lastUpdate).toLocaleString('fr-CA') : 'jamais');
+  renderDraftTab(); renderTeamsTab(); renderSettingsTab();
+}
+
+function points(p){ return (p.goals||0)+(p.assists||0); }
+function capUsage(roster){
+  const top=(arr,n)=>arr.slice().sort((a,b)=>b.aav-a.aav).slice(0,n).reduce((s,p)=>s+p.aav,0);
+  return top(roster.filter(p=>p.pos==='F'),9)+top(roster.filter(p=>p.pos==='D'),4)+top(roster.filter(p=>p.pos==='G'),2);
+}
+
+function renderDraftTab(){
+  const search = document.getElementById('search').value.toLowerCase();
+  const posFilter = document.getElementById('posFilter').value;
+  const available = state.players.filter(p=>!p.team);
+  const filtered = available.filter(p=>{
+    const matchSearch = !search || p.name.toLowerCase().includes(search) || (p.nhl_team||'').toLowerCase().includes(search);
+    const matchPos = !posFilter || p.pos === posFilter;
+    return matchSearch && matchPos;
+  }).sort((a,b)=>b.aav-a.aav);
+
+  document.getElementById('availCount').textContent = `Joueurs disponibles (${filtered.length} / ${available.length})`;
+  const wrap = document.getElementById('playerTableWrap');
+  if(state.teams.length===0){ wrap.innerHTML = `<div class="empty">Ajoutez d'abord vos équipes dans Réglages.</div>`; return; }
+  if(filtered.length===0){ wrap.innerHTML = `<div class="empty">Aucun joueur ne correspond au filtre.</div>`; return; }
+
+  const teamOptions = state.teams.map(t=>`<option value="${t}">${t}</option>`).join('');
+  const rows = filtered.slice(0,150).map(p=>`
+    <tr>
+      <td>${p.name}</td><td class="mini">${p.nhl_team||''}</td>
+      <td><span class="pos-tag pos-${p.pos}">${p.pos}</span></td>
+      <td class="aav">${fmt(p.aav)}</td>
+      <td><div class="team-select-row">
+        <select data-pid="${p.id}" class="teamPick">${teamOptions}</select>
+        <button class="action draftBtn" data-pid="${p.id}">Repêcher →</button>
+      </div></td>
+    </tr>`).join('');
+
+  wrap.innerHTML = `<table><thead><tr><th>Joueur</th><th>Équipe LNH</th><th>Pos</th><th>AAV</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table>
+    ${filtered.length>150?'<p class="mini">Affinez la recherche pour voir plus de résultats.</p>':''}`;
+
+  wrap.querySelectorAll('.draftBtn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const pid = btn.dataset.pid;
+      const team = wrap.querySelector(`.teamPick[data-pid="${pid}"]`).value;
+      await api('/api/pick', { method:'POST', body: JSON.stringify({ playerId: pid, team }) });
+      const p = state.players.find(x=>String(x.id)===String(pid));
+      toast(`${p.name} repêché par ${team}`);
+      await loadState();
+    });
+  });
+}
+
+function renderTeamsTab(){
+  const wrap = document.getElementById('teamsWrap');
+  if(state.teams.length===0){ wrap.innerHTML = `<div class="empty">Aucune équipe configurée.</div>`; return; }
+  wrap.innerHTML = state.teams.map(team=>{
+    const roster = state.players.filter(p=>p.team===team);
+    const counts = { F: roster.filter(p=>p.pos==='F').length, D: roster.filter(p=>p.pos==='D').length, G: roster.filter(p=>p.pos==='G').length };
+    const used = capUsage(roster);
+    const pct = Math.min(100,(used/state.cap)*100);
+    const over = used > state.cap;
+    const minWarn = [];
+    if(counts.F<9) minWarn.push(`${9-counts.F} attaquant(s) manquant(s)`);
+    if(counts.D<4) minWarn.push(`${4-counts.D} défenseur(s) manquant(s)`);
+    if(counts.G<2) minWarn.push(`${2-counts.G} gardien(s) manquant(s)`);
+    const rows = roster.sort((a,b)=>points(b)-points(a)).map(p=>`
+      <tr><td>${p.name}</td><td><span class="pos-tag pos-${p.pos}">${p.pos}</span></td>
+      <td class="aav">${fmt(p.aav)}</td><td class="mini">${p.goals||0}-${p.assists||0}-<b style="color:var(--text)">${points(p)}</b></td>
+      <td><button class="ghost releaseBtn" data-pid="${p.id}" style="font-size:11px;padding:4px 8px;">Libérer</button></td></tr>`
+    ).join('') || `<tr><td colspan="5" class="mini">Aucun joueur repêché.</td></tr>`;
+    return `<div class="card team-card">
+      <h3>${team} <span class="mini">${roster.length} joueur(s) — ${counts.F}F/${counts.D}D/${counts.G}G</span></h3>
+      <div class="capline"><b>${fmt(used)}</b> / ${fmt(state.cap)}</div>
+      <div class="bar"><div class="bar-fill ${over?'over':''}" style="width:${pct}%"></div></div>
+      ${over?`<div class="warn">Dépassement du plafond salarial</div>`:''}
+      ${minWarn.length?`<div class="warn">${minWarn.join(' · ')}</div>`:'<div class="ok">Minimums de roster respectés</div>'}
+      <table><thead><tr><th>Joueur</th><th>Pos</th><th>AAV</th><th>B-P-Pts</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+  }).join('');
+
+  wrap.querySelectorAll('.releaseBtn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      await api('/api/release', { method:'POST', body: JSON.stringify({ playerId: btn.dataset.pid }) });
+      await loadState();
+    });
+  });
+}
+
+async function renderMyListTab(){
+  const searchBox = document.getElementById('mylistSearch');
+  const resultsWrap = document.getElementById('mylistSearchResults');
+  if(!searchBox.dataset.bound){
+    searchBox.dataset.bound = '1';
+    searchBox.addEventListener('input', ()=>{ renderMyListSearch(); });
+  }
+  await renderMyListItems();
+}
+
+function renderMyListSearch(){
+  const searchBox = document.getElementById('mylistSearch');
+  const resultsWrap = document.getElementById('mylistSearchResults');
+  const q = searchBox.value.toLowerCase().trim();
+  if(q.length < 2){ resultsWrap.innerHTML=''; return; }
+  const matches = state.players.filter(p=>
+    p.name.toLowerCase().includes(q) || (p.nhl_team||'').toLowerCase().includes(q)
+  ).slice(0,12);
+  resultsWrap.innerHTML = matches.length ? matches.map(p=>`
+    <div class="row" style="align-items:center;margin-bottom:4px;">
+      <span style="flex:2">${p.name} <span class="mini">${p.nhl_team||''} · ${p.pos} · ${fmt(p.aav)}</span></span>
+      <button class="ghost addToMyListBtn" data-pid="${p.id}" style="flex:0 0 auto;">+ Ajouter</button>
+    </div>`).join('') : '<div class="mini">Aucun résultat.</div>';
+  resultsWrap.querySelectorAll('.addToMyListBtn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      await api('/api/mylist/add', { method:'POST', body: JSON.stringify({ playerId: btn.dataset.pid }) });
+      searchBox.value=''; resultsWrap.innerHTML='';
+      toast('Ajouté à Ma liste');
+      await renderMyListItems();
+    });
+  });
+}
+
+async function renderMyListItems(){
+  const list = await api('/api/mylist');
+  document.getElementById('mylistCount').textContent = `Ma liste de repêchage (${list.length})`;
+  const wrap = document.getElementById('mylistWrap');
+  if(list.length===0){ wrap.innerHTML = `<div class="empty">Ajoutez des joueurs ci-dessus.</div>`; return; }
+
+  const posLabels = { F:'Attaquants', D:'Défenseurs', G:'Gardiens' };
+  let html = '';
+  ['F','D','G'].forEach(posKey=>{
+    const items = list.filter(p=>p.pos===posKey);
+    if(items.length===0) return;
+    const rows = items.map(p=>`
+      <tr style="${p.team?'opacity:0.45;':''}">
+        <td>${p.name}${p.team?`<div class="mini" style="color:var(--red)">Pris par ${p.team}</div>`:''}</td>
+        <td class="mini">${p.nhl_team||'—'}</td>
+        <td class="mini">${p.age||'—'}</td>
+        <td class="aav">${fmt(p.aav)}</td>
+        <td><button class="ghost removeFromMyListBtn" data-pid="${p.id}" style="font-size:11px;padding:4px 8px;">✕</button></td>
+      </tr>`).join('');
+    html += `<h3 style="margin:16px 0 6px;font-size:13px;color:var(--gold);">${posLabels[posKey]} (${items.length})</h3>
+      <table><thead><tr><th>Joueur</th><th>Équipe</th><th>Âge</th><th>AAV</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  });
+  wrap.innerHTML = html;
+  wrap.querySelectorAll('.removeFromMyListBtn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      await api('/api/mylist/remove', { method:'POST', body: JSON.stringify({ playerId: btn.dataset.pid }) });
+      await renderMyListItems();
+    });
+  });
+}
+
+async function renderStandingsTab(){
+  const standings = await api('/api/standings');
+  const wrap = document.getElementById('standingsWrap');
+  if(standings.length===0){ wrap.innerHTML = `<div class="empty">Aucune équipe n'a encore de joueurs repêchés.</div>`; return; }
+  wrap.innerHTML = `<table><thead><tr><th>Rang</th><th>Équipe</th><th>Points</th></tr></thead><tbody>
+    ${standings.map((r,i)=>`<tr><td>${i+1}</td><td>${r.team}</td><td class="aav">${r.points}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+function renderSettingsTab(){
+  const list = document.getElementById('teamList');
+  list.innerHTML = state.teams.map(t=>`<span class="pill">${t}</span>`).join('') || '<p class="mini">Aucune équipe.</p>';
+}
+
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    ['draft','mylist','teams','standings','settings'].forEach(t=>{
+      document.getElementById('tab-'+t).style.display = (t===btn.dataset.tab) ? '' : 'none';
+    });
+    if(btn.dataset.tab === 'standings') renderStandingsTab();
+    if(btn.dataset.tab === 'mylist') renderMyListTab();
+  });
+});
+
+document.getElementById('search').addEventListener('input', renderDraftTab);
+document.getElementById('posFilter').addEventListener('change', renderDraftTab);
+
+document.getElementById('addTeamBtn').addEventListener('click', async ()=>{
+  const input = document.getElementById('newTeamName');
+  if(!input.value.trim()) return;
+  try{ await api('/api/teams', { method:'POST', body: JSON.stringify({ name: input.value.trim() }) }); input.value=''; await loadState(); }
+  catch(e){ toast(e.message); }
+});
+
+document.getElementById('saveCapBtn').addEventListener('click', async ()=>{
+  const v = parseInt(document.getElementById('capInput').value,10);
+  if(!v) return;
+  await api('/api/cap', { method:'POST', body: JSON.stringify({ cap: v }) });
+  toast('Plafond mis à jour'); await loadState();
+});
+
+document.getElementById('addPlayerBtn').addEventListener('click', async ()=>{
+  const name = document.getElementById('pName').value.trim();
+  const nhl_team = document.getElementById('pTeam').value.trim();
+  const pos = document.getElementById('pPos').value;
+  const aav = parseInt(document.getElementById('pAav').value,10);
+  if(!name||!nhl_team||!aav) return toast('Remplissez tous les champs');
+  try{
+    await api('/api/players', { method:'POST', body: JSON.stringify({ name, nhl_team, pos, aav }) });
+    document.getElementById('pName').value=''; document.getElementById('pTeam').value=''; document.getElementById('pAav').value='';
+    toast(`${name} ajouté`); await loadState();
+  }catch(e){ toast(e.message); }
+});
+
+document.getElementById('importBtn').addEventListener('click', async ()=>{
+  const raw = document.getElementById('bulkImport').value.trim();
+  if(!raw) return;
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  const result = await api('/api/players/import', { method:'POST', body: JSON.stringify({ lines }) });
+  document.getElementById('importMsg').textContent = `${result.added} ajouté(s), ${result.updated} mis à jour, ${result.skipped} ignoré(s).`;
+  document.getElementById('bulkImport').value='';
+  await loadState();
+});
+
+document.getElementById('rosterImportBtn').addEventListener('click', async ()=>{
+  const raw = document.getElementById('rosterImport').value.trim();
+  if(!raw) return;
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  const result = await api('/api/roster/import', { method:'POST', body: JSON.stringify({ lines }) });
+  document.getElementById('rosterImportMsg').textContent =
+    `${result.teamsAdded} équipe(s), ${result.playersCreated} joueur(s) créé(s), ${result.playersUpdated} mis à jour, ${result.picked} choix assignés, ${result.skipped} ignoré(s).`;
+  document.getElementById('rosterImport').value='';
+  toast('Alignement importé');
+  await loadState();
+});
+
+document.getElementById('resetDraftBtn').addEventListener('click', async ()=>{
+  if(!confirm('Réinitialiser tous les choix de repêchage ?')) return;
+  await api('/api/reset', { method:'POST' });
+  toast('Repêchage réinitialisé'); await loadState();
+});
+
+document.getElementById('refreshStatsBtn').addEventListener('click', async ()=>{
+  toast('Mise à jour en cours…');
+  const r = await api('/api/stats/refresh', { method:'POST' });
+  toast(`${r.matched} joueur(s) mis à jour, ${r.missed} non trouvé(s)`);
+  await loadState(); await renderStandingsTab();
+});
+
+setInterval(loadState, 5000);
+loadState();
+</script>
+</body>
+</html>

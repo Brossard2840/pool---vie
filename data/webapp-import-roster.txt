@@ -1,0 +1,162 @@
+Andybros;Berkly Catton;F;1943000;20;2028
+Andybros;Sidney Crosby;F;8700000;39;2027
+Andybros;Alex DeBrincat;F;7875000;28;2027
+Andybros;Leon Draisaitl;F;14000000;30;2033
+Andybros;Mitch Marner;F;12000000;29;2033
+Andybros;Brayden Point;F;9500000;29;2030
+Andybros;Aliaksei Protas;F;3375000;25;2029
+Andybros;Tage Thompson;F;7143000;28;2030
+Andybros;Lane Hutson;D;8850000;22;2034
+Andybros;Josh Morrissey;D;6250000;30;2028
+Andybros;Matthew Schaefer;D;4475000;18;2028
+Andybros;Lukas Dostal;G;6500000;;2030
+Andybros;Logan Thompson;G;5850000;28;2031
+Cabrera;Brandon Hagel;F;6500000;27;2032
+Cabrera;Taylor Hall;F;3167000;34;2028
+Cabrera;Zach Hyman;F;5500000;34;2028
+Cabrera;Ryan Leonard;F;2208000;21;2027
+Cabrera;Nathan MacKinnon;F;12600000;30;2031
+Cabrera;Ryan Nugent-Hopkins;F;5125000;33;2029
+Cabrera;Juraj Slafkovsky;F;7600000;22;2033
+Cabrera;Danila Yurov;F;2950000;22;2028
+Cabrera;Evan Bouchard;D;10500000;26;2029
+Cabrera;Jackson LaCombe;D;9000000;25;2034
+Cabrera;Moritz Seider;D;8550000;25;2031
+Cabrera;Sergei Bobrovsky;G;7000000;37;2029
+Cabrera;Dustin Wolf;G;7500000;25;2033
+Godino_01;Zach Benson;F;7500000;21;
+Godino_01;Macklin Celebrini;F;4475000;20;
+Godino_01;Caleb Desnoyers;F;4225000;19;
+Godino_01;Josh Doan;F;6950000;24;
+Godino_01;William Eklund;F;5600000;23;
+Godino_01;Cutter Gauthier;F;1900000;22;
+Godino_01;Nico Hischier;F;7250000;27;
+Godino_01;Auston Matthews;F;13250000;28;
+Godino_01;JJ Peterka;F;7700000;24;
+Godino_01;Marco Rossi;F;5000000;24;
+Godino_01;Matthew Tkachuk;F;9500000;28;
+Godino_01;Bowen Byram;D;6250000;25;
+Godino_01;Axel Sandin Pellikka;D;1418000;21;
+Jaylab36;Matt Boldy;F;7000000;25;
+Jaylab36;Logan Cooley;F;10000000;22;
+Jaylab36;Adam Fantilli;F;4150000;21;
+Jaylab36;Isaac Howard;F;1617000;22;
+Jaylab36;Seth Jarvis;F;7420000;24;
+Jaylab36;Tim Stutzle;F;8350000;24;
+Jaylab36;John Tavares;F;4388000;35;
+Jaylab36;Roman Josi;D;9059000;36;
+Jaylab36;Cale Makar;D;9000000;27;
+Jaylab36;Denton Mateychuk;D;1637000;22;
+Jaylab36;Carter Yakemchuk;D;1943000;20;
+Jaylab36;Jake Oettinger;G;8250000;27;2033
+Jaylab36;Andrei Vasilevskiy;G;9500000;31;2028
+JeromeSteMarie;Aleksander Barkov;F;10000000;31;
+JeromeSteMarie;Drake Batherson;F;4975000;28;
+JeromeSteMarie;Jackson Blake;F;5117000;23;
+JeromeSteMarie;Joel Eriksson Ek;F;5250000;29;
+JeromeSteMarie;Anton Frondell;F;4125000;19;
+JeromeSteMarie;Roope Hintz;F;8450000;29;
+JeromeSteMarie;Kirill Kaprizov;F;17000000;29;
+JeromeSteMarie;Nikita Kucherov;F;9500000;33;
+JeromeSteMarie;Sam Reinhart;F;8625000;30;
+JeromeSteMarie;Philip Broberg;D;8000000;25;
+JeromeSteMarie;Zach Werenski;D;9583000;29;
+JeromeSteMarie;Carter Hart;G;2000000;27;2027
+JeromeSteMarie;Joel Hofer;G;3400000;25;2027
+Joel;Bobby Brink;F;2750000;25;
+Joel;Cole Caufield;F;7850000;25;
+Joel;Jack Eichel;F;13500000;29;
+Joel;Kevin Fiala;F;7875000;30;
+Joel;Connor McDavid;F;12500000;29;
+Joel;Nick Suzuki;F;7875000;27;
+Joel;Carter Verhaeghe;F;7000000;31;
+Joel;Jamie Drysdale;D;6500000;24;
+Joel;Vince Dunn;D;7350000;29;
+Joel;Tristan Luneau;D;918000;22;
+Joel;Mikhail Sergachev;D;8500000;28;
+LeFarmerr;Connor Bedard;F;15000000;21;
+LeFarmerr;Leo Carlsson;F;18000000;21;
+LeFarmerr;Jordan Kyrou;F;8125000;28;
+LeFarmerr;Mason McTavish;F;7000000;23;
+LeFarmerr;J.T. Miller;F;8000000;33;
+LeFarmerr;Lucas Raymond;F;8075000;24;
+LeFarmerr;Beckett Sennecke;F;4043000;20;
+LeFarmerr;Vincent Trocheck;F;5625000;33;
+LeFarmerr;Adam Fox;D;9500000;28;
+LeFarmerr;Sam Rinzel;D;1367000;22;
+LeFarmerr;Yaroslav Askarov;G;2000000;24;2027
+LeFarmerr;Mackenzie Blackwood;G;5250000;29;2030
+LeFarmerr;Jeremy Swayman;G;8250000;27;2032
+Milesstemarie;Jesper Bratt;F;7875000;28;
+Milesstemarie;Filip Forsberg;F;8500000;32;
+Milesstemarie;Jake Guentzel;F;9000000;31;
+Milesstemarie;Jack Hughes;F;8000000;25;
+Milesstemarie;Martin Necas;F;11500000;27;
+Milesstemarie;Mark Scheifele;F;8500000;33;
+Milesstemarie;Dylan Strome;F;5000000;29;
+Milesstemarie;Brandt Clarke;D;7400000;23;
+Milesstemarie;Rasmus Dahlin;D;11000000;26;
+Milesstemarie;Darren Raddysh;D;8500000;30;
+Milesstemarie;Jakub Dobes;G;965000;25;2027
+Milesstemarie;Ukko-Pekka Luukkonen;G;4750000;27;2029
+Nicolas_A;Kyle Connor;F;12000000;29;
+Nicolas_A;Matthew Knies;F;7750000;23;
+Nicolas_A;Artemi Panarin;F;11000000;34;
+Nicolas_A;Bryan Rust;F;5125000;34;
+Nicolas_A;Nick Schmaltz;F;8000000;30;
+Nicolas_A;Robert Thomas;F;8125000;27;
+Nicolas_A;Quinn Hughes;D;7850000;26;
+Nicolas_A;Cole Hutson;D;2240000;20;
+Nicolas_A;Mike Matheson;D;6000000;32;
+Nicolas_A;Alexander Nikishin;D;2944000;24;
+Nicolas_A;Zayne Parekh;D;1943000;20;
+Nicolas_A;Joey Daccord;G;5000000;29;2030
+Nicolas_A;Juuse Saros;G;7740000;31;2033
+Olivierarchambault66;Ivan Demidov;F;2634000;20;
+Olivierarchambault66;Clayton Keller;F;7150000;28;
+Olivierarchambault66;Travis Konecny;F;8750000;29;
+Olivierarchambault66;Jared McCann;F;5000000;30;
+Olivierarchambault66;Michael Misa;F;4225000;19;
+Olivierarchambault66;Will Smith;F;4150000;21;
+Olivierarchambault66;Brady Tkachuk;F;8206000;26;
+Olivierarchambault66;Sean Durzi;D;6000000;27;
+Olivierarchambault66;Miro Heiskanen;D;8450000;27;
+Olivierarchambault66;Luke Hughes;D;9000000;22;
+Olivierarchambault66;Filip Gustavsson;G;6800000;28;2031
+Olivierarchambault66;Connor Hellebuyck;G;8500000;33;2031
+Packydou;Sebastian Aho;F;9750000;29;
+Packydou;Easton Cowan;F;874000;21;
+Packydou;Dylan Guenther;F;7143000;23;
+Packydou;Kirill Marchenko;F;3850000;26;
+Packydou;William Nylander;F;11500000;30;
+Packydou;David Pastrnak;F;11250000;30;
+Packydou;Matt Savoie;F;1887000;22;
+Packydou;Jimmy Snuggerud;F;1550000;22;
+Packydou;Pavel Zacha;F;4750000;29;
+Packydou;Zeev Buium;D;1650000;20;
+Packydou;Mason Lohrei;D;3200000;25;
+Packydou;Jacob Markstrom;G;6000000;36;2026
+Packydou;Jesper Wallstedt;G;2200000;23;2027
+RaphDaoust;Quinton Byfield;F;6250000;24;
+RaphDaoust;Dylan Holloway;F;7750000;24;
+RaphDaoust;Kent Johnson;F;1800000;23;
+RaphDaoust;Ville Koivunen;F;880000;23;
+RaphDaoust;Dylan Larkin;F;8700000;30;
+RaphDaoust;Anton Lundell;F;5000000;24;
+RaphDaoust;Matvei Michkov;F;4250000;21;
+RaphDaoust;Frank Nazar;F;6600000;22;
+RaphDaoust;Logan Stankoven;F;6000000;23;
+RaphDaoust;Ilya Sorokin;G;8250000;31;2032
+Simon Archambault;Ivan Barbashev;F;5000000;30;
+Simon Archambault;Wyatt Johnston;F;8400000;23;
+Simon Archambault;Mikko Rantanen;F;12000000;29;
+Simon Archambault;Jason Robertson;F;12000000;27;2027
+Simon Archambault;Andrei Svechnikov;F;7750000;26;
+Simon Archambault;Gabriel Vilardi;F;7500000;27;
+Simon Archambault;Sam Dickinson;D;1726000;20;
+Simon Archambault;Shayne Gostisbehere;D;3200000;33;
+Simon Archambault;Jake Sanderson;D;8050000;24;
+Simon Archambault;Shea Theodore;D;7425000;31;
+Simon Archambault;Jet Greaves;G;5000000;25;2029
+Simon Archambault;Pyotr Kochetkov;G;2000000;27;2027
+Simon Archambault;Karel Vejmelka;G;4750000;30;2030
