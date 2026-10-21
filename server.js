@@ -12,6 +12,7 @@ const { createWaivers } = require('./lib/waivers');
 const { createProtection } = require('./lib/protection');
 const { createPlayoffs } = require('./lib/playoffs');
 const { createDraft } = require('./lib/draft');
+const { createNotify } = require('./lib/notify');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -120,6 +121,7 @@ async function initDb() {
   await waivers.initTables();
   await protection.initTables();
   await draft.initTables();
+  await notifier.initTables();
   await setDefault('cap', '104000000');   // plafond LNH 2026-27
   await setDefault('floor', '76900000');  // plancher LNH 2026-27
 
@@ -187,7 +189,38 @@ async function leagueConfig() {
 
 // En direct : sommaires de match (voir lib/live.js). Une fois la saison rattrapée, ce sont eux
 // qui donnent les totaux ; le rapport de saison ne sert plus qu'au catalogue des joueurs.
-const live = createLive(pool, { getConfig, setConfig, seasonId: () => seasonId(), onUpdated: () => linkUnlinked() });
+let notifier = null; // créé plus bas, une fois les routes protégées par la connexion
+const notify = n => notifier ? notifier.notify(n) : null;
+const live = createLive(pool, { getConfig, setConfig, seasonId: () => seasonId(),
+  onUpdated: async () => { await linkUnlinked(); await checkLeader(); }, onGame: (...a) => gameHighlights(...a) });
+
+// Exploits des joueurs du pool pendant les matchs d'hier et d'aujourd'hui (pas lors du rattrapage de la saison).
+async function gameHighlights(gameId, game, rows) {
+  if (!game.game_date || String(game.game_date) < addDays(live.todayET(), -1)) return;
+  const ids = rows.map(r => r.nhl_id);
+  const { rows: owned } = await pool.query(`
+    SELECT p.nhl_id, p.name, t.name AS team, t.id AS team_id FROM players p JOIN picks pk ON pk.player_id=p.id JOIN teams t ON t.id=pk.team_id
+    WHERE p.nhl_id = ANY($1::int[])`, [ids]);
+  const final = ['FINAL', 'OFF'].includes(game.state);
+  for (const o of owned) {
+    const r = rows.find(x => x.nhl_id === o.nhl_id);
+    const pts = r.goals + r.assists;
+    if (r.goals >= 3) notify({ kind: 'highlight', title: `🎩 TOUR DU CHAPEAU pour ${o.name} !`, body: `${r.goals} buts ce soir — gros soir pour ${o.team}.`, link: '#/direct', dedupe: `hl:${gameId}:${o.nhl_id}:hat` });
+    else if (pts >= 4) notify({ kind: 'highlight', title: `🔥 ${o.name} : ${pts} points ce soir !`, body: `${r.goals} B, ${r.assists} A pour ${o.team}.`, link: '#/direct', dedupe: `hl:${gameId}:${o.nhl_id}:4pts` });
+    if (final && r.shutouts) notify({ kind: 'highlight', title: `🧱 Blanchissage de ${o.name} !`, body: `3 points pour ${o.team}.`, link: '#/direct', dedupe: `hl:${gameId}:${o.nhl_id}:so` });
+  }
+}
+
+// Changement de meneur au classement.
+async function checkLeader() {
+  const { teams } = await buildLeague();
+  if (!teams.length || !teams[0].points) return;
+  const prev = await getConfig('leader_id');
+  if (String(teams[0].id) === prev) return;
+  await setConfig('leader_id', teams[0].id);
+  if (prev) notify({ kind: 'standings', title: `👑 ${teams[0].name} prend la 1re place !`, body: `${teams[0].points} pts, devant ${teams[1]?.name || ''} (${teams[1]?.points ?? 0} pts).`,
+    link: '#/classement', dedupe: `leader:${teams[0].id}:${new Date().toISOString().slice(0, 13)}` });
+}
 
 // Relie les joueurs du pool sans identifiant LNH à une fiche du catalogue (même nom, position, équipe).
 async function linkUnlinked() {
@@ -402,7 +435,7 @@ async function buildLeague() {
 app.get('/api/state', h(async (req, res) => {
   const league = await buildLeague();
   res.json({ me: req.me, pendingTrades: await trades.pendingCount(req.me), pendingProtection: await protection.pendingFor(req.me.teamId),
-    draft: await draft.status(), ...league });
+    draft: await draft.status(), unreadNotifications: await notifier.unread(req.me), ...league });
 }));
 
 app.get('/api/players', h(async (req, res) => {
@@ -516,18 +549,20 @@ const admin = express.Router();
 admin.use(requireAdmin);
 
 // Échanges et choix de repêchage (lib/trades.js). Déclaré ici : les fonctions utilitaires plus bas sont « hissées ».
-const trades = registerTrades(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, seasonId, rules,
+// Notifications (lib/notify.js).
+notifier = createNotify(app, { pool, h, getConfig, setConfig });
+const trades = registerTrades(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, seasonId, rules, notify,
   putOnWaivers: (...a) => waivers.putOnWaivers(...a) });
 // Ballottage (lib/waivers.js).
-const waivers = createWaivers(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, seasonId, rules,
+const waivers = createWaivers(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, seasonId, rules, notify,
   standings: async () => (await buildLeague()).teams, claimPicks: id => trades.claimPicks(id), deadlinePassed: () => trades.deadlinePassed() });
 // Listes de protection (lib/protection.js).
-const protection = createProtection(app, admin, { pool, h, inTransaction, getConfig, setConfig, seasonId,
+const protection = createProtection(app, admin, { pool, h, inTransaction, getConfig, setConfig, seasonId, notify,
   generatePicks: y => trades.generatePicks(y) });
 // Pool des séries (lib/playoffs.js).
 createPlayoffs(app, { pool, h, seasonId, buildLeague });
 // Repêchage (lib/draft.js).
-const draft = createDraft(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, rules, buildLeague });
+const draft = createDraft(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, rules, buildLeague, notify });
 
 admin.post('/config', h(async (req, res) => {
   const { cap, floor, seasonId: sid } = req.body;

@@ -33,6 +33,23 @@
   .brand .sub{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .top .me{font-size:12px;color:var(--dim);text-align:right;white-space:nowrap;}
   .top .me b{color:var(--gold);}
+  .bell{position:relative;font-size:22px;text-decoration:none;line-height:1;}
+  .bell .badge{position:absolute;top:-6px;right:-10px;background:var(--red);color:#fff;font-size:10px;font-weight:800;border-radius:9px;padding:1px 5px;line-height:14px;}
+  #banners{position:fixed;left:0;right:0;top:calc(8px + var(--safe-t));z-index:70;display:flex;flex-direction:column;gap:8px;padding:0 10px;pointer-events:none;}
+  .banner{pointer-events:auto;background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.45);
+          display:flex;gap:10px;align-items:flex-start;cursor:pointer;animation:slidein .35s ease;max-width:560px;margin:0 auto;width:100%;}
+  .banner .ico{font-size:24px;line-height:1;}
+  .banner .tt{font-weight:800;font-size:15px;} .banner .bd{font-size:13px;color:var(--dim);margin-top:2px;}
+  .banner .x{margin-left:auto;color:var(--dim);font-size:18px;padding:0 0 0 8px;}
+  .banner.alarm{background:linear-gradient(135deg,#b3121f,#6d0a12);border-color:#ff5a5a;animation:slidein .35s ease, shake .5s .35s 3, flash 1s .35s 6;}
+  .banner.alarm .tt{color:#fff;font-size:17px;letter-spacing:.02em;} .banner.alarm .bd{color:#ffd9d9;}
+  .banner.alarm .ico{font-size:34px;animation:siren .6s linear infinite;}
+  @keyframes slidein{from{transform:translateY(-120%);opacity:0}to{transform:none;opacity:1}}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  @keyframes flash{50%{box-shadow:0 0 0 4px rgba(255,80,80,.8),0 8px 24px rgba(0,0,0,.45)}}
+  @keyframes siren{0%{transform:rotate(-14deg) scale(1)}50%{transform:rotate(14deg) scale(1.15)}100%{transform:rotate(-14deg) scale(1)}}
+  .notif{display:flex;gap:10px;padding:11px 2px;border-bottom:1px solid #1a2938;cursor:pointer;}
+  .notif.new{background:#141d2c;border-radius:8px;} .notif .ico{font-size:22px;width:28px;text-align:center;}
   main{padding:14px 16px;max-width:860px;margin:0 auto;}
   h2.title{font-size:20px;margin:4px 0 12px;}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;}
@@ -166,7 +183,10 @@
 
 <header class="top" id="top" hidden>
   <div class="brand"><img class="logo" src="/logo.svg" alt=""><div><h1>POOL À VIE</h1><div class="sub" id="updated">—</div></div></div>
-  <div class="me" id="meLabel"></div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <a class="bell" href="#/notifications" aria-label="Notifications">🔔<span class="badge" id="bellBadge" hidden></span></a>
+    <div class="me" id="meLabel"></div>
+  </div>
 </header>
 
 <main id="view"></main>
@@ -184,6 +204,7 @@
 <div class="sheet-bg" id="sheetBg"></div>
 <div class="sheet" id="sheet"><div class="grab"></div><div id="sheetBody"></div></div>
 <div class="toast" id="toast"></div>
+<div id="banners"></div>
 
 <script>
 const POS_LABEL = { F: 'Attaquants', D: 'Défenseurs', G: 'Gardiens' };
@@ -262,7 +283,7 @@ async function showLogin(){
       const v = $('#lgTeam').value, teamId = v === 'admin' ? 'admin' : Number(v);
       await api('/api/login', { teamId, code: $('#lgCode').value });
       localStorageSet('pav_team', String(teamId));
-      try { await loadState(); }
+      try { await loadState(); startNotifications(); }
       catch (e) { throw new Error(`Connecté, mais le chargement a échoué : ${e.message}. Si ça se répète, les témoins (cookies) sont peut-être bloqués dans ce navigateur.`); }
       route();
     } catch (e) {
@@ -284,6 +305,7 @@ function renderChrome(){
   $('#meLabel').innerHTML = `<b>${esc(S.me.name)}</b>${S.me.isAdmin ? '<br>commissaire' : ''}`;
   const b = $('#tradeBadge'); b.hidden = !S.pendingTrades; b.textContent = S.pendingTrades || '';
   $('#plusBadge').hidden = !S.pendingProtection;
+  const bb = $('#bellBadge'); bb.hidden = !S.unreadNotifications; bb.textContent = S.unreadNotifications > 99 ? '99+' : (S.unreadNotifications || '');
   // Pendant la préparation ou le déroulement d'un repêchage, l'onglet Repêchage remplace En direct.
   const drafting = S.draft && ['setup', 'live'].includes(S.draft.status);
   document.querySelector('.tabbar a[data-r="repechage"]').hidden = !drafting;
@@ -291,6 +313,7 @@ function renderChrome(){
 }
 async function boot(){
   try { await loadState(); } catch { showLogin(); return; }
+  startNotifications();
   route();
 }
 
@@ -303,11 +326,11 @@ function route(){
   document.querySelectorAll('.tabbar a').forEach(a => a.classList.toggle('on', a.dataset.r === r ||
     (r === 'equipe' && a.dataset.r === (Number(arg) === S.me.teamId ? 'mon-equipe' : 'classement')) ||
     (['liste','historique','commissaire','equipes','protection'].includes(r) && a.dataset.r === 'plus') ||
-    (['offre','choix'].includes(r) && a.dataset.r === 'echanges')));
+    (['offre','choix','echange'].includes(r) && a.dataset.r === 'echanges')));
   clearInterval(liveTimer); liveTimer = null; clearInterval(draftTimer); draftTimer = null;
   window.scrollTo(0, 0);
   const views = { classement: vStandings, 'mon-equipe': () => vTeam(S.me.teamId), equipe: () => vTeam(arg), equipes: vTeams, direct: () => vLive(arg),
-                  repechage: () => vDraft(arg), protection: () => vProtection(arg), echanges: vTrades, offre: () => vOffer(arg), choix: () => vPicks(arg),
+                  repechage: () => vDraft(arg), protection: () => vProtection(arg), echanges: vTrades, echange: () => vTradeOne(arg), notifications: vNotifications, offre: () => vOffer(arg), choix: () => vPicks(arg),
                   joueurs: vPlayers, plus: vMore, liste: vWatchlist, historique: vMoves, commissaire: vAdmin };
   (views[r] || vStandings)();
 }
@@ -1412,7 +1435,105 @@ window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferr
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 
 // Rafraîchit les données quand on revient dans l'application.
-document.addEventListener('visibilitychange', () => { if (!document.hidden && S && !$('#sheet').classList.contains('open')) refresh().catch(() => {}); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S && !$('#sheet').classList.contains('open')) { refresh().catch(() => {}); pollNotifications(); } });
+
+// ---------- Notifications ----------
+const NOTIF_ICON = { trade: '🚨', offer: '📨', waiver: '⏳', freeagent: '🆕', draft: '🎲', protection: '🛡️', highlight: '🔥', standings: '👑', admin: '🔑' };
+let notifLast = Number(localStorageGet('pav_notif_last')) || 0, notifTimer = null, audioCtx = null;
+// Le son ne peut jouer qu'après un premier toucher de l'écran (règle des navigateurs).
+document.addEventListener('pointerdown', () => {
+  try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch {}
+}, { passive: true });
+// Klaxon de but : deux notes graves en dents de scie, avec un léger trémolo.
+function goalHorn(){
+  if (!audioCtx || localStorageGet('pav_sound') === 'off') return;
+  const t = audioCtx.currentTime, out = audioCtx.createGain(), lp = audioCtx.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 1400; out.gain.setValueAtTime(0, t);
+  out.gain.linearRampToValueAtTime(.22, t + .08); out.gain.setValueAtTime(.22, t + 2.1); out.gain.linearRampToValueAtTime(0, t + 2.6);
+  lp.connect(out); out.connect(audioCtx.destination);
+  const lfo = audioCtx.createOscillator(), lfoGain = audioCtx.createGain(); lfo.frequency.value = 6; lfoGain.gain.value = 3; lfo.connect(lfoGain);
+  for (const f of [155, 196, 233]) { const o = audioCtx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; lfoGain.connect(o.frequency); o.connect(lp); o.start(t); o.stop(t + 2.7); }
+  lfo.start(t); lfo.stop(t + 2.7);
+  if (navigator.vibrate) navigator.vibrate([300, 120, 300, 120, 600]);
+}
+function showBanner(n){
+  const alarm = n.kind === 'trade';
+  const el = document.createElement('div');
+  el.className = 'banner' + (alarm ? ' alarm' : '');
+  el.innerHTML = `<div class="ico">${NOTIF_ICON[n.kind] || '🔔'}</div><div><div class="tt">${esc(n.title)}</div>${n.body ? `<div class="bd">${esc(n.body)}</div>` : ''}
+    ${alarm ? '<div class="bd" style="margin-top:4px;font-weight:700;color:#fff">Touche pour voir la transaction ›</div>' : ''}</div><div class="x">✕</div>`;
+  el.onclick = e => { el.remove(); if (!e.target.classList.contains('x') && n.link) location.hash = n.link; };
+  $('#banners').prepend(el);
+  if (alarm) goalHorn();
+  setTimeout(() => el.remove(), alarm ? 15000 : 7000);
+}
+async function pollNotifications(){
+  if (!S || document.hidden) return;
+  try {
+    const N = await api('/api/notifications?after=' + notifLast);
+    const fresh = N.notifications.slice().reverse();
+    if (fresh.length) {
+      // Premier lancement sur cet appareil : on n'affiche pas tout l'historique d'un coup.
+      const first = !notifLast;
+      if (!first) { fresh.slice(-3).forEach(showBanner); S.unreadNotifications = (S.unreadNotifications || 0) + fresh.length; renderChrome(); }
+      notifLast = fresh[fresh.length - 1].id; localStorageSet('pav_notif_last', String(notifLast));
+    }
+  } catch {}
+}
+function startNotifications(){ if (!notifTimer) notifTimer = setInterval(pollNotifications, 30000); pollNotifications(); }
+
+const vNotifications = run(async () => {
+  const N = await api('/api/notifications');
+  const top = N.notifications[0]?.id || 0;
+  const pushOk = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const iOS = /iPhone|iPad/.test(navigator.userAgent);
+  $('#view').innerHTML = `<h2 class="title">Notifications</h2>
+    <div class="card" id="pushCard"><h3>Sur ce téléphone</h3>
+      ${!pushOk ? `<p class="muted">${iOS && !standalone ? 'Sur iPhone, ajoute d\'abord l\'application à ton écran d\'accueil (Partager ⬆︎ → Sur l\'écran d\'accueil), puis ouvre-la depuis l\'icône pour activer les notifications.' : 'Ce navigateur ne permet pas les notifications.'}</p>`
+        : '<div id="pushBody" class="muted">Chargement…</div>'}
+      <label class="pick"><input type="checkbox" id="soundTog" ${localStorageGet('pav_sound') === 'off' ? '' : 'checked'}> 🚨 Sirène de but dans l'application lors d'une transaction</label>
+    </div>
+    <div class="card"><div class="list">${N.notifications.map(n => `<div class="notif ${n.id > N.seen ? 'new' : ''}" onclick="${n.link ? `location.hash='${n.link}'` : ''}">
+      <div class="ico">${NOTIF_ICON[n.kind] || '🔔'}</div><div class="grow"><div class="name" style="white-space:normal">${esc(n.title)}</div>
+      ${n.body ? `<div class="meta">${esc(n.body)}</div>` : ''}<div class="meta">${ago(n.at)}</div></div></div>`).join('') || '<div class="empty">Aucune notification pour l\'instant.</div>'}</div></div>`;
+  $('#soundTog').onchange = e => { localStorageSet('pav_sound', e.target.checked ? 'on' : 'off'); if (e.target.checked) goalHorn(); };
+  if (top) { api('/api/notifications/seen', { id: top }).catch(() => {}); S.unreadNotifications = 0; renderChrome(); }
+  if (pushOk) renderPush(N);
+});
+function urlB64(b64){ const p = '='.repeat((4 - b64.length % 4) % 4); const raw = atob((b64 + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...raw].map(c => c.charCodeAt(0))); }
+async function renderPush(N){
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  const st = sub ? await api('/api/push/status', { endpoint: sub.endpoint }) : { subscribed: false, kinds: [] };
+  const on = sub && st.subscribed;
+  const kinds = on ? st.kinds : Object.keys(N.kinds).filter(k => k !== 'admin' || S.me.isAdmin);
+  $('#pushBody').innerHTML = `
+    <p class="muted">${on ? '✅ Les notifications sont activées sur ce téléphone.' : 'Reçois les alertes même quand l\'application est fermée.'}</p>
+    ${Object.entries(N.kinds).filter(([k]) => k !== 'admin' || S.me.isAdmin).map(([k, l]) => `<label class="pick"><input type="checkbox" class="pkind" value="${k}" ${kinds.includes(k) ? 'checked' : ''}> ${esc(l)}</label>`).join('')}
+    <div class="row" style="margin-top:8px">
+      <button class="btn small" id="pushOn">${on ? 'Enregistrer mes choix' : '🔔 Activer les notifications'}</button>
+      ${on ? '<button class="btn small ghost" id="pushTest">Tester</button><button class="btn small danger" id="pushOff">Désactiver</button>' : ''}
+    </div>`;
+  $('#pushOn').onclick = run(async () => {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') return toast('Notifications refusées dans les réglages du téléphone');
+    const s2 = sub || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(N.publicKey) });
+    await api('/api/push/subscribe', { subscription: s2.toJSON(), kinds: [...document.querySelectorAll('.pkind:checked')].map(i => i.value) });
+    toast('Notifications activées'); renderPush(N);
+  });
+  if (on) {
+    $('#pushTest').onclick = run(async () => { await api('/api/push/test', { endpoint: sub.endpoint }); toast('Notification de test envoyée'); });
+    $('#pushOff').onclick = run(async () => { await api('/api/push/unsubscribe', { endpoint: sub.endpoint }); await sub.unsubscribe(); toast('Notifications désactivées'); renderPush(N); });
+  }
+}
+// Détail d'un échange (lien des notifications).
+const vTradeOne = run(async id => {
+  const T = await api('/api/trades');
+  const t = T.trades.find(x => x.id === Number(id));
+  $('#view').innerHTML = `<h2 class="title">Échange #${esc(id)}</h2>${t ? tradeCard(t) : '<div class="empty">Échange introuvable ou non visible.</div>'}
+    <p><a class="link" href="#/echanges">‹ Tous les échanges</a> · <a class="link" href="#/historique">Historique des mouvements</a></p>`;
+});
 
 boot();
 </script>

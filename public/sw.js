@@ -1,6 +1,6 @@
 // Service worker : rend l'application installable et garde la coquille en cache.
 // Les données (/api) ne sont jamais mises en cache : on veut toujours les stats à jour.
-const CACHE = 'pav-v3';
+const CACHE = 'pav-v4';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icons/icon-192.png', '/logo.svg'];
 
 self.addEventListener('install', e => {
@@ -22,4 +22,23 @@ self.addEventListener('fetch', e => {
     caches.open(CACHE).then(c => c.put(e.request, copy));
     return res;
   }).catch(() => caches.match(e.request).then(r => r || caches.match('/'))));
+});
+
+// Notifications reçues même quand l'application est fermée.
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data.json(); } catch { d = { title: 'Pool à vie', body: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Pool à vie', {
+    body: d.body || '', icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', tag: d.tag, data: { url: d.url || '/' },
+    vibrate: d.kind === 'trade' ? [300, 120, 300, 120, 600] : [200], requireInteraction: d.kind === 'trade'
+  }));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = new URL(e.notification.data && e.notification.data.url || '/', self.location.origin).href;
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) if (c.url.startsWith(self.location.origin)) { c.navigate(url); return c.focus(); }
+    return clients.openWindow(url);
+  }));
 });

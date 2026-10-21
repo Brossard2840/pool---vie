@@ -156,6 +156,19 @@ Onglet **Repêchage** (il remplace « En direct » pendant la préparation et le
 Le tableau montre les rondes en lignes et les équipes en colonnes : le joueur repêché dans chaque case,
 et « → équipe » quand le choix a été échangé.
 
+## Notifications
+
+- **Dans l'application** : cloche 🔔 avec compteur, fil des notifications, bannières qui apparaissent
+  en haut de l'écran. Une transaction complétée déclenche l'alerte « 🚨 GROSSE TRANSACTION ! » (bannière
+  rouge, sirène animée, klaxon de but, vibration) ; on la touche pour voir l'échange.
+- **Sur le téléphone, application fermée** (Web Push) : Notifications → « Activer les notifications »,
+  et choix des catégories. Sur iPhone (iOS 16.4+), l'application doit être ajoutée à l'écran d'accueil
+  et ouverte depuis l'icône.
+- Événements : transactions, offres reçues/acceptées/refusées, échange à approuver (commissaire),
+  joueurs mis au ballottage et résultat, agents libres réclamés, loterie, début du repêchage, « c'est ton
+  tour », chaque sélection, ouverture et dévoilement des listes de protection, tour du chapeau / 4 points /
+  blanchissage d'un joueur du pool, changement de meneur au classement.
+
 ## Développement local
 
 ```bash
