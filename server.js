@@ -333,6 +333,8 @@ app.post('/api/login', h(async (req, res) => {
   if (teamId === 'admin') {
     if (!auth.checkCode(code, await getConfig('commissaire_hash'))) {
       a.n++; loginAttempts.set(ip, a);
+      console.warn(`Connexion commissaire refusée : code reçu de ${String(code || '').trim().length} caractère(s), ` +
+        `attendu ${(process.env.COMMISSAIRE_CODE || '').trim().length} (essai ${a.n}/10).`);
       return res.status(401).json({ error: 'Code invalide' });
     }
     loginAttempts.delete(ip);
