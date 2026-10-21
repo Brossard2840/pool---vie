@@ -4,17 +4,23 @@ Godino_01;Auston Matthews;F;13250000;29;;TOR
 Cabrera;Evan Bouchard;D;10500000;27;2029;EDM
 Cabrera;Nathan MacKinnon;F;12600000;31;2031;COL
 JeromeSteMarie;Kirill Kaprizov;F;17000000;29;;MIN
-Packydou;William Nylander;F;11500000;30;;TOR
 Andybros;Leon Draisaitl;F;14000000;30;2033;EDM
+Jaylab36;Jake Oettinger;G;8250000;27;2033;DAL
+Packydou;William Nylander;F;11500000;30;;TOR
+LeFarmerr;Jeremy Swayman;G;8250000;27;2032;BOS
+Godino_01;Macklin Celebrini;F;4475000;20;;SJS
 Packydou;Sebastian Aho;F;9750000;29;;CAR
 Godino_01;Matthew Tkachuk;F;9500000;28;;FLA
 Olivierarchambault66;Clayton Keller;F;7150000;28;;UTA
+Simon Archambault;Karel Vejmelka;G;4750000;30;2030;UTA
 Nicolas_A;Nick Schmaltz;F;8000000;30;;UTA
+RaphDaoust;Ilya Sorokin;G;8250000;31;2032;NYI
 Joel;Nick Suzuki;F;7875000;27;;MTL
-Godino_01;Macklin Celebrini;F;4475000;20;;SJS
 Nicolas_A;Quinn Hughes;D;7850000;27;;MIN
 Packydou;David Pastrnak;F;11250000;30;;BOS
 Jaylab36;Tim Stutzle;F;8350000;24;;OTT
+Packydou;Jesper Wallstedt;G;2200000;23;2027;MIN
+Jaylab36;Cale Makar;D;9000000;27;;COL
 Cabrera;Brandon Hagel;F;6500000;28;2032;TBL
 Milesstemarie;Martin Necas;F;11500000;27;;COL
 Packydou;Kirill Marchenko;F;3850000;26;;TOR
@@ -22,13 +28,14 @@ Joel;Mikhail Sergachev;D;8500000;28;;UTA
 Simon Archambault;Andrei Svechnikov;F;7750000;26;;CAR
 Nicolas_A;Kyle Connor;F;12000000;29;;WPG
 Andybros;Mitch Marner;F;12000000;29;2033;VGK
+LeFarmerr;Leo Carlsson;F;18000000;21;;ANA
 Olivierarchambault66;Vasily Podkolzin;F;2950000;25;;EDM
-Jaylab36;Cale Makar;D;9000000;27;;COL
+Packydou;Artturi Lehkonen;F;4500000;31;;COL
 JeromeSteMarie;Nikita Kucherov;F;9500000;33;;TBL
 LeFarmerr;Adam Fox;D;9500000;28;;NYR
 Olivierarchambault66;Brady Tkachuk;F;8206000;27;;FLA
-LeFarmerr;Leo Carlsson;F;18000000;21;;ANA
 Cabrera;Seth Jones;D;9500000;32;;FLA
+Simon Archambault;Pyotr Kochetkov;G;2000000;27;2027;CAR
 Packydou;Easton Cowan;F;874000;21;;TOR
 Andybros;Tage Thompson;F;7143000;28;2030;BUF
 Andybros;Lane Hutson;D;8850000;22;2034;MTL
@@ -36,28 +43,41 @@ Packydou;Dylan Guenther;F;7143000;23;;UTA
 Milesstemarie;Jack Hughes;F;8000000;25;;NJD
 Milesstemarie;Jake Guentzel;F;9000000;32;;TBL
 Andybros;Alex DeBrincat;F;7875000;28;2027;DET
+Andybros;Logan Thompson;G;5850000;29;2031;WSH
 Simon Archambault;Mikko Rantanen;F;12000000;29;;DAL
 Jaylab36;Roman Josi;D;9059000;36;;NSH
 RaphDaoust;Mika Zibanejad;F;8500000;33;;NYR
 Jaylab36;Logan Cooley;F;10000000;22;;UTA
+Packydou;Jacob Markstrom;G;6000000;36;2026;FLA
 LeFarmerr;Mason McTavish;F;7000000;23;;STL
-Packydou;Artturi Lehkonen;F;4500000;31;;COL
 Nicolas_A;Jack Quinn;F;3375000;25;;BUF
+Andybros;Jacob Fowler;G;1173000;21;;MTL
+Godino_01;Arturs Silovs;G;2800000;25;;PIT
 Andybros;Matthew Schaefer;D;4475000;19;2028;NYI
+Jaylab36;Matt Boldy;F;7000000;25;;MIN
 Joel;Cole Caufield;F;7850000;25;;MTL
 Simon Archambault;Jason Robertson;F;12000000;27;2027;DAL
 Milesstemarie;Mark Scheifele;F;8500000;33;;WPG
 JeromeSteMarie;Sam Reinhart;F;8625000;30;;FLA
 Milesstemarie;Filip Forsberg;F;8500000;32;;NSH
+Jaylab36;Andrei Vasilevskiy;G;9500000;32;2028;TBL
 LeFarmerr;Beckett Sennecke;F;4043000;20;;ANA
 Milesstemarie;Morgan Geekie;F;5500000;28;;BOS
+JeromeSteMarie;Carter Hart;G;2000000;28;2027;VGK
+LeFarmerr;Mackenzie Blackwood;G;5250000;29;2030;COL
+Jaylab36;Brock Nelson;F;7500000;35;;COL
 JeromeSteMarie;Jackson Blake;F;5117000;23;;CAR
+JeromeSteMarie;Joel Hofer;G;3400000;26;2027;STL
 Packydou;Ryan Leonard;F;2208000;21;2027;WSH
 Olivierarchambault66;Jared McCann;F;5000000;30;;SEA
+Milesstemarie;Devon Levi;G;813000;24;;EDM
 Joel;Carter Verhaeghe;F;7000000;31;;FLA
 LeFarmerr;Fraser Minten;F;879000;22;;BOS
-Jaylab36;Matt Boldy;F;7000000;25;;MIN
+RaphDaoust;Jake Allen;G;1800000;36;;NJD
+Jaylab36;Adin Hill;G;6250000;30;;VGK
 Simon Archambault;Shayne Gostisbehere;D;3200000;33;;CAR
+Cabrera;Jackson LaCombe;D;9000000;25;2034;ANA
+Olivierarchambault66;Will Smith;F;4150000;21;;SJS
 Milesstemarie;Jesper Bratt;F;7875000;28;;NJD
 Cabrera;Juraj Slafkovsky;F;7600000;22;2033;MTL
 Nicolas_A;Artemi Panarin;F;11000000;34;;LAK
@@ -65,38 +85,41 @@ Joel;Vince Dunn;D;7350000;29;;SEA
 Jaylab36;John Tavares;F;4388000;36;;TOR
 RaphDaoust;Dylan Holloway;F;7750000;25;;STL
 LeFarmerr;J.T. Miller;F;8000000;33;;NYR
-Jaylab36;Brock Nelson;F;7500000;35;;COL
 RaphDaoust;Tomas Hertl;F;8138000;32;;VGK
+RaphDaoust;Ivar Stenberg;F;4325000;19;;SJS
 RaphDaoust;Matvei Michkov;F;4250000;21;;PHI
 RaphDaoust;Mattias Samuelsson;D;4286000;26;;BUF
+Simon Archambault;Jet Greaves;G;5000000;25;2029;CBJ
 LeFarmerr;Ryan O'Reilly;F;4500000;35;;NSH
 JeromeSteMarie;Joel Eriksson Ek;F;5250000;29;;MIN
 Cabrera;Devon Toews;D;7250000;32;;COL
 Simon Archambault;Nazem Kadri;F;7000000;36;;COL
 Packydou;Gabe Perreault;F;1233000;21;;NYR
 Simon Archambault;Ivan Barbashev;F;5000000;30;;VGK
+Cabrera;Morgan Rielly;D;7500000;32;;TOR
+Nicolas_A;Joey Daccord;G;5000000;30;2030;SEA
 Cabrera;James Hagens;F;1657000;19;;BOS
 JeromeSteMarie;Trevor Connelly;F;1225000;20;;VGK
 Andybros;Brett Howden;F;2500000;28;;VGK
 JeromeSteMarie;Zach Werenski;D;9583000;29;;CBJ
 Olivierarchambault66;Miro Heiskanen;D;8450000;27;;DAL
 Andybros;Sidney Crosby;F;8700000;39;2027;PIT
-Cabrera;Jackson LaCombe;D;9000000;25;2034;ANA
 JeromeSteMarie;Drake Batherson;F;4975000;28;;OTT
-Olivierarchambault66;Will Smith;F;4150000;21;;SJS
 Godino_01;Nico Hischier;F;7250000;27;;NJD
 LeFarmerr;Gavin McKenna;F;4575000;18;;TOR
 Andybros;Brayden Point;F;9500000;30;2030;TBL
 Packydou;Filip Hronek;D;7250000;28;;VAN
+Andybros;Lukas Dostal;G;6500000;26;2030;ANA
+Nicolas_A;Juuse Saros;G;7740000;31;2033;NSH
 Packydou;Jimmy Snuggerud;F;1550000;22;;STL
-RaphDaoust;Ivar Stenberg;F;4325000;19;;SJS
 RaphDaoust;Logan Stankoven;F;6000000;23;;CAR
 Milesstemarie;Dylan Strome;F;5000000;29;;WSH
 Packydou;Sam Bennett;F;8000000;30;;FLA
 JeromeSteMarie;Anton Frondell;F;4125000;19;;CHI
+Packydou;Spencer Knight;G;5833000;25;;CHI
 Godino_01;JJ Peterka;F;7700000;24;;BOS
-Cabrera;Morgan Rielly;D;7500000;32;;TOR
 JeromeSteMarie;Sean Walker;D;3625000;31;;CAR
+Milesstemarie;Ukko-Pekka Luukkonen;G;4750000;27;2029;BUF
 Simon Archambault;Jordan Kyrou;F;8125000;28;;WSH
 RaphDaoust;Alex Laferriere;F;4100000;24;;LAK
 Godino_01;Zach Benson;F;7500000;21;;BUF
@@ -105,6 +128,7 @@ Jaylab36;Maxim Shabanov;F;1600000;26;;MIN
 Cabrera;Noah Ostlund;F;1362000;22;;BUF
 Simon Archambault;Jaden Schwartz;F;3250000;34;;COL
 JeromeSteMarie;Arseny Gritsyuk;F;3250000;25;;NJD
+Andybros;Alex Nedeljkovic;G;3000000;30;;SJS
 Nicolas_A;Matias Maccelli;F;2250000;26;;NYI
 Cabrera;Moritz Seider;D;8550000;25;2031;DET
 Olivierarchambault66;Jakob Chychrun;D;9000000;28;;WSH
@@ -134,10 +158,14 @@ Joel;John Carlson;D;8500000;36;;TBL
 LeFarmerr;Lucas Raymond;F;8075000;24;;DET
 Simon Archambault;Shea Theodore;D;7425000;31;;VGK
 Nicolas_A;Matthew Knies;F;7750000;24;;CBJ
+Nicolas_A;Brandon Bussi;G;1900000;28;;CAR
 Olivierarchambault66;Luke Hughes;D;9000000;23;;NJD
 Nicolas_A;Robert Thomas;F;8125000;27;;STL
+Cabrera;Sergei Bobrovsky;G;7000000;38;2029;TOR
+LeFarmerr;Yaroslav Askarov;G;2000000;24;2027;SJS
 LeFarmerr;Vincent Trocheck;F;5625000;33;;UTA
 Olivierarchambault66;Rickard Rakell;F;5000000;33;;PIT
+Simon Archambault;Gabriel Vilardi;F;7500000;27;;WPG
 Olivierarchambault66;Michael Misa;F;4225000;19;;SJS
 Godino_01;Igor Chernyshov;F;954000;20;;SJS
 Packydou;Chris Kreider;F;5400000;35;;MTL
@@ -148,8 +176,10 @@ Milesstemarie;Nikita Zadorov;D;5000000;31;;BOS
 Olivierarchambault66;Josh Manson;D;3950000;35;;COL
 Olivierarchambault66;Sean Durzi;D;6000000;27;;NYR
 Cabrera;Noah Hanifin;D;7350000;29;;VGK
+JeromeSteMarie;Sebastian Cossa;G;2000000;23;;UTA
 LeFarmerr;Lawson Crouse;F;4300000;29;;UTA
 Milesstemarie;Eeli Tolvanen;F;1500000;27;;NYR
+Joel;Akira Schmid;G;2000000;26;;FLA
 LeFarmerr;Alex Newhook;F;2900000;25;;MTL
 Godino_01;Dawson Mercer;F;4000000;24;;NJD
 Godino_01;Ryker Evans;D;2050000;24;;SEA
@@ -163,9 +193,9 @@ Packydou;Porter Martone;F;2532000;19;;PHI
 Olivierarchambault66;Travis Konecny;F;8750000;29;;PHI
 Packydou;Victor Hedman;D;8000000;35;;TBL
 Godino_01;Thomas Harley;D;10587000;25;;DAL
-Simon Archambault;Gabriel Vilardi;F;7500000;27;;WPG
 RaphDaoust;Mattias Ekholm;D;4000000;36;;EDM
 Joel;K'Andre Miller;D;7500000;26;;CAR
+Godino_01;Daniel Vladar;G;3350000;29;;PHI
 LeFarmerr;Roman Kantserov;F;4575000;22;;CHI
 Milesstemarie;Artyom Levshunov;D;4225000;20;;CHI
 Godino_01;Anthony Cirelli;F;6250000;29;;TBL
@@ -184,16 +214,20 @@ Packydou;Sam Steel;F;2100000;28;;DAL
 Packydou;Charlie McAvoy;D;9500000;28;;BOS
 Olivierarchambault66;Ivan Demidov;F;2634000;20;;MTL
 RaphDaoust;Noah Dobson;D;9500000;26;;MTL
+Milesstemarie;Jakub Dobes;G;965000;25;2027;MTL
+RaphDaoust;Scott Wedgewood;G;2500000;34;;COL
 RaphDaoust;Quinton Byfield;F;6250000;24;;LAK
 Godino_01;William Eklund;F;5600000;24;;OTT
 Nicolas_A;Zayne Parekh;D;1943000;20;;CGY
 LeFarmerr;Luca Cagnoni;D;975000;21;;SJS
 Godino_01;Josh Doan;F;6950000;24;;BUF
+Cabrera;Dustin Wolf;G;7500000;25;2033;CGY
 Andybros;Aliaksei Protas;F;3375000;25;2029;WSH
 Simon Archambault;Carter Yakemchuk;D;1943000;21;;OTT
 Jaylab36;Denton Mateychuk;D;1637000;22;;CBJ
 Milesstemarie;Sam Malinski;D;4750000;28;;COL
 Andybros;Konsta Helenius;F;1543000;20;;BUF
+Cabrera;Darcy Kuemper;G;5250000;36;;LAK
 Joel;Tristan Luneau;D;918000;22;;ANA
 LeFarmerr;Sam Rinzel;D;1367000;22;;CHI
 JeromeSteMarie;Anthony Mantha;F;4750000;32;;NJD
@@ -206,6 +240,7 @@ Godino_01;Charle-Edouard D'Astous;D;875000;28;;TBL
 Joel;Ryan McLeod;F;5000000;27;;BUF
 Andybros;Tony DeAngelo;D;4500000;30;;NYI
 Nicolas_A;Jamie Benn;F;2000000;37;;DAL
+JeromeSteMarie;Michael DiPietro;G;813000;27;;BOS
 Simon Archambault;Eetu Luostarinen;F;3000000;28;;FLA
 Cabrera;Zach Hyman;F;5500000;34;2028;EDM
 Godino_01;Bowen Byram;D;6250000;25;;CHI
@@ -224,11 +259,14 @@ Andybros;Ryan McDonagh;D;4100000;37;;TBL
 JeromeSteMarie;Timothy Liljegren;D;3250000;27;;WSH
 Simon Archambault;Jake Sanderson;D;8050000;24;;OTT
 Jaylab36;Seth Jarvis;F;7420000;24;;CAR
+Olivierarchambault66;Connor Hellebuyck;G;8500000;33;2031;WPG
 JeromeSteMarie;Aleksander Barkov;F;10000000;31;;FLA
 RaphDaoust;Brock Faber;D;8500000;24;;MIN
 Cabrera;Ryan Nugent-Hopkins;F;5125000;33;2029;EDM
 Joel;Kevin Fiala;F;7875000;30;;LAK
 Nicolas_A;Alexander Nikishin;D;750000;25;;CAR
+Olivierarchambault66;Filip Gustavsson;G;6800000;28;2031;MIN
+Joel;Sergei Murashov;G;936000;22;;PIT
 Jaylab36;Matt Duchene;F;4500000;35;;DAL
 Joel;Jamie Drysdale;D;6500000;24;;PHI
 Simon Archambault;Viggo Bjorck;F;2075000;18;;WPG
@@ -237,42 +275,23 @@ Olivierarchambault66;Tij Iginla;F;1942000;20;;UTA
 Joel;Michael Hage;F;750000;20;;MTL
 Milesstemarie;Caleb Malhotra;F;750000;18;;VAN
 Packydou;Matt Savoie;F;1887000;22;;EDM
+Cabrera;Frederik Andersen;G;2800000;37;;EDM
 Godino_01;Caleb Desnoyers;F;4225000;19;;UTA
 Joel;Alberts Smits;D;4225000;18;;NYR
 Olivierarchambault66;Alexander Zharovsky;F;750000;19;;MTL
 Milesstemarie;Nikita Klepov;F;1575000;18;;ANA
 Joel;Brady Martin;F;2141000;19;;NSH
+Simon Archambault;Trey Augustine;G;1908000;21;;DET
 LeFarmerr;Logan Mailloux;D;850000;23;;STL
 Jaylab36;Oliver Kapanen;F;1226000;23;;MTL
 Andybros;Marco Kasper;F;1887000;22;;DET
+Nicolas_A;Alex Lyon;G;1500000;33;;BUF
 Jaylab36;Ryan Ufko;D;943000;23;;NSH
 JeromeSteMarie;Lian Bichsel;D;1418000;22;;DAL
 Olivierarchambault66;Jordan Staal;F;2975000;38;;CAR
+Joel;Anton Forsberg;G;2250000;33;;LAK
 JeromeSteMarie;Justin Hryckowian;F;950000;25;;DAL
 Joel;Alex Bump;F;1473000;22;;PHI
 Godino_01;Parker Wotherspoon;D;1000000;29;;VGK
 Andybros;Gage Goncalves;F;1200000;25;;TBL
 Olivierarchambault66;Jake Evans;F;2850000;30;;MTL
-Andybros;Lukas Dostal;G;6500000;;2030;ANA
-Andybros;Logan Thompson;G;5850000;28;2031;WSH
-Cabrera;Sergei Bobrovsky;G;7000000;37;2029;TOR
-Cabrera;Dustin Wolf;G;7500000;25;2033;CGY
-Jaylab36;Jake Oettinger;G;8250000;27;2033;DAL
-Jaylab36;Andrei Vasilevskiy;G;9500000;31;2028;TBL
-JeromeSteMarie;Carter Hart;G;2000000;27;2027;VGK
-JeromeSteMarie;Joel Hofer;G;3400000;25;2027;STL
-LeFarmerr;Yaroslav Askarov;G;2000000;24;2027;SJS
-LeFarmerr;Mackenzie Blackwood;G;5250000;29;2030;COL
-LeFarmerr;Jeremy Swayman;G;8250000;27;2032;BOS
-Milesstemarie;Jakub Dobes;G;965000;25;2027;MTL
-Milesstemarie;Ukko-Pekka Luukkonen;G;4750000;27;2029;BUF
-Nicolas_A;Joey Daccord;G;5000000;29;2030;SEA
-Nicolas_A;Juuse Saros;G;7740000;31;2033;NSH
-Olivierarchambault66;Filip Gustavsson;G;6800000;28;2031;MIN
-Olivierarchambault66;Connor Hellebuyck;G;8500000;33;2031;WPG
-Packydou;Jacob Markstrom;G;6000000;36;2026;NJD
-Packydou;Jesper Wallstedt;G;2200000;23;2027;MIN
-RaphDaoust;Ilya Sorokin;G;8250000;31;2032;NYI
-Simon Archambault;Jet Greaves;G;5000000;25;2029;CBJ
-Simon Archambault;Pyotr Kochetkov;G;2000000;27;2027;CAR
-Simon Archambault;Karel Vejmelka;G;4750000;30;2030;UTA
