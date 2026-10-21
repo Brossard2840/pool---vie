@@ -18,7 +18,17 @@ if (IS_PROD && !process.env.DATABASE_URL) {
     '(adresse « Session pooler » de Supabase), puis redéployez.');
   process.exit(1);
 }
-const DATABASE_URL = process.env.DATABASE_URL || 'postgres://postgres@127.0.0.1:5432/pool';
+// DATABASE_PASSWORD (optionnel) remplace le mot de passe de l'adresse : on peut alors coller
+// l'adresse de Supabase telle quelle, avec [YOUR-PASSWORD], et mettre le mot de passe à part.
+function databaseUrl() {
+  const raw = (process.env.DATABASE_URL || 'postgres://postgres@127.0.0.1:5432/pool').trim();
+  const pw = process.env.DATABASE_PASSWORD;
+  if (!pw) return raw;
+  const u = new URL(raw.replace(/\[YOUR-PASSWORD\]/i, 'x'));
+  u.password = encodeURIComponent(pw.trim());
+  return u.toString();
+}
+const DATABASE_URL = databaseUrl();
 const isLocalDb = /@(localhost|127\.0\.0\.1)[:/]/.test(DATABASE_URL);
 const pool = new Pool({
   connectionString: DATABASE_URL,
@@ -605,7 +615,7 @@ initDb().then(() => {
 }).catch(e => {
   const msg = String(e && e.message || e);
   const hints = [
-    [/password authentication failed/i, 'Mot de passe refusé : vérifiez le mot de passe dans DATABASE_URL (sans crochets [ ]).'],
+    [/password authentication failed/i, 'Mot de passe refusé. Mettez le mot de passe Supabase dans une variable DATABASE_PASSWORD (Render → Environment) ; DATABASE_URL peut alors garder [YOUR-PASSWORD].'],
     [/tenant or user not found/i, 'Utilisateur inconnu : l\'adresse doit commencer par postgresql://postgres.<id-du-projet>: (adresse « Session pooler »).'],
     [/ENOTFOUND|getaddrinfo/i, 'Adresse du serveur introuvable : recopiez l\'adresse « Session pooler » depuis Supabase.'],
     [/ENETUNREACH|EHOSTUNREACH/i, 'Réseau inaccessible : utilisez l\'adresse « Session pooler » (pooler.supabase.com), pas « Direct connection ».'],
