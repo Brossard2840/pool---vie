@@ -29,6 +29,17 @@ function databaseUrl() {
   return u.toString();
 }
 const DATABASE_URL = databaseUrl();
+
+// Résumé de connexion sans révéler le mot de passe (aide au dépannage).
+function describeDb(url) {
+  try {
+    const u = new URL(url);
+    const pw = decodeURIComponent(u.password || '');
+    return `hôte ${u.hostname}, port ${u.port || 5432}, utilisateur ${decodeURIComponent(u.username)}, ` +
+      `mot de passe ${pw.length} caractère(s)${process.env.DATABASE_PASSWORD ? ' (variable DATABASE_PASSWORD)' : ' (dans DATABASE_URL)'}` +
+      `${/\s/.test(pw) ? ', CONTIENT UNE ESPACE' : ''}${/[\[\]]/.test(pw) ? ', CONTIENT DES CROCHETS' : ''}`;
+  } catch { return 'adresse illisible'; }
+}
 const isLocalDb = /@(localhost|127\.0\.0\.1)[:/]/.test(DATABASE_URL);
 const pool = new Pool({
   connectionString: DATABASE_URL,
@@ -622,6 +633,7 @@ initDb().then(() => {
     [/Invalid URL|ERR_INVALID_URL/i, 'Adresse mal formée : un caractère spécial dans le mot de passe ? Générez un mot de passe sans symboles.']
   ];
   const hint = (hints.find(([re]) => re.test(msg)) || [null, ''])[1];
+  console.error(`Connexion tentée : ${describeDb(DATABASE_URL)}`);
   console.error(`ERREUR base de données : ${msg}${e && e.code ? ' (code ' + e.code + ')' : ''}`);
   if (hint) console.error(`→ ${hint}`);
   process.exit(1);
