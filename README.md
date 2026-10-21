@@ -143,6 +143,19 @@ nouvelle équipe et le montant retenu reste dans la masse de l'équipe qui retie
 la saison. Limites vérifiées : 3 échanges avec retenue par saison, 15 % du plafond au total, 2 échanges
 avec retenue par contrat, et pas de retour du joueur dans l'équipe qui retient.
 
+## Repêchage (art. 4.4 à 4.6)
+
+Onglet **Repêchage** (il remplace « En direct » pendant la préparation et le déroulement ; aussi dans Plus).
+1. Ordre de base : la pire équipe d'abord (rang de la saison précédente saisi dans Commissaire →
+   Ballottage). Le commissaire peut réordonner les positions (ex. selon les séries).
+2. Loterie : les 5 premières équipes de l'ordre se disputent les choix 1 à 5 selon des pourcentages
+   réglables (25/25/20/15/10 par défaut). Tirage pondéré sans remise, dévoilé du 5e au 1er choix.
+3. Repêchage en direct : même ordre à chaque ronde ; l'équipe au choix (ou le commissaire) choisit un
+   joueur disponible. Une équipe à 23 joueurs a terminé (art. 4.5) : ses choix restants sont passés.
+   Le commissaire peut annuler la dernière sélection, mettre en pause ou terminer.
+Le tableau montre les rondes en lignes et les équipes en colonnes : le joueur repêché dans chaque case,
+et « → équipe » quand le choix a été échangé.
+
 ## Développement local
 
 ```bash

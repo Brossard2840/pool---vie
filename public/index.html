@@ -121,6 +121,22 @@
   .trade .cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;}
   .trade .cols h5{margin:0 0 4px;font-size:11px;color:var(--dim);font-weight:600;}
   .trade .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+  .boardwrap{overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:12px;background:var(--panel);margin:0 -4px 12px;}
+  table.db{border-collapse:separate;border-spacing:0;font-size:11px;}
+  table.db th,table.db td{border-right:1px solid #1a2938;border-bottom:1px solid #1a2938;padding:6px;vertical-align:top;}
+  table.db thead th{position:sticky;top:0;background:#0e1a28;z-index:2;color:var(--dim);font-weight:700;min-width:96px;max-width:110px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  table.db th.r{position:sticky;left:0;background:#0e1a28;z-index:1;color:var(--gold);min-width:34px;text-align:center;}
+  table.db thead th.r{z-index:3;}
+  table.db td{min-width:96px;max-width:110px;height:46px;}
+  table.db td b{display:block;color:var(--text);font-size:12px;line-height:1.2;}
+  table.db td small{display:block;color:var(--dim);}
+  table.db td .own{display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;background:#13261f;color:#9fd8bf;font-weight:700;}
+  table.db td.mine{background:#141d2c;} table.db td.cur{background:#2b2512;box-shadow:inset 0 0 0 2px var(--gold);}
+  table.db td.gone{opacity:.5;}
+  .clock{background:#2b2512;border:1px solid var(--gold);border-radius:12px;padding:12px;margin-bottom:12px;}
+  .lot{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #1a2938;font-size:15px;}
+  .lot .n{width:38px;height:38px;border-radius:50%;background:var(--panel-2);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--gold);flex:none;}
+  .lot.reveal{animation:pop .5s ease;} @keyframes pop{0%{transform:scale(.8);opacity:0}100%{transform:none;opacity:1}}
   .datebar{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
   .datebar input{flex:1;text-align:center;padding:9px;}
   .games{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin:0 -16px 12px;padding-left:16px;padding-right:16px;scrollbar-width:none;}
@@ -157,6 +173,7 @@
 <nav class="tabbar" id="tabbar" hidden>
   <a href="#/classement" data-r="classement"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>Classement</a>
   <a href="#/mon-equipe" data-r="mon-equipe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>Mon équipe</a>
+  <a href="#/repechage" data-r="repechage" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16M15 4v16"/></svg>Repêchage</a>
   <a href="#/direct" data-r="direct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>En direct</a>
   <a href="#/echanges" data-r="echanges"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>Échanges<span class="badge" id="tradeBadge" hidden></span></a>
   <a href="#/joueurs" data-r="joueurs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Joueurs</a>
@@ -266,6 +283,10 @@ function renderChrome(){
   $('#meLabel').innerHTML = `<b>${esc(S.me.name)}</b>${S.me.isAdmin ? '<br>commissaire' : ''}`;
   const b = $('#tradeBadge'); b.hidden = !S.pendingTrades; b.textContent = S.pendingTrades || '';
   $('#plusBadge').hidden = !S.pendingProtection;
+  // Pendant la préparation ou le déroulement d'un repêchage, l'onglet Repêchage remplace En direct.
+  const drafting = S.draft && ['setup', 'live'].includes(S.draft.status);
+  document.querySelector('.tabbar a[data-r="repechage"]').hidden = !drafting;
+  document.querySelector('.tabbar a[data-r="direct"]').hidden = !!drafting;
 }
 async function boot(){
   try { await loadState(); } catch { showLogin(); return; }
@@ -282,10 +303,10 @@ function route(){
     (r === 'equipe' && a.dataset.r === (Number(arg) === S.me.teamId ? 'mon-equipe' : 'classement')) ||
     (['liste','historique','commissaire','equipes','protection'].includes(r) && a.dataset.r === 'plus') ||
     (['offre','choix'].includes(r) && a.dataset.r === 'echanges')));
-  clearInterval(liveTimer); liveTimer = null;
+  clearInterval(liveTimer); liveTimer = null; clearInterval(draftTimer); draftTimer = null;
   window.scrollTo(0, 0);
   const views = { classement: vStandings, 'mon-equipe': () => vTeam(S.me.teamId), equipe: () => vTeam(arg), equipes: vTeams, direct: () => vLive(arg),
-                  protection: () => vProtection(arg), echanges: vTrades, offre: () => vOffer(arg), choix: () => vPicks(arg),
+                  repechage: () => vDraft(arg), protection: () => vProtection(arg), echanges: vTrades, offre: () => vOffer(arg), choix: () => vPicks(arg),
                   joueurs: vPlayers, plus: vMore, liste: vWatchlist, historique: vMoves, commissaire: vAdmin };
   (views[r] || vStandings)();
 }
@@ -846,6 +867,160 @@ const savePick = run(async id => {
   toast('Choix mis à jour'); closeSheet(); vPicks(location.hash.split('/')[2]);
 });
 
+// ---------- Repêchage ----------
+let draftTimer = null, DR = null, lotteryAnim = false;
+const vDraft = run(async (yearArg) => {
+  const D = await api('/api/draft' + (yearArg ? '?year=' + yearArg : ''));
+  DR = D;
+  if (!D.year) { $('#view').innerHTML = '<h2 class="title">Repêchage</h2><p class="muted">Aucun choix de repêchage pour l\'instant.</p>'; return; }
+  if (!lotteryAnim) renderDraft();
+  if (!draftTimer && D.status === 'live') draftTimer = setInterval(() => {
+    if (document.hidden || !location.hash.startsWith('#/repechage') || $('#sheet').classList.contains('open')) return;
+    api('/api/draft?year=' + DR.year).then(x => { DR = x; renderDraft(); }).catch(() => {});
+  }, 6000);
+});
+function shortName(n){ return n.length > 12 ? n.slice(0, 11) + '…' : n; }
+function draftBoard(D){
+  const cur = D.picks.find(p => p.id === D.current);
+  const head = D.order.map((t, i) => `<th title="${esc(t.name)}">${i + 1}. ${esc(shortName(t.name))}</th>`).join('');
+  const rows = [];
+  for (let r = 1; r <= D.rounds; r++) {
+    const cells = D.order.map(t => {
+      const p = D.picks.find(x => x.round === r && x.original_team_id === t.id);
+      if (!p) return '<td></td>';
+      const traded = p.owner_team_id !== p.original_team_id;
+      const cls = [p.id === D.current ? 'cur' : '', p.owner_team_id === S.me.teamId ? 'mine' : '', (p.used && !p.player) || p.skipped ? 'gone' : ''].join(' ');
+      const body = p.player ? `<b>${esc(p.player.name)}</b><small>${p.player.pos} · ${esc(p.player.nhl_team || '')}</small>`
+        : p.used ? `<small>${esc(p.note || 'utilisé')}</small>`
+        : p.skipped ? '<small>équipe complète</small>'
+        : p.id === D.current ? '<small style="color:var(--gold);font-weight:700">⏳ au choix</small>' : `<small>#${p.overall}</small>`;
+      return `<td class="${cls}" title="Choix #${p.overall}">${body}${traded ? `<span class="own">→ ${esc(shortName(p.owner_team))}</span>` : ''}</td>`;
+    }).join('');
+    rows.push(`<tr><th class="r">R${r}</th>${cells}</tr>`);
+  }
+  return `<div class="boardwrap"><table class="db"><thead><tr><th class="r">#</th>${head}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+}
+function renderDraft(){
+  const D = DR, A = S.me.isAdmin;
+  const cur = D.picks.find(p => p.id === D.current);
+  const statusTxt = { setup: 'en préparation', live: 'en cours', done: 'terminé' }[D.status] || '';
+  const mineOnClock = cur && (cur.owner_team_id === S.me.teamId);
+  // Loterie
+  let lottery = '';
+  if (D.status === 'setup') {
+    if (D.lottery) {
+      lottery = `<div class="card"><h3><span>Loterie (art. 4.4)</span><span>${new Date(D.lottery.at).toLocaleString('fr-CA', { dateStyle:'medium', timeStyle:'short' })}</span></h3>
+        ${D.lottery.draws.map(x => `<div class="lot"><div class="n">${x.position}</div><div class="grow"><b>${esc((D.order.find(t => t.id === x.team_id) || {}).name || '?')}</b>
+          <div class="meta">${x.pct} % de chances au départ</div></div></div>`).join('')}
+        ${A ? `<button class="btn small ghost" style="margin-top:10px" onclick="runLottery(true)">Refaire la loterie</button>` : ''}</div>`;
+    } else {
+      lottery = `<div class="card"><h3>Loterie des 5 dernières équipes (art. 4.4)</h3>
+        ${D.lotteryTeams.map((t, i) => `<div class="lot"><div class="n">🎟</div><div class="grow"><b>${esc(t.name)}</b>
+          <div class="meta">${['Dernière', 'Avant-dernière', '3e avant-dernière', '4e avant-dernière', '5e avant-dernière'][i]} de la saison</div></div>
+          ${A ? `<input class="lotPct" data-i="${i}" value="${t.pct}" inputmode="numeric" style="width:70px;text-align:right">` : `<b>${t.pct} %</b>`}</div>`).join('')}
+        <p class="muted">Les pourcentages sont relatifs : on tire le 1er choix selon ces poids, puis le 2e parmi les équipes restantes, et ainsi de suite.</p>
+        ${A ? `<div class="row"><button class="btn ghost small" onclick="saveWeights()">Enregistrer les %</button><button class="btn" onclick="runLottery(false)">🎲 Lancer la loterie</button></div>` : ''}</div>`;
+    }
+  }
+  const orderCard = D.status === 'setup' ? `<div class="card"><h3><span>Ordre de sélection (chaque ronde)</span>${A ? '<a class="link" onclick="resetDraftOrder()">réinitialiser</a>' : ''}</h3>
+      <div class="list">${D.order.map((t, i) => `<div class="item" style="cursor:default"><div class="rank ${i < 5 ? 'po' : ''}">${i + 1}</div>
+        <div class="grow"><div class="name">${esc(t.name)}</div><div class="meta">${t.size} joueur(s) · ${Math.max(0, D.rosterFull - t.size)} à repêcher</div></div>
+        ${A ? `<button class="btn small ghost" onclick="moveOrder(${i},-1)" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn small ghost" onclick="moveOrder(${i},1)" ${i === D.order.length - 1 ? 'disabled' : ''}>↓</button>` : ''}</div>`).join('')}</div>
+      <p class="muted">Choix 1 à 5 : loterie. À partir du 6e : selon les séries puis la saison précédente, le champion repêche dernier. Même ordre à chaque ronde.</p>
+      ${A ? `<button class="btn" style="width:100%" onclick="draftStart(false)">▶ Commencer le repêchage</button>` : ''}</div>` : '';
+  const clock = D.status === 'live' ? (cur ? `<div class="clock"><div class="muted" style="color:var(--gold)">AU CHOIX · ronde ${cur.round}, choix #${cur.overall}</div>
+      <div style="font-size:20px;font-weight:800;margin:4px 0">${esc(cur.owner_team)}${cur.owner_team_id !== cur.original_team_id ? ` <span class="muted" style="font-size:13px">(choix de ${esc(cur.original_team)})</span>` : ''}</div>
+      ${mineOnClock || A ? `<button class="btn" style="width:100%" onclick="openDraftPicker()">${mineOnClock ? 'Faire mon choix' : 'Choisir pour ' + esc(cur.owner_team)}</button>` : '<div class="muted">La page se met à jour toute seule.</div>'}
+      ${A ? `<div class="row" style="margin-top:8px"><button class="btn small ghost" onclick="draftUndo()">↶ Annuler la dernière sélection</button><button class="btn small ghost" onclick="draftStart(true)">⏸ Pause</button></div>` : ''}</div>`
+      : `<div class="okbox">Toutes les équipes sont complètes (23 joueurs).${A ? ' <a class="link" onclick="draftFinish()">Terminer le repêchage</a>' : ''}</div>`) : '';
+  const last = D.picks.filter(p => p.player && p.picked_at).sort((a, b) => b.picked_at.localeCompare(a.picked_at)).slice(0, 5);
+  $('#view').innerHTML = `<h2 class="title">Repêchage ${D.year} <span class="pill ${D.status === 'live' ? 'wait' : D.status === 'done' ? 'ok' : ''}" style="font-size:12px;vertical-align:4px">${statusTxt}</span></h2>
+    ${D.years.length > 1 ? `<div class="seg">${D.years.map(y => `<button class="${y === D.year ? 'on' : ''}" onclick="location.hash='#/repechage/${y}'">${y}</button>`).join('')}</div>` : ''}
+    ${clock}${lottery}
+    <h3 class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:6px 0 8px">Tableau des choix · rondes 1 à ${D.rounds}</h3>
+    ${draftBoard(D)}
+    <p class="muted">En vert « → équipe » : le choix appartient maintenant à une autre équipe. Glisse le tableau de côté pour voir toutes les équipes.</p>
+    ${last.length ? `<div class="card"><h3>Dernières sélections</h3>${last.map(p => `<div class="pl"><span>#${p.overall} <b>${esc(p.player.name)}</b> (${p.player.pos})</span><span>${esc(p.owner_team)}</span></div>`).join('')}</div>` : ''}
+    ${orderCard}`;
+}
+const saveWeights = run(async () => {
+  const weights = [...document.querySelectorAll('.lotPct')].map(i => Number(i.value) || 0);
+  await api('/api/admin/draft/settings', { year: DR.year, weights }); toast('Pourcentages enregistrés'); vDraft(DR.year);
+});
+// La loterie est tirée sur le serveur ; ici on dévoile les résultats du 5e au 1er choix.
+const runLottery = run(async (redo) => {
+  if (redo && !confirm('Refaire la loterie ? Le résultat actuel sera remplacé.')) return;
+  if (!redo) { const weights = [...document.querySelectorAll('.lotPct')].map(i => Number(i.value) || 0); if (weights.length) await api('/api/admin/draft/settings', { year: DR.year, weights }); }
+  const { lottery } = await api('/api/admin/draft/lottery', { year: DR.year });
+  lotteryAnim = true;
+  const nameOf = id => (DR.order.find(t => t.id === id) || {}).name || '?';
+  const draws = lottery.draws.slice().sort((a, b) => b.position - a.position);
+  $('#view').innerHTML = `<h2 class="title">Loterie ${DR.year}</h2><div class="card" id="lotBox"><div class="muted" style="text-align:center;padding:10px">🎲 Tirage en cours…</div></div>`;
+  for (const d of draws) {
+    await new Promise(r => setTimeout(r, 1600));
+    const box = $('#lotBox'); if (!box) break;
+    box.insertAdjacentHTML('afterbegin', `<div class="lot reveal"><div class="n">${d.position}</div><div class="grow"><b>${esc(nameOf(d.team_id))}</b>
+      <div class="meta">${d.position === 1 ? '🏆 1er choix au total' : d.position + 'e choix'} · ${d.pct} % au départ</div></div></div>`);
+  }
+  await new Promise(r => setTimeout(r, 2500));
+  lotteryAnim = false; vDraft(DR.year);
+});
+const moveOrder = run(async (i, dir) => {
+  const o = DR.order.map(t => t.id); const j = i + dir; [o[i], o[j]] = [o[j], o[i]];
+  await api('/api/admin/draft/settings', { year: DR.year, order: o }); vDraft(DR.year);
+});
+const resetDraftOrder = run(async () => {
+  if (!confirm('Revenir à l\'ordre de base (pire équipe d\'abord) et effacer la loterie ?')) return;
+  await api('/api/admin/draft/settings', { year: DR.year, resetOrder: true }); vDraft(DR.year);
+});
+const draftStart = run(async stop => {
+  if (!confirm(stop ? 'Mettre le repêchage en pause ?' : 'Commencer le repêchage ? Les poolers pourront faire leurs choix à leur tour.')) return;
+  await api('/api/admin/draft/start', { year: DR.year, stop }); await loadState(); vDraft(DR.year);
+});
+const draftUndo = run(async () => {
+  if (!confirm('Annuler la dernière sélection ?')) return;
+  const r = await api('/api/admin/draft/undo', { year: DR.year }); toast(`${r.undone} retiré`); vDraft(DR.year);
+});
+const draftFinish = run(async () => {
+  if (!confirm('Terminer le repêchage ? Les choix restants seront marqués non utilisés.')) return;
+  await api('/api/admin/draft/finish', { year: DR.year }); await loadState(); vDraft(DR.year);
+});
+// Choisir un joueur disponible : ma liste d'abord, puis la recherche.
+let DP = { q: '', pos: '', names: {} };
+const openDraftPicker = run(async () => {
+  const cur = DR.picks.find(p => p.id === DR.current); if (!cur) return;
+  const watch = cur.owner_team_id === S.me.teamId ? (await api('/api/watchlist')).filter(p => !p.team) : [];
+  $('#sheetBody').innerHTML = `<h3>Choix #${cur.overall} · ${esc(cur.owner_team)}</h3>
+    ${watch.length ? `<label class="f">☆ Ma liste (disponibles)</label><div class="list">${watch.slice(0, 8).map(p => draftRow(p)).join('')}</div><div style="height:10px"></div>` : ''}
+    <input id="dpQ" type="search" placeholder="Rechercher un joueur disponible…" value="${esc(DP.q)}">
+    <div class="seg" style="margin-top:8px">${[['','Tous'],['F','Att.'],['D','Déf.'],['G','Gard.']].map(([v, l]) => `<button class="${DP.pos === v ? 'on' : ''}" onclick="DP.pos='${v}';this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));this.classList.add('on');loadDraftList()">${l}</button>`).join('')}</div>
+    <div class="list" id="dpList"><div class="empty">Chargement…</div></div>`;
+  let t; $('#dpQ').oninput = e => { DP.q = e.target.value; clearTimeout(t); t = setTimeout(loadDraftList, 250); };
+  $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open');
+  loadDraftList();
+});
+function draftRow(p){
+  DP.names[p.id] = p.name;
+  return `<div class="item" onclick="draftChoose(${p.id})"><span class="pos pos-${p.pos}">${p.pos}</span>
+    <div class="grow"><div class="name">${esc(p.name)}</div><div class="meta">${esc(p.nhl_team || '')} · ${p.age ? p.age + ' ans · ' : ''}${statLine(p)}</div></div>
+    <div class="num"><b>${p.pts}</b><div class="meta aav">${money(p.aav)}</div></div></div>`;
+}
+const loadDraftList = run(async () => {
+  const qs = new URLSearchParams({ status: 'available', q: DP.q, pos: DP.pos, sort: 'pts', limit: 60 }).toString();
+  const rows = await api('/api/players?' + qs);
+  const el = $('#dpList'); if (el) el.innerHTML = rows.map(draftRow).join('') || '<div class="empty">Aucun joueur disponible.</div>';
+});
+const draftChoose = run(async (id) => {
+  const name = DP.names[id] || 'ce joueur';
+  if (!confirm(`Repêcher ${name} ?`)) return;
+  try { await api('/api/draft/pick', { year: DR.year, playerId: id }); }
+  catch (e) {
+    if (!(S.me.isAdmin && /Sélection impossible/.test(e.message) && confirm(e.message + '\n\nForcer quand même (commissaire) ?'))) throw e;
+    await api('/api/draft/pick', { year: DR.year, playerId: id, force: true });
+  }
+  toast(`${name} repêché`); closeSheet(); await loadState(); vDraft(DR.year);
+});
+
 // ---------- Liste de protection ----------
 let PR = null;
 const vProtection = run(async (teamArg) => {
@@ -955,6 +1130,7 @@ function vMore(){
     <h2 class="title">Plus</h2>
     <div class="card"><div class="list">
       <div class="item" onclick="location.hash='#/liste'"><div class="grow"><div class="name">☆ Ma liste</div><div class="meta">Mes joueurs ciblés, en ordre de préférence</div></div>›</div>
+      <div class="item" onclick="location.hash='#/repechage'"><div class="grow"><div class="name">🎲 Repêchage</div><div class="meta">Loterie, ordre et tableau des choix</div></div>›</div>
       <div class="item" onclick="location.hash='#/protection'"><div class="grow"><div class="name">🛡️ Liste de protection${S.pendingProtection ? ' <span class="tag" style="border-color:var(--red);color:var(--red)">à remettre</span>' : ''}</div><div class="meta">10 joueurs protégés + 3 automatiques (art. 4.2 et 4.3)</div></div>›</div>
       <div class="item" onclick="location.hash='#/equipes'"><div class="grow"><div class="name">Équipes</div><div class="meta">Tous les alignements et leur conformité</div></div>›</div>
       <div class="item" onclick="location.hash='#/historique'"><div class="grow"><div class="name">Historique des mouvements</div><div class="meta">Ajouts, libérations, échanges</div></div>›</div>

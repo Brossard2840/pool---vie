@@ -108,3 +108,16 @@ test('protection : recrues et combinaisons permises (art. 4.3)', () => {
   assert.deepStrictEqual(assignCategories([P('GP', 'R'), P('GP'), P('GP')]), ['R', 'GP', 'GP']); // un joueur admissible à deux catégories
   assert.strictEqual(assignCategories([P('R'), P('R'), P('R'), P('R')]), null);
 });
+
+test('loterie du repêchage : tirage pondéré sans remise (art. 4.4)', () => {
+  const { drawLottery } = require('../lib/draft');
+  const seq = vals => { let i = 0; return () => vals[i++ % vals.length]; };
+  // rand = 0 : la première équipe sort chaque fois
+  assert.deepStrictEqual(drawLottery([1, 2, 3, 4, 5], [25, 25, 20, 15, 10], seq([0])).map(d => d.team_id), [1, 2, 3, 4, 5]);
+  // rand ≈ 1 : la dernière équipe restante sort chaque fois
+  assert.deepStrictEqual(drawLottery([1, 2, 3, 4, 5], [25, 25, 20, 15, 10], seq([0.999])).map(d => d.team_id), [5, 4, 3, 2, 1]);
+  // Fréquences proches des pourcentages pour le 1er choix
+  const n = 20000, wins = {};
+  for (let i = 0; i < n; i++) { const t = drawLottery([1, 2, 3, 4, 5], [25, 25, 20, 15, 10])[0].team_id; wins[t] = (wins[t] || 0) + 1; }
+  assert.ok(Math.abs(wins[1] / n - 25 / 95) < 0.02 && Math.abs(wins[5] / n - 10 / 95) < 0.02);
+});
