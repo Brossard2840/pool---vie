@@ -10,7 +10,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pool à vie">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/icons/icon-192.png">
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="icon" href="/icons/icon-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>Pool à vie</title>
 <style>
@@ -27,7 +28,7 @@
   .top{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#0e1a28,#0b1622);border-bottom:1px solid var(--line);
        padding:calc(10px + var(--safe-t)) 16px 10px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
   .brand{display:flex;align-items:center;gap:8px;min-width:0;}
-  .brand .puck{width:10px;height:10px;border-radius:50%;background:var(--gold);flex:none;}
+  .brand .logo{width:34px;height:34px;flex:none;display:block;}
   .brand h1{font-size:15px;letter-spacing:.05em;margin:0;font-weight:800;}
   .brand .sub{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .top .me{font-size:12px;color:var(--dim);text-align:right;white-space:nowrap;}
@@ -98,7 +99,7 @@
   .toast.show{opacity:1;}
   .code{font-family:ui-monospace,monospace;font-size:22px;letter-spacing:.15em;color:var(--gold);font-weight:800;}
   .login{max-width:380px;margin:8vh auto 0;}
-  .login .logo{width:84px;height:84px;border-radius:20px;display:block;margin:0 auto 14px;}
+  .login .logo{width:168px;height:168px;display:block;margin:0 auto 10px;}
   details summary{cursor:pointer;color:var(--dim);font-size:13px;}
   .pick{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #1a2938;font-size:14px;}
   .pick input{width:20px;height:20px;flex:none;}
@@ -164,7 +165,7 @@
 <body>
 
 <header class="top" id="top" hidden>
-  <div class="brand"><span class="puck"></span><div><h1>POOL À VIE</h1><div class="sub" id="updated">—</div></div></div>
+  <div class="brand"><img class="logo" src="/logo.svg" alt=""><div><h1>POOL À VIE</h1><div class="sub" id="updated">—</div></div></div>
   <div class="me" id="meLabel"></div>
 </header>
 
@@ -237,7 +238,7 @@ async function showLogin(){
   const saved = localStorageGet('pav_team');
   $('#view').innerHTML = `
     <div class="login">
-      <img class="logo" src="/icons/icon-192.png" alt="">
+      <img class="logo" src="/logo.svg" alt="Pool à vie">
       <h2 class="title" style="text-align:center">Pool à vie</h2>
       <div class="card">
         <label class="f">Mon équipe</label>
