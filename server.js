@@ -12,6 +12,12 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: 0 }));
 
+const IS_PROD = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
+if (IS_PROD && !process.env.DATABASE_URL) {
+  console.error('ERREUR : la variable DATABASE_URL est absente. Ajoutez-la dans Render → Environment ' +
+    '(adresse « Session pooler » de Supabase), puis redéployez.');
+  process.exit(1);
+}
 const DATABASE_URL = process.env.DATABASE_URL || 'postgres://postgres@127.0.0.1:5432/pool';
 const isLocalDb = /@(localhost|127\.0\.0\.1)[:/]/.test(DATABASE_URL);
 const pool = new Pool({
@@ -20,7 +26,6 @@ const pool = new Pool({
 });
 
 const REFRESH_MINUTES = Number(process.env.REFRESH_MINUTES || 20);
-const IS_PROD = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
 let SECRET = process.env.SESSION_SECRET || null;
 
 const h = fn => (req, res, next) => fn(req, res, next).catch(next);
