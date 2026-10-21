@@ -7,6 +7,7 @@ const rules = require('./lib/rules');
 const nhl = require('./lib/nhl');
 const auth = require('./lib/auth');
 const { createLive, addDays } = require('./lib/live');
+const { registerTrades } = require('./lib/trades');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -111,6 +112,7 @@ async function initDb() {
     );
   `);
   await live.initTables();
+  await trades.initTables();
   await setDefault('cap', '104000000');   // plafond LNH 2026-27
   await setDefault('floor', '76900000');  // plancher LNH 2026-27
 
@@ -375,7 +377,7 @@ async function buildLeague() {
 
 app.get('/api/state', h(async (req, res) => {
   const league = await buildLeague();
-  res.json({ me: req.me, ...league });
+  res.json({ me: req.me, pendingTrades: await trades.pendingCount(req.me), ...league });
 }));
 
 app.get('/api/players', h(async (req, res) => {
@@ -484,6 +486,9 @@ app.post('/api/watchlist/reorder', h(async (req, res) => {
 
 const admin = express.Router();
 admin.use(requireAdmin);
+
+// Échanges et choix de repêchage (lib/trades.js). Déclaré ici : les fonctions utilitaires plus bas sont « hissées ».
+const trades = registerTrades(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, seasonId });
 
 admin.post('/config', h(async (req, res) => {
   const { cap, floor, seasonId: sid } = req.body;

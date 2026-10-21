@@ -80,7 +80,8 @@
   .empty{color:var(--dim);font-size:14px;padding:24px 8px;text-align:center;}
   .tabbar{position:fixed;bottom:0;left:0;right:0;z-index:30;background:rgba(14,26,40,.97);backdrop-filter:blur(8px);border-top:1px solid var(--line);
           display:flex;padding-bottom:var(--safe-b);}
-  .tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 7px;color:var(--dim);text-decoration:none;font-size:11px;font-weight:600;}
+  .tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 7px;color:var(--dim);text-decoration:none;font-size:10px;font-weight:600;position:relative;}
+  .tabbar .badge{position:absolute;top:4px;left:calc(50% + 6px);background:var(--red);color:#fff;font-size:10px;font-weight:800;border-radius:9px;padding:1px 5px;line-height:14px;}
   .tabbar a.on{color:var(--gold);}
   .tabbar svg{width:22px;height:22px;}
   .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;display:none;}
@@ -101,7 +102,25 @@
   details summary{cursor:pointer;color:var(--dim);font-size:13px;}
   .pick{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #1a2938;font-size:14px;}
   .pick input{width:20px;height:20px;flex:none;}
-  a.link{color:var(--gold);}
+  a.link{color:var(--gold);text-decoration:none;font-weight:600;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:12px;background:var(--ice);font-variant-numeric:tabular-nums;}
+  .chip.acq{border-color:var(--green);color:#9fd8bf;} .chip.used{opacity:.4;text-decoration:line-through;}
+  .chip.sel{border-color:var(--gold);background:#2b2512;color:var(--gold);font-weight:700;}
+  .tray{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+  .tray .side{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;min-height:96px;}
+  .tray .side h4{margin:0 0 6px;font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;}
+  .tray .it{font-size:13px;padding:4px 0;border-bottom:1px solid #1a2938;display:flex;justify-content:space-between;gap:6px;cursor:pointer;}
+  .tray .it:last-child{border-bottom:none;}
+  .tray .it span:last-child{color:var(--dim);white-space:nowrap;}
+  .impact{font-size:12px;border-radius:10px;padding:8px 10px;margin-bottom:8px;}
+  .trade{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--panel);}
+  .trade .hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-weight:700;}
+  .pill{font-size:11px;font-weight:700;border-radius:20px;padding:2px 8px;border:1px solid var(--line);color:var(--dim);white-space:nowrap;}
+  .pill.wait{border-color:var(--gold);color:var(--gold);} .pill.ok{border-color:var(--green);color:var(--green);} .pill.no{border-color:var(--red);color:var(--red);}
+  .trade .cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;}
+  .trade .cols h5{margin:0 0 4px;font-size:11px;color:var(--dim);font-weight:600;}
+  .trade .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
   .datebar{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
   .datebar input{flex:1;text-align:center;padding:9px;}
   .games{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin:0 -16px 12px;padding-left:16px;padding-right:16px;scrollbar-width:none;}
@@ -139,6 +158,7 @@
   <a href="#/classement" data-r="classement"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>Classement</a>
   <a href="#/mon-equipe" data-r="mon-equipe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>Mon équipe</a>
   <a href="#/direct" data-r="direct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>En direct</a>
+  <a href="#/echanges" data-r="echanges"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>Échanges<span class="badge" id="tradeBadge" hidden></span></a>
   <a href="#/joueurs" data-r="joueurs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Joueurs</a>
   <a href="#/plus" data-r="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Plus</a>
 </nav>
@@ -230,6 +250,7 @@ function renderChrome(){
   const lastStats = [S.config.lastUpdate, S.config.lastLive].filter(Boolean).sort().pop();
   $('#updated').textContent = `Stats LNH : ${ago(lastStats)}`;
   $('#meLabel').innerHTML = `<b>${esc(S.me.name)}</b>${S.me.isAdmin ? '<br>commissaire' : ''}`;
+  const b = $('#tradeBadge'); b.hidden = !S.pendingTrades; b.textContent = S.pendingTrades || '';
 }
 async function boot(){
   try { await loadState(); } catch { return; }
@@ -244,10 +265,12 @@ function route(){
   const [, r = 'classement', arg] = location.hash.split('/');
   document.querySelectorAll('.tabbar a').forEach(a => a.classList.toggle('on', a.dataset.r === r ||
     (r === 'equipe' && a.dataset.r === (Number(arg) === S.me.teamId ? 'mon-equipe' : 'classement')) ||
-    (['liste','historique','commissaire','equipes'].includes(r) && a.dataset.r === 'plus')));
+    (['liste','historique','commissaire','equipes'].includes(r) && a.dataset.r === 'plus') ||
+    (['offre','choix'].includes(r) && a.dataset.r === 'echanges')));
   clearInterval(liveTimer); liveTimer = null;
   window.scrollTo(0, 0);
   const views = { classement: vStandings, 'mon-equipe': () => vTeam(S.me.teamId), equipe: () => vTeam(arg), equipes: vTeams, direct: () => vLive(arg),
+                  echanges: vTrades, offre: () => vOffer(arg), choix: () => vPicks(arg),
                   joueurs: vPlayers, plus: vMore, liste: vWatchlist, historique: vMoves, commissaire: vAdmin };
   (views[r] || vStandings)();
 }
@@ -298,7 +321,10 @@ function vTeam(id){
     ${t.issues.length ? `<div class="issues"><b>À corriger</b><br>${t.issues.map(esc).join('<br>')}</div>`
                       : '<div class="okbox">✓ Alignement conforme (positions, plafond et plancher)</div>'}
     ${sections}
+    <div class="card"><h3><span>Choix de repêchage</span><a class="link" href="#/choix/${t.id}">historique ›</a></h3><div id="teamPicks" class="muted">Chargement…</div></div>
+    ${t.id !== S.me.teamId ? `<button class="btn" style="width:100%;margin-bottom:12px" onclick="location.hash='#/offre/${t.id}'">⇄ Proposer un échange à ${esc(t.name)}</button>` : ''}
     <p class="muted"><span class="tag pts">PTS</span> compte pour les points · <span class="tag cap">$</span> compte dans la masse salariale (art. 3.1)</p>`;
+  api('/api/picks').then(P => { const el = $('#teamPicks'); if (el) el.innerHTML = picksChips(P.picks.filter(p => p.owner_team_id === t.id)); }).catch(() => {});
 }
 
 function playerItem(p, { showFlags = false, showOwner = false } = {}){
@@ -495,6 +521,179 @@ const vLive = run(async (date) => {
 });
 function toggleLive(id){ liveOpen.has(id) ? liveOpen.delete(id) : liveOpen.add(id); vLive(window._liveDate); }
 
+// ---------- Échanges ----------
+const roundFr = r => r === 1 ? '1re' : `${r}e`;
+function pickShort(p){ return `${p.year} · ${roundFr(p.round)}${p.original_team_id !== p.owner_team_id ? ' (' + esc(p.original_team) + ')' : ''}`; }
+function picksChips(list){
+  if (!list.length) return '<span class="muted">Aucun choix.</span>';
+  return `<div class="chips">${list.map(p => `<span class="chip ${p.original_team_id !== p.owner_team_id ? 'acq' : ''} ${p.used ? 'used' : ''}"
+    ${S.me.isAdmin ? `onclick="editPick(${p.id})" style="cursor:pointer"` : ''}>${pickShort(p)}</span>`).join('')}</div>`;
+}
+function tradeItems(list){
+  return list.length ? list.map(i => `<div>${i.kind === 'player' ? `<span class="pos pos-${i.pos}">${i.pos}</span> ${esc(i.label)} <span class="aav">${money(i.aav)}</span>`
+    : '🎟️ ' + esc(i.label.replace('Choix ', ''))}</div>`).join('') : '<div class="muted">—</div>';
+}
+function tradeCard(t){
+  const mineFrom = t.from_team_id === S.me.teamId, mineTo = t.to_team_id === S.me.teamId;
+  const cls = { proposed:'wait', accepted:'wait', completed:'ok' }[t.status] || 'no';
+  const acts = [];
+  if (mineTo && t.status === 'proposed') acts.push(`<button class="btn small" onclick="tradeAct(${t.id},'accept')">Accepter</button>`,
+    `<button class="btn small ghost" onclick="location.hash='#/offre/${t.from_team_id}-${t.id}'">Contre-offre</button>`,
+    `<button class="btn small danger" onclick="tradeAct(${t.id},'refuse')">Refuser</button>`);
+  if (mineFrom && ['proposed','accepted'].includes(t.status)) acts.push(`<button class="btn small danger" onclick="tradeAct(${t.id},'cancel')">Annuler</button>`);
+  if (S.me.isAdmin && t.status === 'accepted') acts.push(`<button class="btn small" onclick="tradeAct(${t.id},'approve')">✓ Approuver</button>`,
+    `<button class="btn small danger" onclick="tradeAct(${t.id},'reject')">Rejeter</button>`);
+  return `<div class="trade">
+    <div class="hd"><span>${esc(t.from_team)} ⇄ ${esc(t.to_team)}</span><span class="pill ${cls}">${esc(t.status_label)}</span></div>
+    <div class="cols">
+      <div><h5>${esc(t.from_team)} envoie</h5>${tradeItems(t.items.filter(i => i.from_team_id === t.from_team_id))}</div>
+      <div><h5>${esc(t.to_team)} envoie</h5>${tradeItems(t.items.filter(i => i.from_team_id === t.to_team_id))}</div>
+    </div>
+    ${t.message ? `<p class="muted" style="margin:8px 0 0">💬 ${esc(t.message)}</p>` : ''}
+    ${t.reply ? `<p class="muted" style="margin:4px 0 0">↩︎ ${esc(t.reply)}</p>` : ''}
+    <div class="meta muted" style="margin-top:6px;font-size:11px">#${t.id} · ${new Date(t.updated_at).toLocaleString('fr-CA', { dateStyle:'medium', timeStyle:'short' })}</div>
+    ${acts.length ? `<div class="actions">${acts.join('')}</div>` : ''}
+  </div>`;
+}
+const vTrades = run(async () => {
+  const T = await api('/api/trades');
+  const me = S.me.teamId, list = T.trades;
+  const todo = list.filter(t => (t.to_team_id === me && t.status === 'proposed') || (S.me.isAdmin && t.status === 'accepted'));
+  const sent = list.filter(t => t.from_team_id === me && ['proposed','accepted'].includes(t.status) && !todo.includes(t));
+  const pendingOthers = S.me.isAdmin ? list.filter(t => t.status === 'proposed' && t.from_team_id !== me && t.to_team_id !== me) : [];
+  const done = list.filter(t => t.status === 'completed');
+  const closed = list.filter(t => ['refused','cancelled','rejected','expired'].includes(t.status) && (t.from_team_id === me || t.to_team_id === me || S.me.isAdmin));
+  const sec = (title, arr, empty) => `<h3 class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px">${title}${arr.length ? ' · ' + arr.length : ''}</h3>
+    ${arr.length ? arr.map(tradeCard).join('') : `<p class="muted">${empty}</p>`}`;
+  $('#view').innerHTML = `<h2 class="title">Échanges</h2>
+    <button class="btn" style="width:100%" onclick="location.hash='#/offre'">⇄ Proposer un échange</button>
+    <div class="row" style="margin-top:8px"><a class="btn ghost small" style="text-align:center;text-decoration:none" href="#/choix">🎟️ Choix de repêchage</a></div>
+    ${T.deadline ? `<p class="muted">Date limite des transactions : <b>${esc(T.deadline)} à 21 h</b>${T.deadlinePassed ? ' — <span style="color:var(--red)">passée</span>' : ''} (art. 5.1).</p>` : ''}
+    <p class="muted">${T.approvalRequired ? 'Une fois acceptée par l\'autre pooler, l\'offre est approuvée par le commissaire.' : 'Une offre acceptée est complétée immédiatement.'}</p>
+    ${sec('À traiter', todo, 'Rien en attente.')}
+    ${sec('Mes offres envoyées', sent, 'Aucune offre en cours.')}
+    ${S.me.isAdmin ? sec('Négociations en cours (autres équipes)', pendingOthers, 'Aucune.') : ''}
+    ${sec('Échanges complétés', done, 'Aucun échange pour l\'instant.')}
+    ${closed.length ? `<details><summary>Offres fermées (${closed.length})</summary>${closed.map(tradeCard).join('')}</details>` : ''}`;
+});
+const tradeAct = run(async (id, action) => {
+  const labels = { accept:'Accepter cette offre ?', refuse:'Refuser cette offre ?', cancel:'Annuler ton offre ?', approve:'Approuver et compléter l\'échange ?', reject:'Rejeter cet échange ?' };
+  if (!confirm(labels[action])) return;
+  const reply = ['refuse','reject'].includes(action) ? (prompt('Un mot pour l\'autre pooler ? (optionnel)') || '') : '';
+  await api(`/api/trades/${id}/${action}`, { reply });
+  toast({ accept:'Offre acceptée', refuse:'Offre refusée', cancel:'Offre annulée', approve:'Échange complété', reject:'Échange rejeté' }[action]);
+  await loadState(); vTrades();
+});
+
+// Montage d'une offre : deux plateaux, comme l'écran d'échange du jeu NHL.
+let OF = null;
+const vOffer = run(async (arg) => {
+  const [partnerArg, counterArg] = String(arg || '').split('-');
+  const P = await api('/api/picks');
+  let counter = null;
+  if (counterArg) counter = (await api('/api/trades')).trades.find(t => t.id === Number(counterArg)) || null;
+  const others = S.teams.filter(t => t.id !== S.me.teamId).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  OF = { partner: Number(partnerArg) || (others[0] && others[0].id), picks: P.picks, give: new Set(), get: new Set(), side: 'me', kind: 'players', counter };
+  if (counter) {   // contre-offre : on part de l'offre reçue, vue de mon côté
+    for (const i of counter.items) (i.from_team_id === S.me.teamId ? OF.give : OF.get).add(`${i.kind === 'player' ? 'p' : 'k'}${i.id}`);
+  }
+  renderOffer();
+});
+function offerAssets(teamId){
+  const t = team(teamId);
+  const players = ['F','D','G'].flatMap(pos => t.positions[pos].players);
+  const picks = OF.picks.filter(p => p.owner_team_id === teamId && !p.used);
+  return { t, players, picks };
+}
+function assetLabel(key){
+  const id = Number(key.slice(1));
+  if (key[0] === 'p') { const p = findPlayer(id); return p ? { text: esc(p.name), sub: `${p.pos} · ${money(p.aav)}` } : { text: '?', sub: '' }; }
+  const k = OF.picks.find(x => x.id === id); return { text: '🎟️ ' + (k ? pickShort(k) : '?'), sub: '' };
+}
+function renderOffer(){
+  const others = S.teams.filter(t => t.id !== S.me.teamId).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  const me = offerAssets(S.me.teamId), them = offerAssets(OF.partner);
+  const set = OF.side === 'me' ? OF.give : OF.get, src = OF.side === 'me' ? me : them;
+  const tray = (title, keys, which) => `<div class="side"><h4>${title}</h4>${[...keys].map(k => { const a = assetLabel(k);
+    return `<div class="it" onclick="offerToggle('${which}','${k}')"><span>${a.text}</span><span>${a.sub} ✕</span></div>`; }).join('') || '<div class="muted" style="font-size:12px">Touche un élément ci-dessous</div>'}</div>`;
+  // Conformité après l'échange (mêmes règles que le serveur, sans les choix qui n'ont pas d'effet).
+  const after = (teamId, outKeys, inKeys) => {
+    const t = team(teamId);
+    const outIds = new Set([...outKeys].filter(k => k[0] === 'p').map(k => Number(k.slice(1))));
+    let players = ['F','D','G'].flatMap(pos => t.positions[pos].players).filter(p => !outIds.has(p.id));
+    for (const k of inKeys) if (k[0] === 'p') players.push(findPlayer(Number(k.slice(1))));
+    const s = summarize(players);
+    return `<div class="impact ${s.issues.length ? 'issues' : 'okbox'}"><b>${esc(t.name)}</b> : masse ${money(t.capUsed)} → <b>${money(s.cap)}</b> · ${s.n.F} A, ${s.n.D} D, ${s.n.G} G
+      ${s.issues.length ? '<br>⚠ ' + s.issues.join('<br>⚠ ') : ' ✓'}</div>`;
+  };
+  const list = OF.kind === 'players'
+    ? src.players.map(p => { const k = 'p' + p.id; return `<div class="item ${set.has(k) ? 'sel' : ''}" onclick="offerToggle('${OF.side}','${k}')" style="${set.has(k) ? 'background:#2b2512' : ''}">
+        <span class="pos pos-${p.pos}">${p.pos}</span><div class="grow"><div class="name">${esc(p.name)}</div><div class="meta">${esc(p.nhl_team || '')} · ${p.pts} pts · ${p.age ? p.age + ' ans · ' : ''}fin ${p.contract_end || '?'}</div></div>
+        <div class="num"><span class="aav">${money(p.aav)}</span><div class="meta">${set.has(k) ? '✓ choisi' : '+'}</div></div></div>`; }).join('')
+    : `<div class="chips" style="padding:6px 0">${src.picks.map(p => { const k = 'k' + p.id; return `<span class="chip ${set.has(k) ? 'sel' : ''}" style="cursor:pointer" onclick="offerToggle('${OF.side}','${k}')">${pickShort(p)}</span>`; }).join('') || '<span class="muted">Aucun choix disponible.</span>'}</div>`;
+  $('#view').innerHTML = `<h2 class="title">${OF.counter ? 'Contre-offre' : 'Nouvelle offre'}</h2>
+    <label class="f">Échanger avec</label>
+    <select id="ofPartner" style="margin-bottom:12px" ${OF.counter ? 'disabled' : ''}>${others.map(t => `<option value="${t.id}" ${t.id === OF.partner ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>
+    <div class="tray">${tray('Tu envoies', OF.give, 'me')}${tray(`Tu reçois de ${esc(them.t.name)}`, OF.get, 'them')}</div>
+    ${OF.give.size || OF.get.size ? after(S.me.teamId, OF.give, OF.get) + after(OF.partner, OF.get, OF.give) : ''}
+    <div class="seg"><button class="${OF.side === 'me' ? 'on' : ''}" onclick="OF.side='me';renderOffer()">Mon équipe</button><button class="${OF.side === 'them' ? 'on' : ''}" onclick="OF.side='them';renderOffer()">${esc(them.t.name)}</button></div>
+    <div class="seg"><button class="${OF.kind === 'players' ? 'on' : ''}" onclick="OF.kind='players';renderOffer()">Joueurs (${src.players.length})</button><button class="${OF.kind === 'picks' ? 'on' : ''}" onclick="OF.kind='picks';renderOffer()">Choix (${src.picks.length})</button></div>
+    <div class="card"><div class="list">${list}</div></div>
+    <textarea id="ofMsg" placeholder="Message pour ${esc(them.t.name)} (optionnel)" style="min-height:70px;font-family:inherit;font-size:15px">${esc(OF.msg || '')}</textarea>
+    <div style="height:10px"></div>
+    <button class="btn" style="width:100%" onclick="submitOffer()" ${OF.give.size || OF.get.size ? '' : 'disabled'}>Envoyer l'offre</button>
+    <p class="muted">L'offre arrive dans l'onglet Échanges de ${esc(them.t.name)}. Un dépassement du plafond après un échange oblige à libérer un joueur (art. 3.2).</p>`;
+  $('#ofPartner').onchange = e => { OF.partner = Number(e.target.value); OF.get.clear(); OF.side = 'them'; renderOffer(); };
+  $('#ofMsg').oninput = e => { OF.msg = e.target.value; };
+}
+function offerToggle(which, key){ const s = which === 'me' ? OF.give : OF.get; s.has(key) ? s.delete(key) : s.add(key); renderOffer(); }
+const submitOffer = run(async () => {
+  const pick = (set, c) => [...set].filter(k => k[0] === c).map(k => Number(k.slice(1)));
+  const body = { toTeamId: OF.partner, message: OF.msg || '', counterOf: OF.counter ? OF.counter.id : null,
+    give: { players: pick(OF.give, 'p'), picks: pick(OF.give, 'k') }, get: { players: pick(OF.get, 'p'), picks: pick(OF.get, 'k') } };
+  if (!confirm(`Envoyer l'offre à ${team(OF.partner).name} ?`)) return;
+  await api('/api/trades', body);
+  toast('Offre envoyée'); location.hash = '#/echanges';
+});
+
+// Choix de repêchage : qui possède quoi, et l'historique des échanges de choix.
+const vPicks = run(async (teamArg) => {
+  const P = await api('/api/picks');
+  const years = [...new Set(P.picks.map(p => p.year))];
+  const teams = S.teams.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  const focus = Number(teamArg) || null;
+  const cards = teams.filter(t => !focus || t.id === focus).map(t => {
+    const own = P.picks.filter(p => p.owner_team_id === t.id);
+    const gone = P.picks.filter(p => p.original_team_id === t.id && p.owner_team_id !== t.id);
+    return `<div class="card"><h3><span>${esc(t.name)} · ${own.length} choix</span></h3>${picksChips(own)}
+      ${gone.length ? `<p class="muted" style="margin:8px 0 0">Cédés : ${gone.map(p => `${p.year} ${roundFr(p.round)} → ${esc(p.owner_team)}`).join(' · ')}</p>` : ''}</div>`;
+  }).join('');
+  const hist = P.history.filter(m => !focus || [m.from_team, m.to_team].includes(team(focus).name));
+  $('#view').innerHTML = `<h2 class="title">Choix de repêchage</h2>
+    <p class="muted">Rondes 1 à 12 · repêchage${years.length > 1 ? 's' : ''} ${years.join(', ')}. En vert : choix obtenus d'une autre équipe (entre parenthèses, l'équipe d'origine).
+      ${S.me.isAdmin ? 'Touche un choix pour le corriger.' : ''}</p>
+    ${focus ? `<p><a class="link" href="#/choix">‹ Toutes les équipes</a></p>` : ''}
+    ${cards}
+    <div class="card"><h3>Suivi des échanges de choix</h3><div class="list">${hist.map(m => `<div class="item" style="cursor:default"><div class="grow">
+      <div class="name">${esc(m.player_name)}</div><div class="meta">${esc(m.from_team)} → <b>${esc(m.to_team)}</b> · ${esc(m.kind)}${m.note ? ' · ' + esc(m.note) : ''}</div>
+      <div class="meta">${new Date(m.at).toLocaleString('fr-CA', { dateStyle:'medium', timeStyle:'short' })}</div></div></div>`).join('') || '<div class="empty">Aucun choix échangé pour l\'instant.</div>'}</div></div>`;
+  window._picks = P.picks;
+});
+function editPick(id){
+  const p = (window._picks || []).find(x => x.id === id); if (!p) { location.hash = '#/choix'; return; }
+  $('#sheetBody').innerHTML = `<h3>${esc(p.label)}</h3><p class="muted">Propriétaire actuel : <b>${esc(p.owner_team)}</b></p>
+    <label class="f">Nouveau propriétaire</label>
+    <select id="pkOwner">${S.teams.slice().sort((a,b)=>a.name.localeCompare(b.name,'fr')).map(t => `<option value="${t.id}" ${t.id === p.owner_team_id ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>
+    <div style="height:8px"></div><input id="pkNote" placeholder="Note, ex. cédé pour l'agent libre X (art. 5.4)">
+    <label class="pick"><input type="checkbox" id="pkUsed" ${p.used ? 'checked' : ''}> Choix utilisé (repêchage fait)</label>
+    <button class="btn" style="width:100%;margin-top:8px" onclick="savePick(${p.id})">Enregistrer</button>`;
+  $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open');
+}
+const savePick = run(async id => {
+  await api(`/api/admin/picks/${id}`, { ownerTeamId: Number($('#pkOwner').value), used: $('#pkUsed').checked, note: $('#pkNote').value });
+  toast('Choix mis à jour'); closeSheet(); vPicks(location.hash.split('/')[2]);
+});
+
 // ---------- Plus ----------
 function vMore(){
   const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
@@ -608,6 +807,17 @@ const vAdmin = run(async () => {
       <div id="impResult"></div>
     </div>
 
+    <div class="card"><h3>Échanges et choix</h3>
+      <label class="pick"><input type="checkbox" id="trApproval"> Le commissaire approuve chaque échange accepté</label>
+      <div class="row" style="margin-top:8px">
+        <div><label class="f">Date limite des transactions (21 h)</label><input type="date" id="trDeadline"></div>
+      </div>
+      <button class="btn small" onclick="saveTradeSettings()">Enregistrer</button>
+      <hr style="border:none;border-top:1px solid var(--line);margin:14px 0">
+      <p class="muted">Après la remise des listes de protection, les choix de l'année suivante deviennent disponibles (art. 4.6).</p>
+      <div class="row"><input id="pkYear" inputmode="numeric" placeholder="Année, ex. 2028"><button class="btn small" style="flex:0" onclick="genPicks()">Créer les choix (12 rondes)</button></div>
+    </div>
+
     <div class="card"><h3>Réglages de la ligue</h3>
       <div class="row">
         <div><label class="f">Plafond ($)</label><input id="cfCap" inputmode="numeric" value="${c.cap}"></div>
@@ -629,6 +839,7 @@ const vAdmin = run(async () => {
     toast(`${$('#impText').value.trim().split(/\n/).length} lignes chargées`);
   };
   $('#trA').onchange = $('#trB').onchange = renderTradeLists;
+  api('/api/trades').then(T => { $('#trApproval').checked = T.approvalRequired; $('#trDeadline').value = T.deadline || ''; }).catch(() => {});
   renderTradeLists();
 });
 
@@ -666,6 +877,14 @@ const refreshStats = run(async btn => {
   btn.disabled = true; btn.textContent = 'Mise à jour…';
   try { const r = await api('/api/admin/stats/refresh', {}); toast(`${r.nhlPlayers} joueurs LNH mis à jour`); await refresh(); }
   finally { btn.disabled = false; }
+});
+const saveTradeSettings = run(async () => {
+  await api('/api/admin/trade-settings', { approval: $('#trApproval').checked, deadline: $('#trDeadline').value });
+  toast('Réglages des échanges enregistrés');
+});
+const genPicks = run(async () => {
+  const r = await api('/api/admin/picks/generate', { year: Number($('#pkYear').value) });
+  toast(`${r.created} choix créés`);
 });
 const saveConfig = run(async () => {
   await api('/api/admin/config', { cap: $('#cfCap').value, floor: $('#cfFloor').value, seasonId: $('#cfSeason').value.trim() });

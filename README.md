@@ -94,6 +94,15 @@ L'onglet **En direct** suit les matchs de la journée à partir des sommaires de
 Au premier démarrage d'une saison, le serveur télécharge tous les matchs déjà joués (quelques
 minutes) ; ensuite, les totaux de la saison sont la somme de ces matchs, matchs en cours inclus.
 
+## Échanges et choix de repêchage
+
+Chaque équipe possède ses choix des rondes 1 à 12 du prochain repêchage (art. 4.6) ; le commissaire
+ajoute ceux de l'année suivante après les listes de protection (Commissaire → Échanges et choix).
+Un pooler monte une offre (joueurs et choix) dans l'onglet **Échanges** ; l'autre pooler accepte,
+refuse ou fait une contre-offre, puis le commissaire approuve (réglable). L'écran montre la masse
+salariale et les positions des deux équipes après l'échange. La page **Choix de repêchage** suit
+qui possède chaque choix et l'historique de leurs échanges. Date limite (art. 5.1) réglable.
+
 ## Développement local
 
 ```bash
