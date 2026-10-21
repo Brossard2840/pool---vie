@@ -174,6 +174,18 @@ et « → équipe » quand le choix a été échangé.
   une fois par jour, sauf pendant l'entre-saison), résumé du matin à 9 h (tes points d'hier, ton rang,
   tes meilleurs joueurs) et avis quand un joueur du pool change d'équipe dans la LNH.
 
+## Âge, recrues et projections
+
+- **Âge moyen** de chaque équipe (date de naissance de NHL.com, sinon l'âge saisi), rang de la plus jeune,
+  et tri « plus jeunes / plus vieilles » dans Équipes.
+- **Recrues** : étiquettes « 🍼 Recrue ⚡ » (recrue LNH de la saison, protection automatique possible,
+  art. 4.3.1) et « Recrue 2e an ⚡ » (art. 4.3.3), d'après l'historique LNH rafraîchi chaque semaine.
+  « ≤ 39 PJ ⚡ » (art. 4.3.2) s'affiche seulement pendant la période de protection.
+- **Projections** (Plus → 🔮) : copies de son alignement pour une saison future (1 à 5 ans), privées.
+  Salaire = AAV si le joueur est encore sous contrat cette saison-là, sinon « contrat échu » (0 $)
+  tant qu'on n'inscrit pas un salaire estimé. Plafond de l'année (113,5 M$ en 2027-28, puis estimé,
+  modifiable), conformité, âge de chaque joueur cette saison-là. On peut ajouter n'importe quel joueur.
+
 ## Développement local
 
 ```bash

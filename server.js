@@ -9,11 +9,12 @@ const auth = require('./lib/auth');
 const { createLive, addDays } = require('./lib/live');
 const { registerTrades } = require('./lib/trades');
 const { createWaivers } = require('./lib/waivers');
-const { createProtection } = require('./lib/protection');
+const { createProtection, categories } = require('./lib/protection');
 const { createPlayoffs } = require('./lib/playoffs');
 const { createDraft } = require('./lib/draft');
 const { createNotify } = require('./lib/notify');
 const { createReminders } = require('./lib/reminders');
+const { createProjections } = require('./lib/projections');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -123,6 +124,7 @@ async function initDb() {
   await protection.initTables();
   await draft.initTables();
   await notifier.initTables();
+  await projections.initTables();
   await setDefault('cap', '104000000');   // plafond LNH 2026-27
   await setDefault('floor', '76900000');  // plancher LNH 2026-27
 
@@ -404,7 +406,16 @@ app.use('/api', (req, res, next) => { refreshIfStale().catch(() => {}); next(); 
 // ---------- Lecture ----------
 
 const PLAYER_COLS = `p.id, p.nhl_id, p.name, p.nhl_team, p.pos, p.aav, p.age, p.contract_end, p.rookie,
-  p.gp, p.goals, p.assists, p.wins, p.ot_losses, p.shutouts`;
+  p.gp, p.goals, p.assists, p.wins, p.ot_losses, p.shutouts, p.birth_date, p.auto_override`;
+
+// Âge exact si on connaît la date de naissance (NHL.com), sinon l'âge saisi.
+function ageOf(p, at = new Date()) {
+  if (!p.birth_date) return p.age ?? null;
+  const b = new Date(p.birth_date);
+  let a = at.getFullYear() - b.getFullYear();
+  if (at.getMonth() < b.getMonth() || (at.getMonth() === b.getMonth() && at.getDate() < b.getDate())) a--;
+  return a;
+}
 
 function clean(p) {
   return { ...p, aav: p.aav === null ? null : Number(p.aav), pts: rules.poolPoints(p) };
@@ -428,8 +439,28 @@ async function buildLeague() {
     if (cut && c.aav !== null) { c.aav_full = c.aav; c.aav = Math.max(0, c.aav - cut); c.retained = cut; }
     byTeam.get(p.team_id)?.push(c);
   }
-  const summaries = teams.map(t => ({ id: t.id, name: t.name, hasCode: t.has_code,
-    ...rules.teamSummary(byTeam.get(t.id), { ...config, retained: retByTeam.get(t.id) || 0 }) }));
+  // Recrues et protections automatiques possibles (art. 4.3), d'après l'historique LNH de chaque joueur.
+  // « GP » (peu de matchs) ne veut rien dire en cours de saison : on ne l'affiche que pendant la période de protection.
+  const ids = owned.map(p => p.nhl_id).filter(Boolean);
+  const { rows: hist } = await pool.query(`SELECT nhl_id, season_start, gp FROM player_seasons WHERE nhl_id = ANY($1::int[])`, [ids]);
+  const seasonsOf = new Map();
+  for (const r of hist) { if (!seasonsOf.has(r.nhl_id)) seasonsOf.set(r.nhl_id, new Map()); seasonsOf.get(r.nhl_id).set(r.season_start, r.gp); }
+  const startYear = Number(String(config.seasonId).slice(0, 4));
+  const protOpen = (await getConfig('prot_status')) === 'open';
+  for (const list of byTeam.values()) for (const p of list) {
+    p.age = ageOf(p);
+    const known = seasonsOf.get(p.nhl_id);
+    p.cats = known || p.auto_override ? categories(p, startYear, known || new Map(), p.birth_date).filter(c => protOpen || c !== 'GP') : [];
+  }
+  const summaries = teams.map(t => {
+    const list = byTeam.get(t.id), ages = list.map(p => p.age).filter(a => a);
+    return { id: t.id, name: t.name, hasCode: t.has_code,
+      avgAge: ages.length ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length * 10) / 10 : null,
+      rookies: list.filter(p => p.cats.includes('R')).length,
+      ...rules.teamSummary(list, { ...config, retained: retByTeam.get(t.id) || 0 }) };
+  });
+  // Rang d'âge : 1 = équipe la plus jeune.
+  summaries.filter(t => t.avgAge).sort((a, b) => a.avgAge - b.avgAge).forEach((t, i) => { t.ageRank = i + 1; });
   const ranked = rules.rankTeams(summaries);
   return { config, teams: ranked };
 }
@@ -566,6 +597,8 @@ const protection = createProtection(app, admin, { pool, h, inTransaction, getCon
 createPlayoffs(app, { pool, h, seasonId, buildLeague });
 // Repêchage (lib/draft.js).
 const draft = createDraft(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, rules, buildLeague, notify });
+// Projections d'alignement (lib/projections.js).
+const projections = createProjections(app, { pool, h, inTransaction, seasonId, rules });
 
 admin.post('/config', h(async (req, res) => {
   const { cap, floor, seasonId: sid } = req.body;
@@ -812,6 +845,10 @@ initDb().then(() => {
       live.tick().catch(e => console.error('Direct :', e.message));
       waivers.processDue().catch(e => console.error('Ballottage :', e.message));
       reminders.tick().catch(e => console.error('Rappels :', e.message));
+      // Historique LNH (statut de recrue) : rafraîchi chaque semaine.
+      getConfig('prot_history_at').then(at => {
+        if (!at || Date.now() - Date.parse(at) > 7 * 864e5) protection.computeHistory().catch(e => console.error('Historique :', e.message));
+      }).catch(() => {});
     }, 60 * 1000);
     refreshIfStale().catch(e => console.error(e));
   }

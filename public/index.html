@@ -123,6 +123,7 @@
   .pick{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #1a2938;font-size:14px;}
   .pick input{width:20px;height:20px;flex:none;}
   a.link{color:var(--gold);text-decoration:none;font-weight:600;}
+  .tag.rk{border-color:#7fc8a9;color:#9fe0c2;background:#13261f;} .tag.rk2{border-color:#8fb4d6;color:#b5d3ee;background:#16233a;}
   .chips{display:flex;flex-wrap:wrap;gap:6px;}
   .chip{border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:12px;background:var(--ice);font-variant-numeric:tabular-nums;}
   .chip.acq{border-color:var(--green);color:#9fd8bf;} .chip.used{opacity:.4;text-decoration:line-through;}
@@ -327,12 +328,12 @@ function route(){
   const [, r = 'classement', arg] = location.hash.split('/');
   document.querySelectorAll('.tabbar a').forEach(a => a.classList.toggle('on', a.dataset.r === r ||
     (r === 'equipe' && a.dataset.r === (Number(arg) === S.me.teamId ? 'mon-equipe' : 'classement')) ||
-    (['liste','historique','commissaire','equipes','protection'].includes(r) && a.dataset.r === 'plus') ||
+    (['liste','historique','commissaire','equipes','protection','projections','projection'].includes(r) && a.dataset.r === 'plus') ||
     (['offre','choix','echange'].includes(r) && a.dataset.r === 'echanges')));
   clearInterval(liveTimer); liveTimer = null; clearInterval(draftTimer); draftTimer = null;
   window.scrollTo(0, 0);
   const views = { classement: vStandings, 'mon-equipe': () => vTeam(S.me.teamId), equipe: () => vTeam(arg), equipes: vTeams, direct: () => vLive(arg),
-                  repechage: () => vDraft(arg), protection: () => vProtection(arg), echanges: vTrades, echange: () => vTradeOne(arg), notifications: vNotifications, offre: () => vOffer(arg), choix: () => vPicks(arg),
+                  repechage: () => vDraft(arg), protection: () => vProtection(arg), echanges: vTrades, echange: () => vTradeOne(arg), projections: vProjections, projection: () => vProjection(arg), notifications: vNotifications, offre: () => vOffer(arg), choix: () => vPicks(arg),
                   joueurs: vPlayers, plus: vMore, liste: vWatchlist, historique: vMoves, commissaire: vAdmin };
   (views[r] || vStandings)();
 }
@@ -398,6 +399,11 @@ function vTeam(id){
       <div class="stat"><div class="l">Points</div><div class="v">${t.points}</div></div>
       <div class="stat"><div class="l">Pt/match</div><div class="v">${ppg(t)}</div></div>
     </div>
+    <div class="stats">
+      <div class="stat"><div class="l">Âge moyen</div><div class="v">${t.avgAge ? t.avgAge.toLocaleString('fr-CA') : '—'}</div></div>
+      <div class="stat"><div class="l">Jeunesse</div><div class="v">${t.ageRank ? (t.ageRank === 1 ? '1re' : t.ageRank + 'e') : '—'}<span class="muted" style="font-size:12px"> plus jeune</span></div></div>
+      <div class="stat"><div class="l">Recrues</div><div class="v">${t.rookies || 0}</div></div>
+    </div>
     <div class="card">
       <h3><span>Masse salariale</span><span>${money(t.capUsed)} / ${money(c.cap)}</span></h3>
       <div class="bar"><i class="${t.capUsed > c.cap ? 'over' : ''}" style="width:${pct}%"></i></div>
@@ -413,24 +419,38 @@ function vTeam(id){
   api('/api/picks').then(P => { const el = $('#teamPicks'); if (el) el.innerHTML = picksChips(P.picks.filter(p => p.owner_team_id === t.id)); }).catch(() => {});
 }
 
+// Recrue (art. 4.3.1), recrue de 2e année (4.3.3) : protection automatique possible ⚡.
+function rookieTags(p){
+  const c = p.cats || [];
+  return (c.includes('R') ? '<span class="tag rk" title="Recrue LNH cette saison : protection automatique possible (art. 4.3.1)">🍼 Recrue ⚡</span>' : '')
+    + (c.includes('R2') ? '<span class="tag rk2" title="Recrue la saison passée : une année de protection supplémentaire (art. 4.3.3)">Recrue 2e an ⚡</span>' : '')
+    + (c.includes('GP') ? '<span class="tag" title="Peu de matchs : protection automatique possible (art. 4.3.2)">≤ 39 PJ ⚡</span>' : '')
+    + (!c.length && p.rookie ? '<span class="tag rk">🍼 Recrue</span>' : '');
+}
 function playerItem(p, { showFlags = false, showOwner = false } = {}){
   const flags = showFlags ? `${p.counts_points ? '<span class="tag pts">PTS</span>' : ''}${p.counts_cap ? '<span class="tag cap">$</span>' : ''}` : '';
   const owner = showOwner ? (p.team ? ` · <b>${esc(p.team)}</b>` : ' · <span style="color:var(--green)">disponible</span>') : '';
   const link = p.nhl_id ? '' : ' · <span style="color:var(--red)">sans fiche LNH</span>';
   return `<div class="item ${showFlags && !p.counts_points ? 'out' : ''}" onclick="openPlayer(${p.id})">
     <span class="pos pos-${p.pos}">${p.pos}</span>
-    <div class="grow"><div class="name">${esc(p.name)}${flags}${p.rookie ? '<span class="tag">R</span>' : ''}${p.retained ? '<span class="tag" title="Une autre équipe retient une partie du salaire">ret.</span>' : ''}</div>
-      <div class="meta">${esc(p.nhl_team || '—')} · ${statLine(p)}${owner}${link}</div></div>
+    <div class="grow"><div class="name">${esc(p.name)}${flags}${p.retained ? '<span class="tag" title="Une autre équipe retient une partie du salaire">ret.</span>' : ''}</div>
+      ${rookieTags(p) ? `<div class="meta" style="margin-top:3px">${rookieTags(p).replace(/class="tag/g, 'style="margin-left:0;margin-right:4px" class="tag')}</div>` : ''}
+      <div class="meta">${esc(p.nhl_team || '—')}${p.age ? ' · ' + p.age + ' ans' : ''} · ${statLine(p)}${owner}${link}</div></div>
     <div class="num"><b>${p.pts}</b><div class="meta aav">${money(p.aav)}</div></div>
   </div>`;
 }
 
 // ---------- Équipes ----------
+let teamsSort = 'nom';
 function vTeams(){
-  $('#view').innerHTML = `<h2 class="title">Équipes</h2><div class="card"><div class="list">${
-    S.teams.slice().sort((a,b) => a.name.localeCompare(b.name, 'fr')).map(t => `
+  const sorters = { nom: (a, b) => a.name.localeCompare(b.name, 'fr'), jeunes: (a, b) => (a.avgAge || 99) - (b.avgAge || 99), vieux: (a, b) => (b.avgAge || 0) - (a.avgAge || 0) };
+  $('#view').innerHTML = `<h2 class="title">Équipes</h2>
+    <div class="seg">${[['nom','Nom'],['jeunes','Plus jeunes'],['vieux','Plus vieilles']].map(([k, l]) => `<button class="${teamsSort === k ? 'on' : ''}" onclick="teamsSort='${k}';vTeams()">${l}</button>`).join('')}</div>
+    <div class="card"><div class="list">${
+    S.teams.slice().sort(sorters[teamsSort]).map(t => `
       <div class="item" onclick="location.hash='#/equipe/${t.id}'">
         <div class="grow"><div class="name">${esc(t.name)}</div>
+          <div class="meta">🎂 ${t.avgAge ? t.avgAge.toLocaleString('fr-CA') + ' ans de moyenne' : 'âge inconnu'}${t.rookies ? ' · 🍼 ' + t.rookies + ' recrue' + (t.rookies > 1 ? 's' : '') : ''}</div>
           <div class="meta">${t.positions.F.count} A · ${t.positions.D.count} D · ${t.positions.G.count} G · espace ${money(t.capSpace)}
           ${t.issues.length ? ' · <span style="color:var(--red)">⚠ ' + t.issues.map(esc).join(', ') + '</span>' : ''}</div></div>
         <div class="num"><b>${t.points}</b><div class="meta">${t.rank}e</div></div>
@@ -893,6 +913,88 @@ const savePick = run(async id => {
   toast('Choix mis à jour'); closeSheet(); vPicks(location.hash.split('/')[2]);
 });
 
+// ---------- Projections ----------
+const seasonLbl = y => `${y}-${String(y + 1).slice(2)}`;
+const vProjections = run(async () => {
+  const P = await api('/api/projections');
+  $('#view').innerHTML = `<h2 class="title">🔮 Projections</h2>
+    <p class="muted">Bâtis ton alignement des saisons à venir. Le salaire de chaque joueur est son AAV s'il est encore sous contrat cette saison-là ; sinon, son contrat est échu (0 $) jusqu'à ce que tu inscrives un salaire estimé. Tes projections sont privées.</p>
+    <div class="card"><h3>Nouvelle projection</h3>
+      <div class="row"><select id="pjYear">${P.seasons.map(x => `<option value="${x.start}">${seasonLbl(x.start)} · plafond ${money(x.cap)}${x.estimated ? ' (estimé)' : ''}</option>`).join('')}</select></div>
+      <div class="row"><select id="pjFrom"><option value="current">Copier mon équipe actuelle</option>${P.projections.map(p => `<option value="${p.id}">Copier « ${esc(p.name)} »</option>`).join('')}<option value="">Partir de zéro</option></select></div>
+      <div class="row"><input id="pjName" placeholder="Nom (optionnel), ex. Plan A : on garde les jeunes"></div>
+      <button class="btn small" onclick="newProjection()">Créer</button></div>
+    ${P.projections.map(p => `<div class="item card" onclick="location.hash='#/projection/${p.id}'" style="display:flex">
+      <div class="grow"><div class="name">${esc(p.name)}</div>
+        <div class="meta">${seasonLbl(p.season_start)} · ${p.size} joueurs · ${p.counts.F} A, ${p.counts.D} D, ${p.counts.G} G · 🎂 ${p.avgAge ?? '—'} ans</div>
+        <div class="meta">${p.expired ? `<span style="color:var(--red)">${p.expired} contrat${p.expired > 1 ? 's' : ''} échu${p.expired > 1 ? 's' : ''}</span> · ` : ''}${p.issues.length ? '⚠ ' + esc(p.issues[0]) : '✓ conforme'}</div></div>
+      <div class="num"><b class="aav">${money(p.capUsed)}</b><div class="meta">/ ${money(p.cap)}</div></div></div>`).join('') || '<p class="muted">Aucune projection pour l\'instant.</p>'}`;
+});
+const newProjection = run(async () => {
+  const r = await api('/api/projections', { seasonStart: Number($('#pjYear').value), copyFrom: $('#pjFrom').value || null, name: $('#pjName').value });
+  location.hash = '#/projection/' + r.id;
+});
+let PJ = null;
+const vProjection = run(async (id) => { PJ = await api('/api/projections/' + id); renderProjection(); });
+const STATUS_TAG = { contrat: p => `<span class="tag pts">contrat jusqu'en ${p.contract_end}</span>`, échu: p => `<span class="tag" style="border-color:var(--red);color:var(--red)">contrat échu${p.contract_end ? ' (' + p.contract_end + ')' : ''}</span>`, inconnu: () => '<span class="tag">fin de contrat inconnue</span>' };
+function renderProjection(){
+  const P = PJ, pct = Math.min(100, P.capUsed / P.cap * 100);
+  const sec = pos => {
+    const list = P.players.filter(p => p.pos === pos);
+    return `<div class="card"><h3>${POS_LABEL[pos]} · ${list.length}</h3><div class="list">${list.map(p => `<div class="item" onclick="editProjPlayer(${p.id})">
+      <span class="pos pos-${p.pos}">${p.pos}</span>
+      <div class="grow"><div class="name">${esc(p.name)}${p.counts_cap ? '<span class="tag cap">$</span>' : ''}</div>
+        <div class="meta">${p.age ? p.age + ' ans · ' : ''}${STATUS_TAG[p.status](p)}${p.override !== null ? ' <span class="tag cap">salaire estimé</span>' : ''}${p.owner && p.owner !== S.me.name ? ' · chez ' + esc(p.owner) : ''}</div></div>
+      <div class="num"><b class="aav" style="${p.status === 'échu' && p.override === null ? 'color:var(--red)' : ''}">${money(p.aav)}</b>${p.aav !== p.aav_now ? `<div class="meta">auj. ${money(p.aav_now)}</div>` : ''}</div></div>`).join('') || '<div class="empty">Aucun joueur</div>'}</div></div>`;
+  };
+  $('#view').innerHTML = `<h2 class="title">${esc(P.name)}</h2>
+    <p class="muted">Saison ${seasonLbl(P.season_start)} · <a class="link" onclick="renameProjection()">renommer</a> · <a class="link" onclick="deleteProjection()">supprimer</a> · <a class="link" href="#/projections">toutes mes projections</a></p>
+    <div class="card"><h3><span>Masse salariale ${seasonLbl(P.season_start)}</span><span>${money(P.capUsed)} / <a class="link" onclick="editProjCap()">${money(P.cap)}</a>${P.capEstimated ? ' (estimé)' : ''}</span></h3>
+      <div class="bar"><i class="${P.capUsed > P.cap ? 'over' : ''}" style="width:${pct}%"></i></div>
+      <div class="muted">Espace : <b style="color:${P.capSpace < 0 ? 'var(--red)' : 'var(--text)'}">${moneyFull(P.capSpace)}</b> · plancher ${money(P.floor)} · 🎂 âge moyen ${P.avgAge ?? '—'} ans</div></div>
+    ${P.issues.length ? `<div class="issues">${P.issues.map(esc).join('<br>')}</div>` : '<div class="okbox">✓ Alignement conforme pour cette saison</div>'}
+    ${P.expired ? `<div class="issues" style="background:#2b2512;border-color:#5a4a1e;color:var(--gold)">${P.expired} joueur(s) n'auront plus de contrat : touche-les pour inscrire un salaire estimé (nouveau contrat) ou retire-les.</div>` : ''}
+    ${P.unknown ? `<p class="muted">${P.unknown} joueur(s) sans date de fin de contrat connue : leur AAV actuel est utilisé. Touche-les pour inscrire une fin de contrat.</p>` : ''}
+    <button class="btn" style="width:100%;margin-bottom:12px" onclick="openProjAdd()">+ Ajouter un joueur</button>
+    ${['F','D','G'].map(sec).join('')}`;
+}
+const projUpdate = run(async body => { PJ = await api('/api/projections/' + PJ.id, body); renderProjection(); });
+function editProjPlayer(id){
+  const p = PJ.players.find(x => x.id === id);
+  $('#sheetBody').innerHTML = `<h3>${esc(p.name)}</h3><p class="muted">AAV aujourd'hui : ${money(p.aav_now)} · ${STATUS_TAG[p.status](p)}</p>
+    <label class="f">Salaire estimé pour ${seasonLbl(PJ.season_start)} (vide = AAV actuel si sous contrat)</label>
+    <input id="ppSal" inputmode="numeric" value="${p.override ?? ''}" placeholder="ex. 7500000">
+    <div style="height:8px"></div>
+    <label class="f">Fin de contrat supposée (dernière saison, ex. 2030)</label>
+    <input id="ppEnd" inputmode="numeric" value="${p.end_override ?? ''}" placeholder="${p.contract_end ?? 'inconnue'}">
+    <div class="row" style="margin-top:12px"><button class="btn" onclick="saveProjPlayer(${p.id})">Enregistrer</button><button class="btn danger" onclick="removeProjPlayer(${p.id})">Retirer de la projection</button></div>`;
+  $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open');
+}
+function saveProjPlayer(id){ closeSheet(); projUpdate({ player: id, salary: $('#ppSal').value.trim(), contractEnd: $('#ppEnd').value.trim() }); }
+function removeProjPlayer(id){ closeSheet(); projUpdate({ remove: id }); }
+function editProjCap(){ const v = prompt(`Plafond pour ${seasonLbl(PJ.season_start)} ($)`, PJ.cap); if (v) projUpdate({ cap: Number(v.replace(/[^0-9]/g, '')) }); }
+function renameProjection(){ const v = prompt('Nom de la projection', PJ.name); if (v) projUpdate({ name: v }); }
+const deleteProjection = run(async () => {
+  if (!confirm('Supprimer cette projection ?')) return;
+  await apiDelete('/api/projections/' + PJ.id); location.hash = '#/projections';
+});
+// Ajouter n'importe quel joueur LNH (agent libre, joueur d'une autre équipe, espoir…).
+let PA = { q: '' };
+function openProjAdd(){
+  $('#sheetBody').innerHTML = `<h3>Ajouter à « ${esc(PJ.name)} »</h3>
+    <input id="paQ" type="search" placeholder="Rechercher un joueur…" value="${esc(PA.q)}"><div class="list" id="paList"></div>`;
+  let t; $('#paQ').oninput = e => { PA.q = e.target.value; clearTimeout(t); t = setTimeout(loadProjAdd, 250); };
+  $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open'); loadProjAdd();
+}
+const loadProjAdd = run(async () => {
+  const rows = await api('/api/players?' + new URLSearchParams({ status: 'all', q: PA.q, sort: 'pts', limit: 40 }));
+  const inIt = new Set(PJ.players.map(p => p.id));
+  $('#paList').innerHTML = rows.filter(p => !inIt.has(p.id)).map(p => `<div class="item" onclick="closeSheet();projUpdate({ add: ${p.id} })">
+    <span class="pos pos-${p.pos}">${p.pos}</span><div class="grow"><div class="name">${esc(p.name)}</div>
+    <div class="meta">${esc(p.nhl_team || '')} · ${p.team ? esc(p.team) : 'disponible'}${p.contract_end ? ' · fin ' + p.contract_end : ''}</div></div>
+    <div class="num aav">${money(p.aav)}</div></div>`).join('') || '<div class="empty">Aucun joueur.</div>';
+});
+
 // ---------- Repêchage ----------
 let draftTimer = null, DR = null, lotteryAnim = false;
 const vDraft = run(async (yearArg) => {
@@ -1156,6 +1258,7 @@ function vMore(){
     <h2 class="title">Plus</h2>
     <div class="card"><div class="list">
       <div class="item" onclick="location.hash='#/liste'"><div class="grow"><div class="name">☆ Ma liste</div><div class="meta">Mes joueurs ciblés, en ordre de préférence</div></div>›</div>
+      <div class="item" onclick="location.hash='#/projections'"><div class="grow"><div class="name">🔮 Projections</div><div class="meta">Tes alignements des saisons à venir, avec la masse salariale de l'année</div></div>›</div>
       <div class="item" onclick="location.hash='#/repechage'"><div class="grow"><div class="name">🎲 Repêchage</div><div class="meta">Loterie, ordre et tableau des choix</div></div>›</div>
       <div class="item" onclick="location.hash='#/protection'"><div class="grow"><div class="name">🛡️ Liste de protection${S.pendingProtection ? ' <span class="tag" style="border-color:var(--red);color:var(--red)">à remettre</span>' : ''}</div><div class="meta">10 joueurs protégés + 3 automatiques (art. 4.2 et 4.3)</div></div>›</div>
       <div class="item" onclick="location.hash='#/equipes'"><div class="grow"><div class="name">Équipes</div><div class="meta">Tous les alignements et leur conformité</div></div>›</div>
