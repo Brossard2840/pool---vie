@@ -20,6 +20,7 @@
     --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   }
+  [hidden]{display:none !important;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;background:var(--ice);color:var(--text);}
   body{min-height:100vh;padding-bottom:calc(64px + var(--safe-b));overscroll-behavior-y:none;}
@@ -168,7 +169,9 @@ const myTeam = () => S && team(S.me.teamId);
 // ---------- connexion ----------
 async function showLogin(){
   $('#top').hidden = true; $('#tabbar').hidden = true;
-  teamsCache = await fetch('/api/login/teams').then(r => r.json()).catch(() => []);
+  let loadError = '';
+  teamsCache = await fetch('/api/login/teams').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .catch(e => { loadError = e.message; return []; });
   const saved = localStorageGet('pav_team');
   $('#view').innerHTML = `
     <div class="login">
@@ -182,7 +185,8 @@ async function showLogin(){
         <input id="lgCode" autocomplete="current-password" autocapitalize="characters" placeholder="ex. K7PM2Q">
         <div style="height:14px"></div>
         <button class="btn" style="width:100%" id="lgGo">Entrer</button>
-        ${teamsCache.length ? '' : '<p class="muted">Aucune équipe n\'a encore de code. Le commissaire doit d\'abord se connecter.</p>'}
+        ${loadError ? `<p class="muted" style="color:var(--red)">Le serveur ne répond pas (${esc(loadError)}). Réessaie dans 30 secondes.</p>`
+          : teamsCache.length ? '' : '<p class="muted">Aucune équipe n\'a encore de code. Le commissaire doit définir COMMISSAIRE_CODE dans Render.</p>'}
       </div>
       <p class="muted" style="text-align:center">Ton code t'est remis par le commissaire.</p>
     </div>`;

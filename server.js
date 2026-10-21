@@ -119,7 +119,7 @@ async function initDb() {
   }
 
   // Le commissaire : son code vient de la variable d'environnement COMMISSAIRE_CODE.
-  const adminCode = process.env.COMMISSAIRE_CODE;
+  const adminCode = (process.env.COMMISSAIRE_CODE || '').trim();
   const adminTeam = process.env.COMMISSAIRE_EQUIPE || 'Andybros';
   if (adminCode) {
     const { rows } = await pool.query(
@@ -131,6 +131,10 @@ async function initDb() {
         [auth.hashCode(adminCode), t.id]);
     }
     await pool.query(`UPDATE teams SET is_admin=TRUE WHERE id=$1`, [t.id]);
+    console.log(`Commissaire prêt : équipe « ${adminTeam} » (code de ${String(adminCode).trim().length} caractère(s)).`);
+  } else {
+    console.warn('ATTENTION : la variable COMMISSAIRE_CODE est vide ou absente — personne ne peut se connecter. ' +
+      'Ajoutez-la dans Render → Environment, puis redéployez.');
   }
 }
 
