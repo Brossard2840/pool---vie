@@ -127,6 +127,22 @@ suit les critères de la LNH à partir de l'historique de chaque joueur sur NHL.
 peut forcer l'admissibilité d'un joueur). Le commissaire dévoile ensuite les listes, puis les applique :
 les joueurs non protégés retournent dans le bassin du repêchage et les choix de l'année suivante sont créés.
 
+## Pool des séries (art. 7)
+
+Classement → Séries. Les 8 premières équipes participent. Les points des séries (art. 2.2 : pas de
+point pour une défaite en prolongation) sont multipliés par ronde : ×1, ×1,5, ×2 (finale de
+conférence), ×3 (finale de la Coupe). Après la 1re ronde, les 6 meilleures continuent ; après la
+2e (cumulée), les 4 meilleures. Le plus haut cumulatif est champion. Les meilleurs 9 A, 4 D et 2 G
+de chaque équipe comptent, sur le cumul pondéré. Une ronde est considérée terminée quand la
+suivante commence dans la LNH.
+
+## Retenues salariales (art. 5.3)
+
+Dans une offre, chaque joueur envoyé peut avoir une retenue de 0 à 50 %. Le joueur coûte moins à sa
+nouvelle équipe et le montant retenu reste dans la masse de l'équipe qui retient jusqu'à la fin de
+la saison. Limites vérifiées : 3 échanges avec retenue par saison, 15 % du plafond au total, 2 échanges
+avec retenue par contrat, et pas de retour du joueur dans l'équipe qui retient.
+
 ## Développement local
 
 ```bash

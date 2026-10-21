@@ -10,6 +10,7 @@ const { createLive, addDays } = require('./lib/live');
 const { registerTrades } = require('./lib/trades');
 const { createWaivers } = require('./lib/waivers');
 const { createProtection } = require('./lib/protection');
+const { createPlayoffs } = require('./lib/playoffs');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -520,6 +521,8 @@ const waivers = createWaivers(app, admin, { pool, h, inTransaction, movePlayers,
 // Listes de protection (lib/protection.js).
 const protection = createProtection(app, admin, { pool, h, inTransaction, getConfig, setConfig, seasonId,
   generatePicks: y => trades.generatePicks(y) });
+// Pool des séries (lib/playoffs.js).
+createPlayoffs(app, { pool, h, seasonId, buildLeague });
 
 admin.post('/config', h(async (req, res) => {
   const { cap, floor, seasonId: sid } = req.body;

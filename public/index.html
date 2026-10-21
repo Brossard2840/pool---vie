@@ -292,7 +292,30 @@ function route(){
 async function refresh(){ await loadState(); route(); }
 
 // ---------- Classement ----------
+let standMode = 'saison';
+function standSeg(){ return `<div class="seg"><button class="${standMode === 'saison' ? 'on' : ''}" onclick="standMode='saison';vStandings()">Saison</button><button class="${standMode === 'series' ? 'on' : ''}" onclick="standMode='series';vStandings()">Séries</button></div>`; }
+const vPlayoffs = run(async () => {
+  const P = await api('/api/playoffs');
+  const roundName = { 1: '1re ronde', 2: '2e ronde', 3: 'Finale de conférence', 4: 'Finale de la Coupe' };
+  const f1 = v => v.toLocaleString('fr-CA', { maximumFractionDigits: 1 });
+  const rows = P.teams.map(t => `
+    <div class="item" onclick="this.nextElementSibling.hidden=!this.nextElementSibling.hidden">
+      <div class="rank ${t.out ? '' : 'po'}">${t.place}</div>
+      <div class="grow"><div class="name">${esc(t.name)}${t.id === S.me.teamId ? ' <span class="tag cap">moi</span>' : ''}</div>
+        <div class="meta">${t.seed}e en saison · <span style="color:${t.out ? 'var(--red)' : 'var(--green)'}">${esc(t.status)}</span></div></div>
+      <div class="num"><b>${f1(t.current.total)}</b><div class="meta">pts</div></div>
+    </div>
+    <div hidden style="padding:0 0 10px 36px">${t.players.length ? t.players.map(p => `<div class="pl"><span><span class="pos pos-${p.pos}">${p.pos}</span> <b>${esc(p.name)}</b></span>
+      <span>${p.rounds.map((v, i) => v ? `R${i + 1}: ${v}` : '').filter(Boolean).join(' · ')} → <b>${f1(p.total)}</b></span></div>`).join('') : '<div class="pl">Aucun point pour l\'instant.</div>'}</div>`).join('');
+  $('#view').innerHTML = `<h2 class="title">Classement</h2>${standSeg()}
+    ${P.maxRound ? `<p class="muted">En cours : <b>${roundName[P.maxRound]}</b>. Points ×1 en 1re ronde, ×1,5 en 2e ronde, ×2 en finale de conférence, ×3 en finale de la Coupe (art. 7.2).</p>`
+      : '<p class="muted">Les séries n\'ont pas commencé. Voici les 8 équipes qui y participeraient selon le classement actuel (art. 7.1).</p>'}
+    <div class="card"><div class="list">${rows}</div></div>
+    <p class="muted">Ronde 1 : les 6 meilleures passent. Ronde 2 (cumulée) : les 4 meilleures passent. Le plus haut cumulatif des 4 finalistes est champion des séries.
+      Pointage des séries : buts, passes, 2 pts par victoire et 1 par blanchissage (pas de point en prolongation, art. 2.2). Égalité : points par match, puis buts (art. 7.3). Touchez une équipe pour le détail.</p>`;
+});
 function vStandings(){
+  if (standMode === 'series') return vPlayoffs();
   const rows = S.teams.map(t => `
     ${t.rank === 9 ? '<div class="cutline">Ligne des séries (top 8)</div>' : ''}
     <div class="item" onclick="location.hash='#/equipe/${t.id}'">
@@ -302,7 +325,7 @@ function vStandings(){
       <div class="num"><b>${t.points}</b><div class="meta">pts</div></div>
     </div>`).join('');
   $('#view').innerHTML = `
-    <h2 class="title">Classement</h2>
+    <h2 class="title">Classement</h2>${standSeg()}
     <div class="card"><div class="list">${rows || '<div class="empty">Aucune équipe.</div>'}</div></div>
     <p class="muted">Seuls les 9 meilleurs attaquants, 4 meilleurs défenseurs et 2 meilleurs gardiens de chaque équipe comptent (art. 2.3).
     Égalité : points par match, puis buts (art. 6.2). Stats officielles de la LNH, mises à jour aux ${S.config.refreshMinutes} minutes.</p>`;
