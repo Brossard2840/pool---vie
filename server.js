@@ -13,6 +13,7 @@ const { createProtection } = require('./lib/protection');
 const { createPlayoffs } = require('./lib/playoffs');
 const { createDraft } = require('./lib/draft');
 const { createNotify } = require('./lib/notify');
+const { createReminders } = require('./lib/reminders');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -289,7 +290,7 @@ async function refreshStats() {
       FROM json_to_recordset($1::json) AS r(nhl_id INT, name TEXT, name_key TEXT, nhl_team TEXT, pos TEXT,
         gp INT, goals INT, assists INT, wins INT, ot_losses INT, shutouts INT)
       ON CONFLICT (nhl_id) DO UPDATE SET
-        nhl_team = COALESCE(EXCLUDED.nhl_team, players.nhl_team),
+        nhl_team = CASE WHEN $3 THEN COALESCE(players.nhl_team, EXCLUDED.nhl_team) ELSE COALESCE(EXCLUDED.nhl_team, players.nhl_team) END,
         stats_season = CASE WHEN $3 THEN players.stats_season ELSE EXCLUDED.stats_season END,
         gp = CASE WHEN $3 THEN players.gp ELSE EXCLUDED.gp END,
         goals = CASE WHEN $3 THEN players.goals ELSE EXCLUDED.goals END,
@@ -355,6 +356,7 @@ app.get('/healthz', h(async (req, res) => {
   await refreshIfStale();
   live.tick().catch(e => console.error('Direct :', e.message));
   waivers.processDue().catch(e => console.error('Ballottage :', e.message));
+  reminders.tick().catch(e => console.error('Rappels :', e.message));
   res.json({ ok: true, lastUpdate: await getConfig('last_stats_update'), lastLive: await getConfig('last_live_sync') });
 }));
 
@@ -551,6 +553,7 @@ admin.use(requireAdmin);
 // Échanges et choix de repêchage (lib/trades.js). Déclaré ici : les fonctions utilitaires plus bas sont « hissées ».
 // Notifications (lib/notify.js).
 notifier = createNotify(app, { pool, h, getConfig, setConfig });
+const reminders = createReminders({ pool, getConfig, setConfig, notify, buildLeague, rules });
 const trades = registerTrades(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, seasonId, rules, notify,
   putOnWaivers: (...a) => waivers.putOnWaivers(...a) });
 // Ballottage (lib/waivers.js).
@@ -808,6 +811,7 @@ initDb().then(() => {
       refreshIfStale().catch(e => console.error(e));
       live.tick().catch(e => console.error('Direct :', e.message));
       waivers.processDue().catch(e => console.error('Ballottage :', e.message));
+      reminders.tick().catch(e => console.error('Rappels :', e.message));
     }, 60 * 1000);
     refreshIfStale().catch(e => console.error(e));
   }

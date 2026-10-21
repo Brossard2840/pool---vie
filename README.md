@@ -168,6 +168,11 @@ et « → équipe » quand le choix a été échangé.
   joueurs mis au ballottage et résultat, agents libres réclamés, loterie, début du repêchage, « c'est ton
   tour », chaque sélection, ouverture et dévoilement des listes de protection, tour du chapeau / 4 points /
   blanchissage d'un joueur du pool, changement de meneur au classement.
+- Planifiées (heure de l'Est) : rappel la veille et le jour de la date limite des transactions,
+  rappel aux équipes qui n'ont pas remis leur liste de protection, « dernière chance » 2 h avant la fin
+  d'un ballottage, alerte quand ton alignement n'est plus conforme (plafond, plancher, positions ;
+  une fois par jour, sauf pendant l'entre-saison), résumé du matin à 9 h (tes points d'hier, ton rang,
+  tes meilleurs joueurs) et avis quand un joueur du pool change d'équipe dans la LNH.
 
 ## Développement local
 

@@ -1438,7 +1438,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 document.addEventListener('visibilitychange', () => { if (!document.hidden && S && !$('#sheet').classList.contains('open')) { refresh().catch(() => {}); pollNotifications(); } });
 
 // ---------- Notifications ----------
-const NOTIF_ICON = { trade: '🚨', offer: '📨', waiver: '⏳', freeagent: '🆕', draft: '🎲', protection: '🛡️', highlight: '🔥', standings: '👑', admin: '🔑' };
+const NOTIF_ICON = { trade: '🚨', offer: '📨', waiver: '⏳', freeagent: '🆕', draft: '🎲', protection: '🛡️', highlight: '🔥', standings: '👑', admin: '🔑', reminder: '⏰', alert: '⚠️', summary: '☀️', nhl: '🔁' };
 let notifLast = Number(localStorageGet('pav_notif_last')) || 0, notifTimer = null, audioCtx = null;
 // Le son ne peut jouer qu'après un premier toucher de l'écran (règle des navigateurs).
 document.addEventListener('pointerdown', () => {
