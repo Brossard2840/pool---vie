@@ -332,6 +332,7 @@ function vTeam(id){
       <h3><span>Masse salariale</span><span>${money(t.capUsed)} / ${money(c.cap)}</span></h3>
       <div class="bar"><i class="${t.capUsed > c.cap ? 'over' : ''}" style="width:${pct}%"></i></div>
       <div class="muted">Espace : <b style="color:${t.capSpace < 0 ? 'var(--red)' : 'var(--text)'}">${moneyFull(t.capSpace)}</b> · plancher ${money(c.floor)}</div>
+      ${t.retained ? `<div class="muted">Dont salaire retenu sur des joueurs échangés (art. 5.3) : <b>${money(t.retained)}</b> (limite ${money(c.cap * 0.15)})</div>` : ''}
     </div>
     ${t.issues.length ? `<div class="issues"><b>À corriger</b><br>${t.issues.map(esc).join('<br>')}</div>`
                       : '<div class="okbox">✓ Alignement conforme (positions, plafond et plancher)</div>'}
@@ -348,7 +349,7 @@ function playerItem(p, { showFlags = false, showOwner = false } = {}){
   const link = p.nhl_id ? '' : ' · <span style="color:var(--red)">sans fiche LNH</span>';
   return `<div class="item ${showFlags && !p.counts_points ? 'out' : ''}" onclick="openPlayer(${p.id})">
     <span class="pos pos-${p.pos}">${p.pos}</span>
-    <div class="grow"><div class="name">${esc(p.name)}${flags}${p.rookie ? '<span class="tag">R</span>' : ''}</div>
+    <div class="grow"><div class="name">${esc(p.name)}${flags}${p.rookie ? '<span class="tag">R</span>' : ''}${p.retained ? '<span class="tag" title="Une autre équipe retient une partie du salaire">ret.</span>' : ''}</div>
       <div class="meta">${esc(p.nhl_team || '—')} · ${statLine(p)}${owner}${link}</div></div>
     <div class="num"><b>${p.pts}</b><div class="meta aav">${money(p.aav)}</div></div>
   </div>`;
@@ -632,7 +633,7 @@ function picksChips(list){
     ${S.me.isAdmin ? `onclick="editPick(${p.id})" style="cursor:pointer"` : ''}>${pickShort(p)}</span>`).join('')}</div>`;
 }
 function tradeItems(list){
-  return list.length ? list.map(i => `<div>${i.kind === 'player' ? `<span class="pos pos-${i.pos}">${i.pos}</span> ${esc(i.label)} <span class="aav">${money(i.aav)}</span>`
+  return list.length ? list.map(i => `<div>${i.kind === 'player' ? `<span class="pos pos-${i.pos}">${i.pos}</span> ${esc(i.label)} <span class="aav">${money(i.aav)}</span>${i.retain_pct ? ` <span class="tag cap">retenue ${i.retain_pct} %</span>` : ''}`
     : '🎟️ ' + esc(i.label.replace('Choix ', ''))}</div>`).join('') : '<div class="muted">—</div>';
 }
 function tradeCard(t){
@@ -715,7 +716,7 @@ const vOffer = run(async (arg) => {
   let counter = null;
   if (counterArg) counter = (await api('/api/trades')).trades.find(t => t.id === Number(counterArg)) || null;
   const others = S.teams.filter(t => t.id !== S.me.teamId).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-  OF = { partner: Number(partnerArg) || (others[0] && others[0].id), picks: P.picks, give: new Set(), get: new Set(), side: 'me', kind: 'players', counter };
+  OF = { partner: Number(partnerArg) || (others[0] && others[0].id), picks: P.picks, give: new Set(), get: new Set(), side: 'me', kind: 'players', counter, ret: {} };
   if (counter) {   // contre-offre : on part de l'offre reçue, vue de mon côté
     for (const i of counter.items) (i.from_team_id === S.me.teamId ? OF.give : OF.get).add(`${i.kind === 'player' ? 'p' : 'k'}${i.id}`);
   }
@@ -737,14 +738,19 @@ function renderOffer(){
   const me = offerAssets(S.me.teamId), them = offerAssets(OF.partner);
   const set = OF.side === 'me' ? OF.give : OF.get, src = OF.side === 'me' ? me : them;
   const tray = (title, keys, which) => `<div class="side"><h4>${title}</h4>${[...keys].map(k => { const a = assetLabel(k);
-    return `<div class="it" onclick="offerToggle('${which}','${k}')"><span>${a.text}</span><span>${a.sub} ✕</span></div>`; }).join('') || '<div class="muted" style="font-size:12px">Touche un élément ci-dessous</div>'}</div>`;
+    const ret = which === 'me' && k[0] === 'p' ? `<select onclick="event.stopPropagation()" onchange="OF.ret['${k}']=Number(this.value);renderOffer()" title="Retenue de salaire (art. 5.3)"
+        style="width:auto;padding:2px 4px;font-size:12px;margin-left:4px">${[0,10,20,25,30,40,50].map(v => `<option value="${v}" ${(OF.ret[k] || 0) === v ? 'selected' : ''}>${v ? 'ret. ' + v + ' %' : 'sans retenue'}</option>`).join('')}</select>` : '';
+    return `<div class="it" onclick="offerToggle('${which}','${k}')"><span>${a.text}${ret}</span><span>${a.sub} ✕</span></div>`; }).join('') || '<div class="muted" style="font-size:12px">Touche un élément ci-dessous</div>'}</div>`;
   // Conformité après l'échange (mêmes règles que le serveur, sans les choix qui n'ont pas d'effet).
   const after = (teamId, outKeys, inKeys) => {
     const t = team(teamId);
     const outIds = new Set([...outKeys].filter(k => k[0] === 'p').map(k => Number(k.slice(1))));
     let players = ['F','D','G'].flatMap(pos => t.positions[pos].players).filter(p => !outIds.has(p.id));
-    for (const k of inKeys) if (k[0] === 'p') players.push(findPlayer(Number(k.slice(1))));
-    const s = summarize(players);
+    // Retenue : le joueur arrive à salaire réduit, et l'équipe qui l'envoie garde la différence.
+    const retOf = k => { const p = findPlayer(Number(k.slice(1))); return Math.round((p.aav_full ?? p.aav ?? 0) * (OF.ret[k] || 0) / 100); };
+    for (const k of inKeys) if (k[0] === 'p') { const p = findPlayer(Number(k.slice(1))); players.push(OF.ret[k] ? { ...p, aav: (p.aav || 0) - retOf(k) } : p); }
+    const keep = [...outKeys].filter(k => k[0] === 'p' && OF.ret[k]).reduce((s2, k) => s2 + retOf(k), 0);
+    const s = summarize(players, (t.retained || 0) + keep);
     return `<div class="impact ${s.issues.length ? 'issues' : 'okbox'}"><b>${esc(t.name)}</b> : masse ${money(t.capUsed)} → <b>${money(s.cap)}</b> · ${s.n.F} A, ${s.n.D} D, ${s.n.G} G
       ${s.issues.length ? '<br>⚠ ' + s.issues.join('<br>⚠ ') : ' ✓'}</div>`;
   };
@@ -772,7 +778,8 @@ function offerToggle(which, key){ const s = which === 'me' ? OF.give : OF.get; s
 const submitOffer = run(async () => {
   const pick = (set, c) => [...set].filter(k => k[0] === c).map(k => Number(k.slice(1)));
   const body = { toTeamId: OF.partner, message: OF.msg || '', counterOf: OF.counter ? OF.counter.id : null,
-    give: { players: pick(OF.give, 'p'), picks: pick(OF.give, 'k') }, get: { players: pick(OF.get, 'p'), picks: pick(OF.get, 'k') } };
+    give: { players: pick(OF.give, 'p'), picks: pick(OF.give, 'k'),
+      retain: Object.fromEntries(Object.entries(OF.ret).filter(([k, v]) => v && OF.give.has(k)).map(([k, v]) => [k.slice(1), v])) }, get: { players: pick(OF.get, 'p'), picks: pick(OF.get, 'k') } };
   if (!confirm(`Envoyer l'offre à ${team(OF.partner).name} ?`)) return;
   await api('/api/trades', body);
   toast('Offre envoyée'); location.hash = '#/echanges';
@@ -1178,7 +1185,7 @@ function previewTrade(){
       ${s.issues.length ? '<br>⚠ ' + s.issues.join('<br>⚠ ') : ' ✓'}</div>`;
   }).join('');
 }
-function summarize(players){
+function summarize(players, retained = 0){
   const MIN = { F:9, D:4, G:2 }, MAX = { F:18, D:8, G:4 };
   const n = { F:0, D:0, G:0 }; let cap = 0; const issues = [];
   for (const pos of ['F','D','G']) {
@@ -1187,6 +1194,7 @@ function summarize(players){
     if (n[pos] < MIN[pos]) issues.push(`${POS_LABEL[pos]} : ${n[pos]} (min ${MIN[pos]})`);
     if (n[pos] > MAX[pos]) issues.push(`${POS_LABEL[pos]} : ${n[pos]} (max ${MAX[pos]})`);
   }
+  cap += retained;
   if (cap > S.config.cap) issues.push(`plafond dépassé de ${moneyFull(cap - S.config.cap)}`);
   if (S.config.floor && cap < S.config.floor) issues.push(`sous le plancher de ${moneyFull(S.config.floor - cap)}`);
   return { n, cap, issues };

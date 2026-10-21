@@ -376,9 +376,22 @@ async function buildLeague() {
   const config = await leagueConfig();
   const { rows: teams } = await pool.query(`SELECT id, name, is_admin, code_hash IS NOT NULL AS has_code FROM teams ORDER BY LOWER(name)`);
   const { rows: owned } = await pool.query(`SELECT ${PLAYER_COLS}, pk.team_id FROM picks pk JOIN players p ON p.id = pk.player_id`);
+  // Retenues salariales de la saison (art. 5.3) : le joueur coûte moins à son équipe actuelle,
+  // et l'équipe qui retient garde ce montant dans sa masse.
+  const { rows: ret } = await pool.query(`SELECT player_id, team_id, amount FROM retentions WHERE season=$1`, [config.seasonId]);
+  const retOnPlayer = new Map(), retByTeam = new Map();
+  for (const r of ret) {
+    retOnPlayer.set(r.player_id, (retOnPlayer.get(r.player_id) || 0) + Number(r.amount));
+    retByTeam.set(r.team_id, (retByTeam.get(r.team_id) || 0) + Number(r.amount));
+  }
   const byTeam = new Map(teams.map(t => [t.id, []]));
-  for (const p of owned) byTeam.get(p.team_id)?.push(clean(p));
-  const summaries = teams.map(t => ({ id: t.id, name: t.name, hasCode: t.has_code, ...rules.teamSummary(byTeam.get(t.id), config) }));
+  for (const p of owned) {
+    const c = clean(p), cut = retOnPlayer.get(p.id) || 0;
+    if (cut && c.aav !== null) { c.aav_full = c.aav; c.aav = Math.max(0, c.aav - cut); c.retained = cut; }
+    byTeam.get(p.team_id)?.push(c);
+  }
+  const summaries = teams.map(t => ({ id: t.id, name: t.name, hasCode: t.has_code,
+    ...rules.teamSummary(byTeam.get(t.id), { ...config, retained: retByTeam.get(t.id) || 0 }) }));
   const ranked = rules.rankTeams(summaries);
   return { config, teams: ranked };
 }
