@@ -603,6 +603,16 @@ initDb().then(() => {
     refreshIfStale().catch(e => console.error(e));
   }
 }).catch(e => {
-  console.error('Erreur d\'initialisation de la base de données :', e);
+  const msg = String(e && e.message || e);
+  const hints = [
+    [/password authentication failed/i, 'Mot de passe refusé : vérifiez le mot de passe dans DATABASE_URL (sans crochets [ ]).'],
+    [/tenant or user not found/i, 'Utilisateur inconnu : l\'adresse doit commencer par postgresql://postgres.<id-du-projet>: (adresse « Session pooler »).'],
+    [/ENOTFOUND|getaddrinfo/i, 'Adresse du serveur introuvable : recopiez l\'adresse « Session pooler » depuis Supabase.'],
+    [/ENETUNREACH|EHOSTUNREACH/i, 'Réseau inaccessible : utilisez l\'adresse « Session pooler » (pooler.supabase.com), pas « Direct connection ».'],
+    [/Invalid URL|ERR_INVALID_URL/i, 'Adresse mal formée : un caractère spécial dans le mot de passe ? Générez un mot de passe sans symboles.']
+  ];
+  const hint = (hints.find(([re]) => re.test(msg)) || [null, ''])[1];
+  console.error(`ERREUR base de données : ${msg}${e && e.code ? ' (code ' + e.code + ')' : ''}`);
+  if (hint) console.error(`→ ${hint}`);
   process.exit(1);
 });
