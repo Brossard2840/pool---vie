@@ -513,6 +513,8 @@ const vAdmin = run(async () => {
 
     <div class="card"><h3>Import des alignements</h3>
       <p class="muted">Une ligne par joueur : <code>ÉquipePool;Nom;Position;AAV;Âge;FinContrat</code>, et l'équipe LNH en 7e colonne au besoin pour les homonymes. Position : F, D ou G.</p>
+      <label class="btn small ghost" style="display:inline-block;margin-bottom:8px">📄 Choisir un fichier…
+        <input type="file" id="impFile" accept=".txt,.csv,text/plain" hidden></label>
       <textarea id="impText" placeholder="Andybros;Leon Draisaitl;F;14000000;30;2033"></textarea>
       <label class="pick"><input type="checkbox" id="impReplace"> Remplacer tous les alignements actuels (après un repêchage)</label>
       <div style="height:8px"></div>
@@ -535,6 +537,11 @@ const vAdmin = run(async () => {
       <div class="row"><input id="npAav" inputmode="numeric" placeholder="AAV"><input id="npTeam" placeholder="Équipe LNH" autocapitalize="characters"></div>
       <button class="btn small" onclick="addPlayer()">Créer</button>
     </div>`;
+  $('#impFile').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    $('#impText').value = await f.text();
+    toast(`${$('#impText').value.trim().split(/\n/).length} lignes chargées`);
+  };
   $('#trA').onchange = $('#trB').onchange = renderTradeLists;
   renderTradeLists();
 });
