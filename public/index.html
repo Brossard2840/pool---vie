@@ -213,7 +213,7 @@ async function showLogin(){
       <p class="muted" style="text-align:center">Ton code t'est remis par le commissaire.</p>
     </div>`;
   const go = run(async () => {
-    const teamId = Number($('#lgTeam').value);
+    const v = $('#lgTeam').value, teamId = v === 'admin' ? 'admin' : Number(v);
     await api('/api/login', { teamId, code: $('#lgCode').value });
     localStorageSet('pav_team', String(teamId));
     await boot();
@@ -566,11 +566,12 @@ const vAdmin = run(async () => {
     <h2 class="title">Commissaire</h2>
 
     <div class="card"><h3>Codes d'accès des poolers</h3>
-      <p class="muted">Chaque équipe entre avec son code. « Nouveau code » remplace l'ancien et déconnecte ses appareils.</p>
+      <p class="muted">Chaque équipe entre avec son code. « Nouveau code » remplace l'ancien et déconnecte ses appareils.
+        L'accès 🔑 Commissaire utilise le code COMMISSAIRE_CODE de Render.</p>
       <div class="list">${teams.map(t => `<div class="item" style="cursor:default">
-        <div class="grow"><div class="name">${esc(t.name)}${t.is_admin ? ' <span class="tag cap">commissaire</span>' : ''}</div>
+        <div class="grow"><div class="name">${esc(t.name)}${t.is_admin ? ' <span class="tag cap">équipe du commissaire</span>' : ''}</div>
           <div class="meta" id="code-${t.id}">${t.has_code ? 'Code actif' : '<span style="color:var(--red)">Aucun code</span>'}</div></div>
-        ${t.is_admin ? '' : `<button class="btn small ghost" onclick="newCode(${t.id})">Nouveau code</button>`}
+        <button class="btn small ghost" onclick="newCode(${t.id})">Nouveau code</button>
         <button class="btn small ghost" onclick="renameTeam(${t.id})">✎</button>
         ${t.is_admin ? '' : `<button class="btn small ghost" onclick="deleteTeam(${t.id})">✕</button>`}
       </div>`).join('')}</div>

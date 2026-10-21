@@ -128,12 +128,19 @@ async function initDb() {
       `INSERT INTO teams(name) VALUES($1) ON CONFLICT (name) DO UPDATE SET name=EXCLUDED.name RETURNING id, code_hash`,
       [adminTeam]);
     const t = rows[0];
-    if (!t.code_hash || !auth.checkCode(adminCode, t.code_hash)) {
-      await pool.query(`UPDATE teams SET code_hash=$1, code_version=code_version+1 WHERE id=$2`,
-        [auth.hashCode(adminCode), t.id]);
+    // Accès commissaire distinct de l'accès de l'équipe : son propre code, sa propre version.
+    const stored = await getConfig('commissaire_hash');
+    if (!stored || !auth.checkCode(adminCode, stored)) {
+      await setConfig('commissaire_hash', auth.hashCode(adminCode));
+      await setConfig('commissaire_version', Number(await getConfig('commissaire_version', 0)) + 1);
     }
-    await pool.query(`UPDATE teams SET is_admin=TRUE WHERE id=$1`, [t.id]);
-    console.log(`Commissaire prêt : équipe « ${adminTeam} » (code de ${String(adminCode).trim().length} caractère(s)).`);
+    // Ancienne version : l'équipe utilisait le code du commissaire. Elle aura maintenant son propre code.
+    if (t.code_hash && auth.checkCode(adminCode, t.code_hash)) {
+      await pool.query(`UPDATE teams SET code_hash=NULL, code_version=code_version+1 WHERE id=$1`, [t.id]);
+      console.log(`L'équipe « ${adminTeam} » n'a plus le code du commissaire : générez-lui un code dans Commissaire.`);
+    }
+    await pool.query(`UPDATE teams SET is_admin=(id=$1)`, [t.id]);
+    console.log(`Commissaire prêt (équipe « ${adminTeam} », code de ${adminCode.length} caractère(s)).`);
   } else {
     console.warn('ATTENTION : la variable COMMISSAIRE_CODE est vide ou absente — personne ne peut se connecter. ' +
       'Ajoutez-la dans Render → Environment, puis redéployez.');
@@ -286,10 +293,14 @@ async function refreshIfStale() {
 app.use(h(async (req, res, next) => {
   req.me = null;
   const s = auth.getSession(req, SECRET);
-  if (s) {
-    const { rows } = await pool.query(`SELECT id, name, is_admin, code_version FROM teams WHERE id=$1`, [s.teamId]);
+  if (s?.admin) {
+    const { rows } = await pool.query(`SELECT id, name FROM teams WHERE is_admin LIMIT 1`);
+    const ok = rows[0] && String(s.av) === String(await getConfig('commissaire_version'));
+    if (ok) req.me = { teamId: rows[0].id, name: rows[0].name, isAdmin: true };
+  } else if (s) {
+    const { rows } = await pool.query(`SELECT id, name, code_version FROM teams WHERE id=$1`, [s.teamId]);
     const t = rows[0];
-    if (t && t.code_version === s.v) req.me = { teamId: t.id, name: t.name, isAdmin: t.is_admin };
+    if (t && t.code_version === s.v) req.me = { teamId: t.id, name: t.name, isAdmin: false };
   }
   next();
 }));
@@ -307,7 +318,8 @@ app.get('/healthz', h(async (req, res) => {
 const loginAttempts = new Map();
 app.get('/api/login/teams', h(async (req, res) => {
   const { rows } = await pool.query(`SELECT id, name FROM teams WHERE code_hash IS NOT NULL ORDER BY LOWER(name)`);
-  res.json(rows);
+  const admin = (await getConfig('commissaire_hash')) ? [{ id: 'admin', name: '🔑 Commissaire' }] : [];
+  res.json([...rows, ...admin]);
 }));
 
 app.post('/api/login', h(async (req, res) => {
@@ -316,6 +328,15 @@ app.post('/api/login', h(async (req, res) => {
   if (Date.now() - a.since > 15 * 60 * 1000) { a.n = 0; a.since = Date.now(); }
   if (a.n >= 10) return res.status(429).json({ error: 'Trop d\'essais. Réessayez dans 15 minutes.' });
   const { teamId, code } = req.body || {};
+  if (teamId === 'admin') {
+    if (!auth.checkCode(code, await getConfig('commissaire_hash'))) {
+      a.n++; loginAttempts.set(ip, a);
+      return res.status(401).json({ error: 'Code invalide' });
+    }
+    loginAttempts.delete(ip);
+    auth.setSession(res, { admin: true, av: await getConfig('commissaire_version') }, SECRET, IS_PROD);
+    return res.json({ ok: true });
+  }
   const { rows } = await pool.query(`SELECT id, code_hash, code_version FROM teams WHERE id=$1`, [teamId]);
   const t = rows[0];
   if (!t || !auth.checkCode(code, t.code_hash)) {
@@ -502,8 +523,6 @@ admin.post('/teams/:id/rename', h(async (req, res) => {
 admin.post('/teams/:id/code', h(async (req, res) => {
   const { rows } = await pool.query(`SELECT is_admin FROM teams WHERE id=$1`, [req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'Équipe introuvable' });
-  if (rows[0].is_admin && process.env.COMMISSAIRE_CODE)
-    return res.status(400).json({ error: 'Le code du commissaire se change dans la variable COMMISSAIRE_CODE de Render.' });
   const code = auth.generateCode();
   await pool.query(`UPDATE teams SET code_hash=$1, code_version=code_version+1 WHERE id=$2`, [auth.hashCode(code), req.params.id]);
   res.json({ code });
