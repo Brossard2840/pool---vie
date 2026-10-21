@@ -103,6 +103,10 @@ refuse ou fait une contre-offre, puis le commissaire approuve (réglable). L'éc
 salariale et les positions des deux équipes après l'échange. La page **Choix de repêchage** suit
 qui possède chaque choix et l'historique de leurs échanges. Date limite (art. 5.1) réglable.
 
+Agents libres (art. 5.4) : depuis la fiche d'un joueur libre, « Réclamer » abandonne un choix de
+1re ronde (obligatoirement son propre choix du prochain repêchage s'il le détient) et peut libérer
+un joueur dans la même opération ; le maximum par position et le plafond sont vérifiés.
+
 ## Développement local
 
 ```bash

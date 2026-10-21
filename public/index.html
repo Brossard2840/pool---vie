@@ -440,6 +440,7 @@ function renderSheet(){
     <div class="kv">${kv.map(([l,v]) => `<div><div class="l">${l}</div><div class="v">${v ?? 0}</div></div>`).join('')}</div>
     <div class="muted">Points de pool : <b style="color:var(--text)">${p.pts ?? 0}</b>${goalie ? ' (B + A + 2×V + DP + BL)' : ''}</div>
     <div style="height:12px"></div>
+    ${owner ? '' : `<button class="btn" style="width:100%;margin-bottom:8px" onclick="openClaim(${p.id})">Réclamer (agent libre) — coûte un choix de 1re ronde</button>`}
     <button class="btn ghost" style="width:100%" onclick="addWatch(${p.id})">☆ Ajouter à ma liste</button>
     ${admin}`;
   const mq = $('#spMergeQ');
@@ -472,6 +473,42 @@ const savePlayer = run(async () => {
     aav: $('#spAav').value, contract_end: $('#spEnd').value, age: $('#spAge').value,
     pos: $('#spPos').value, nhl_team: $('#spNhl').value.trim().toUpperCase(), rookie: $('#spRookie').checked });
   toast('Fiche enregistrée'); await refresh();
+});
+// Réclamation d'un agent libre (art. 5.4) : on abandonne un choix de 1re ronde.
+const openClaim = run(async id => {
+  const O = await api('/api/claims/options');
+  const p = sheetPlayer, mine = myTeam();
+  const roster = ['F','D','G'].flatMap(pos => mine.positions[pos].players);
+  if (O.deadlinePassed && !S.me.isAdmin) return toast('La date limite des transactions est passée (art. 5.1)');
+  if (!O.options.length) {
+    $('#sheetBody').innerHTML = `<h3>Réclamer ${esc(p.name)}</h3><div class="issues">Tu n'as plus de choix de 1re ronde : impossible de réclamer un agent libre (art. 5.4).</div>`;
+    return;
+  }
+  $('#sheetBody').innerHTML = `<h3>Réclamer ${esc(p.name)}</h3>
+    <p class="muted">${esc(p.nhl_team || '')} · ${p.pos} · AAV <span class="aav">${p.aav ? moneyFull(p.aav) : 'inconnu'}</span></p>
+    <label class="f">Choix abandonné (art. 5.4)</label>
+    ${O.forced ? `<div class="chip sel" style="display:inline-block;margin-bottom:4px">${esc(O.forced.label)}</div>
+        <p class="muted" style="margin-top:4px">Tu détiens ton propre choix de 1re ronde du prochain repêchage : c'est lui qui part.</p>`
+      : `<select id="clPick">${O.options.map(k => `<option value="${k.id}">${esc(k.label)}</option>`).join('')}</select>`}
+    <div style="height:10px"></div>
+    <label class="f">Libérer un joueur en même temps (optionnel)</label>
+    <select id="clRelease"><option value="">— Aucun —</option>${roster.map(r => `<option value="${r.id}">${r.pos} · ${esc(r.name)} · ${money(r.aav)}</option>`).join('')}</select>
+    <div id="clPreview" style="margin-top:10px"></div>
+    <button class="btn" style="width:100%" id="clGo">Confirmer la réclamation</button>
+    <p class="muted">Le choix est abandonné définitivement. Le joueur libéré devient agent libre (art. 5.5).</p>`;
+  const preview = () => {
+    const rel = Number($('#clRelease').value) || null;
+    const s = summarize(roster.filter(r => r.id !== rel).concat(p));
+    $('#clPreview').innerHTML = `<div class="impact ${s.issues.length ? 'issues' : 'okbox'}">Après : masse <b>${money(s.cap)}</b> · ${s.n.F} A, ${s.n.D} D, ${s.n.G} G${s.issues.length ? '<br>⚠ ' + s.issues.join('<br>⚠ ') : ' ✓'}</div>`;
+  };
+  $('#clRelease').onchange = preview; preview();
+  $('#clGo').onclick = run(async () => {
+    const pickId = O.forced ? O.forced.id : Number($('#clPick').value);
+    const releasePlayerId = Number($('#clRelease').value) || null;
+    if (!confirm(`Réclamer ${p.name} et abandonner ce choix de 1re ronde ?`)) return;
+    const r = await api('/api/claims', { playerId: p.id, pickId, releasePlayerId });
+    toast(`${r.player} ajouté à ton équipe`); await refresh();
+  });
 });
 const addWatch = run(async id => { await api('/api/watchlist/add', { playerId: id }); toast('Ajouté à ma liste'); });
 
@@ -540,7 +577,7 @@ const roundFr = r => r === 1 ? '1re' : `${r}e`;
 function pickShort(p){ return `${p.year} · ${roundFr(p.round)}${p.original_team_id !== p.owner_team_id ? ' (' + esc(p.original_team) + ')' : ''}`; }
 function picksChips(list){
   if (!list.length) return '<span class="muted">Aucun choix.</span>';
-  return `<div class="chips">${list.map(p => `<span class="chip ${p.original_team_id !== p.owner_team_id ? 'acq' : ''} ${p.used ? 'used' : ''}"
+  return `<div class="chips">${list.map(p => `<span class="chip ${p.original_team_id !== p.owner_team_id ? 'acq' : ''} ${p.used ? 'used' : ''}" title="${esc(p.note || '')}"
     ${S.me.isAdmin ? `onclick="editPick(${p.id})" style="cursor:pointer"` : ''}>${pickShort(p)}</span>`).join('')}</div>`;
 }
 function tradeItems(list){
@@ -679,7 +716,7 @@ const vPicks = run(async (teamArg) => {
   const cards = teams.filter(t => !focus || t.id === focus).map(t => {
     const own = P.picks.filter(p => p.owner_team_id === t.id);
     const gone = P.picks.filter(p => p.original_team_id === t.id && p.owner_team_id !== t.id);
-    return `<div class="card"><h3><span>${esc(t.name)} · ${own.length} choix</span></h3>${picksChips(own)}
+    return `<div class="card"><h3><span>${esc(t.name)} · ${own.filter(p => !p.used).length} choix</span></h3>${picksChips(own)}
       ${gone.length ? `<p class="muted" style="margin:8px 0 0">Cédés : ${gone.map(p => `${p.year} ${roundFr(p.round)} → ${esc(p.owner_team)}`).join(' · ')}</p>` : ''}</div>`;
   }).join('');
   const hist = P.history.filter(m => !focus || [m.from_team, m.to_team].includes(team(focus).name));
@@ -689,7 +726,7 @@ const vPicks = run(async (teamArg) => {
     ${focus ? `<p><a class="link" href="#/choix">‹ Toutes les équipes</a></p>` : ''}
     ${cards}
     <div class="card"><h3>Suivi des échanges de choix</h3><div class="list">${hist.map(m => `<div class="item" style="cursor:default"><div class="grow">
-      <div class="name">${esc(m.player_name)}</div><div class="meta">${esc(m.from_team)} → <b>${esc(m.to_team)}</b> · ${esc(m.kind)}${m.note ? ' · ' + esc(m.note) : ''}</div>
+      <div class="name">${esc(m.player_name)}</div><div class="meta">${esc(m.from_team)} → <b>${m.to_team ? esc(m.to_team) : 'abandonné'}</b> · ${esc(m.kind)}${m.note ? ' · ' + esc(m.note) : ''}</div>
       <div class="meta">${new Date(m.at).toLocaleString('fr-CA', { dateStyle:'medium', timeStyle:'short' })}</div></div></div>`).join('') || '<div class="empty">Aucun choix échangé pour l\'instant.</div>'}</div></div>`;
   window._picks = P.picks;
 });
@@ -764,7 +801,7 @@ const vMoves = run(async () => {
   $('#view').innerHTML = `<h2 class="title">Historique</h2><div class="card"><div class="list">${rows.map(m => `
     <div class="item" style="cursor:default"><div class="grow">
       <div class="name">${m.player_name ? esc(m.player_name) : esc(m.kind)}</div>
-      <div class="meta">${m.player_name ? `${esc(m.kind)} · ${esc(m.from_team || 'agent libre')} → ${esc(m.to_team || 'agent libre')}` : ''}${m.note ? (m.player_name ? ' · ' : '') + esc(m.note) : ''}</div>
+      <div class="meta">${m.player_name ? `${esc(m.kind)} · ${esc(m.from_team || 'agent libre')} → ${m.to_team ? esc(m.to_team) : m.kind === 'Abandon' ? 'abandonné' : 'agent libre'}` : ''}${m.note ? (m.player_name ? ' · ' : '') + esc(m.note) : ''}</div>
       <div class="meta">${new Date(m.at).toLocaleString('fr-CA', { dateStyle:'medium', timeStyle:'short' })}${m.by_team ? ' · par ' + esc(m.by_team) : ''}</div>
     </div></div>`).join('') || '<div class="empty">Aucun mouvement pour l\'instant.</div>'}</div></div>`;
 });
