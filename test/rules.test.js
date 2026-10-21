@@ -62,3 +62,23 @@ test('un joueur échangé sur deux lignes est additionné', () => {
   assert.strictEqual(rows.length, 1);
   assert.deepStrictEqual([rows[0].gp, rows[0].goals, rows[0].assists, rows[0].nhl_team], [8, 3, 1, 'TOR']);
 });
+
+test('sommaire de match : points des patineurs et des gardiens', () => {
+  const { parseBoxscore } = require('../lib/live');
+  const g = (id, decision, ga, toi = '60:00') => ({ playerId: id, name: { default: 'G' + id }, toi, decision, goalsAgainst: ga });
+  const rows = parseBoxscore({
+    awayTeam: { abbrev: 'MTL' }, homeTeam: { abbrev: 'TOR' },
+    playerByGameStats: {
+      awayTeam: { forwards: [{ playerId: 1, name: { default: 'A' }, position: 'C', goals: 2, assists: 1 }], defense: [],
+                  goalies: [g(10, 'W', 0), g(11, undefined, 0, '00:00')] },
+      homeTeam: { forwards: [], defense: [{ playerId: 2, name: { default: 'B' }, position: 'D', goals: 0, assists: 1 }],
+                  goalies: [g(20, 'O', 3)] }
+    }
+  });
+  const by = Object.fromEntries(rows.map(r => [r.nhl_id, r]));
+  assert.strictEqual(rows.length, 4); // le gardien auxiliaire qui n'a pas joué est exclu
+  assert.strictEqual(rules.poolPoints(by[1]), 3);
+  assert.strictEqual(by[2].pos, 'D');
+  assert.strictEqual(rules.poolPoints(by[10]), 3); // victoire + blanchissage
+  assert.strictEqual(rules.poolPoints(by[20]), 1); // défaite en prolongation
+});

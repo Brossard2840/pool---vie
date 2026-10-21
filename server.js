@@ -6,6 +6,7 @@ const path = require('path');
 const rules = require('./lib/rules');
 const nhl = require('./lib/nhl');
 const auth = require('./lib/auth');
+const { createLive, addDays } = require('./lib/live');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -109,6 +110,7 @@ async function initDb() {
       by_team TEXT
     );
   `);
+  await live.initTables();
   await setDefault('cap', '104000000');   // plafond LNH 2026-27
   await setDefault('floor', '76900000');  // plancher LNH 2026-27
 
@@ -159,11 +161,32 @@ async function leagueConfig() {
     seasonId: await seasonId(),
     lastUpdate: await getConfig('last_stats_update'),
     lastResult: JSON.parse((await getConfig('last_stats_result')) || 'null'),
-    refreshMinutes: REFRESH_MINUTES
+    refreshMinutes: REFRESH_MINUTES,
+    lastLive: await getConfig('last_live_sync'),
+    liveReady: (await getConfig('log_season')) === (await seasonId())
   };
 }
 
 // ---------- Statistiques LNH ----------
+
+// En direct : sommaires de match (voir lib/live.js). Une fois la saison rattrapée, ce sont eux
+// qui donnent les totaux ; le rapport de saison ne sert plus qu'au catalogue des joueurs.
+const live = createLive(pool, { getConfig, setConfig, seasonId: () => seasonId(), onUpdated: () => linkUnlinked() });
+
+// Relie les joueurs du pool sans identifiant LNH à une fiche du catalogue (même nom, position, équipe).
+async function linkUnlinked() {
+  const { rows: unlinked } = await pool.query(`SELECT id, name_key, pos, nhl_team FROM players WHERE nhl_id IS NULL`);
+  let n = 0;
+  for (const p of unlinked) {
+    const { rows: cands } = await pool.query(
+      `SELECT id, nhl_id, pos, nhl_team FROM players WHERE name_key=$1 AND nhl_id IS NOT NULL AND id<>$2`, [p.name_key, p.id]);
+    const c = findCandidates(cands, p);
+    if (c.length !== 1) continue;
+    // La fiche LNH existe déjà au catalogue : on y transfère le salaire, le contrat et l'équipe du pool.
+    try { await mergePlayers(p.id, c[0].id); n++; } catch (e) { console.warn(`Lien ${p.id} :`, e.message); }
+  }
+  return n;
+}
 
 // Relie les joueurs saisis à la main (sans identifiant LNH) à leur fiche LNH.
 // On compare le nom, puis la position, puis l'équipe LNH pour les homonymes (ex. deux Sebastian Aho).
@@ -180,6 +203,7 @@ async function refreshStats() {
   refreshing = (async () => {
     const season = await seasonId();
     const rows = await nhl.fetchSeason(season, 2);
+    const keepStats = await live.isReady();
     if (!rows.length) {
       // Début de saison ou API indisponible : on ne remet rien à zéro.
       const result = { at: new Date().toISOString(), season, nhlPlayers: 0, linked: 0, unlinked: [] };
@@ -217,16 +241,21 @@ async function refreshStats() {
         gp INT, goals INT, assists INT, wins INT, ot_losses INT, shutouts INT)
       ON CONFLICT (nhl_id) DO UPDATE SET
         nhl_team = COALESCE(EXCLUDED.nhl_team, players.nhl_team),
-        stats_season = EXCLUDED.stats_season,
-        gp = EXCLUDED.gp, goals = EXCLUDED.goals, assists = EXCLUDED.assists,
-        wins = EXCLUDED.wins, ot_losses = EXCLUDED.ot_losses, shutouts = EXCLUDED.shutouts,
+        stats_season = CASE WHEN $3 THEN players.stats_season ELSE EXCLUDED.stats_season END,
+        gp = CASE WHEN $3 THEN players.gp ELSE EXCLUDED.gp END,
+        goals = CASE WHEN $3 THEN players.goals ELSE EXCLUDED.goals END,
+        assists = CASE WHEN $3 THEN players.assists ELSE EXCLUDED.assists END,
+        wins = CASE WHEN $3 THEN players.wins ELSE EXCLUDED.wins END,
+        ot_losses = CASE WHEN $3 THEN players.ot_losses ELSE EXCLUDED.ot_losses END,
+        shutouts = CASE WHEN $3 THEN players.shutouts ELSE EXCLUDED.shutouts END,
         last_updated = NOW()
-    `, [JSON.stringify(rows), season]);
+    `, [JSON.stringify(rows), season, keepStats]);
 
     // Joueurs sans aucun match cette saison : stats à zéro (évite de traîner les stats de l'an passé).
-    await pool.query(`
+    if (!keepStats) await pool.query(`
       UPDATE players SET gp=0, goals=0, assists=0, wins=0, ot_losses=0, shutouts=0, stats_season=$1
       WHERE stats_season IS DISTINCT FROM $1`, [season]);
+    await linkUnlinked();
 
     const { rows: stillUnlinked } = await pool.query(`
       SELECT p.name, t.name AS team FROM players p JOIN picks pk ON pk.player_id=p.id
@@ -271,7 +300,8 @@ const requireAdmin = (req, res, next) => req.me?.isAdmin ? next() : res.status(4
 // Point d'entrée pour un service de « ping » externe : garde le serveur éveillé et les stats à jour.
 app.get('/healthz', h(async (req, res) => {
   await refreshIfStale();
-  res.json({ ok: true, lastUpdate: await getConfig('last_stats_update') });
+  live.tick().catch(e => console.error('Direct :', e.message));
+  res.json({ ok: true, lastUpdate: await getConfig('last_stats_update'), lastLive: await getConfig('last_live_sync') });
 }));
 
 const loginAttempts = new Map();
@@ -354,6 +384,43 @@ app.get('/api/players/:id', h(async (req, res) => {
     WHERE p.id = $1`, [req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'Joueur introuvable' });
   res.json(clean(rows[0]));
+}));
+
+// Points de la journée (en direct) + classement cumulatif.
+app.get('/api/live', h(async (req, res) => {
+  const today = live.todayET();
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(req.query.date || '') ? req.query.date : today;
+  if (date >= addDays(today, -1)) {
+    // Les données fraîches sont attendues au plus quelques secondes ; sinon on sert ce qu'on a.
+    await Promise.race([live.sync().catch(e => console.warn('Direct :', e.message)), new Promise(r => setTimeout(r, 8000))]);
+  }
+  const { rows: games } = await pool.query(`SELECT * FROM games WHERE game_date=$1 AND game_type IN (2,3) ORDER BY start_utc, id`, [date]);
+  const playing = new Set(games.flatMap(g => [g.away, g.home]));
+  const byId = new Map(games.map(g => [Number(g.id), g]));
+  const { rows: logs } = await pool.query(`
+    SELECT l.*, p.id AS player_id, pk.team_id FROM game_log l
+    JOIN players p ON p.nhl_id = l.player_nhl_id JOIN picks pk ON pk.player_id = p.id
+    WHERE l.game_date = $1 AND l.game_type IN (2,3)`, [date]);
+
+  const league = await buildLeague();
+  const leader = league.teams.length ? league.teams[0].points : 0;
+  const teams = league.teams.map(t => {
+    const all = ['F', 'D', 'G'].flatMap(pos => t.positions[pos].players);
+    const mine = logs.filter(l => l.team_id === t.id).map(l => {
+      const g = byId.get(Number(l.game_id)) || {};
+      return { name: l.name, pos: l.pos, team: l.team, goals: l.goals, assists: l.assists, wins: l.wins,
+        ot_losses: l.ot_losses, shutouts: l.shutouts, pts: rules.poolPoints(l), state: g.state || null };
+    }).sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
+    const livePts = mine.reduce((s, p) => s + p.pts, 0);
+    return {
+      id: t.id, name: t.name, rank: t.rank,
+      scheduled: all.filter(p => playing.has(p.nhl_team)).length,
+      liveGp: mine.length, livePts, liveAvg: mine.length ? livePts / mine.length : 0,
+      cumGp: t.gp, cumPts: t.points, cumAvg: t.ppg, diff: leader - t.points,
+      players: mine
+    };
+  });
+  res.json({ date, today, games, teams, lastLive: await getConfig('last_live_sync'), ready: await live.isReady() });
 }));
 
 app.get('/api/moves', h(async (req, res) => {
@@ -480,6 +547,28 @@ async function movePlayers(client, moves, kind, note, by) {
   return out;
 }
 
+// Transfère salaire, contrat, équipe du pool, « Ma liste » et historique de src vers dst, puis supprime src.
+async function mergePlayers(src, dst) {
+  await inTransaction(async c => {
+    const { rows } = await c.query(`SELECT * FROM players WHERE id = ANY($1::int[])`, [[src, dst]]);
+    const s = rows.find(r => r.id === src), d = rows.find(r => r.id === dst);
+    if (!s || !d) throw Object.assign(new Error('Joueur introuvable'), { status: 404 });
+    const pk = await c.query(`SELECT player_id, team_id FROM picks WHERE player_id = ANY($1::int[])`, [[src, dst]]);
+    const srcPick = pk.rows.find(r => r.player_id === src), dstPick = pk.rows.find(r => r.player_id === dst);
+    if (srcPick && dstPick && srcPick.team_id !== dstPick.team_id)
+      throw Object.assign(new Error('Les deux fiches appartiennent à des équipes différentes'), { status: 400 });
+    await c.query(`UPDATE players SET aav=COALESCE($1,aav), age=COALESCE($2,age), contract_end=COALESCE($3,contract_end),
+      rookie=$4 OR rookie, pos=$5 WHERE id=$6`, [s.aav, s.age, s.contract_end, s.rookie, s.pos, dst]);
+    if (srcPick) {
+      await c.query(`DELETE FROM picks WHERE player_id=$1`, [src]);
+      await c.query(`INSERT INTO picks(player_id, team_id) VALUES($1,$2) ON CONFLICT (player_id) DO UPDATE SET team_id=$2`, [dst, srcPick.team_id]);
+    }
+    await c.query(`INSERT INTO watchlist(team_id, player_id, position) SELECT team_id, $2, position FROM watchlist WHERE player_id=$1 ON CONFLICT DO NOTHING`, [src, dst]);
+    await c.query(`UPDATE moves SET player_id=$2 WHERE player_id=$1`, [src, dst]);
+    await c.query(`DELETE FROM players WHERE id=$1`, [src]);
+  });
+}
+
 async function inTransaction(fn) {
   const client = await pool.connect();
   try {
@@ -536,21 +625,7 @@ admin.post('/players/:id', h(async (req, res) => {
 admin.post('/players/:id/merge', h(async (req, res) => {
   const src = Number(req.params.id), dst = Number(req.body.intoPlayerId);
   if (!dst || src === dst) return res.status(400).json({ error: 'Fiche LNH requise' });
-  await inTransaction(async c => {
-    const { rows } = await c.query(`SELECT * FROM players WHERE id = ANY($1::int[])`, [[src, dst]]);
-    const s = rows.find(r => r.id === src), d = rows.find(r => r.id === dst);
-    if (!s || !d) throw Object.assign(new Error('Joueur introuvable'), { status: 404 });
-    await c.query(`UPDATE players SET aav=COALESCE($1,aav), age=COALESCE($2,age), contract_end=COALESCE($3,contract_end),
-      rookie=$4 OR rookie, pos=$5 WHERE id=$6`, [s.aav, s.age, s.contract_end, s.rookie, s.pos, dst]);
-    const pk = await c.query(`SELECT team_id FROM picks WHERE player_id=$1`, [src]);
-    if (pk.rows[0]) {
-      await c.query(`DELETE FROM picks WHERE player_id=$1`, [src]);
-      await c.query(`INSERT INTO picks(player_id, team_id) VALUES($1,$2) ON CONFLICT (player_id) DO UPDATE SET team_id=$2`, [dst, pk.rows[0].team_id]);
-    }
-    await c.query(`INSERT INTO watchlist(team_id, player_id, position) SELECT team_id, $2, position FROM watchlist WHERE player_id=$1 ON CONFLICT DO NOTHING`, [src, dst]);
-    await c.query(`UPDATE moves SET player_id=$2 WHERE player_id=$1`, [src, dst]);
-    await c.query(`DELETE FROM players WHERE id=$1`, [src]);
-  });
+  await mergePlayers(src, dst);
   res.json({ ok: true });
 }));
 
@@ -605,7 +680,10 @@ admin.post('/roster/import', h(async (req, res) => {
 }));
 
 admin.post('/stats/refresh', h(async (req, res) => {
-  res.json(await refreshStats());
+  const result = await refreshStats();
+  if (await live.isReady()) await live.sync({ force: true });
+  else live.backfill().catch(e => console.error('Rattrapage :', e.message));
+  res.json(result);
 }));
 
 app.use('/api/admin', admin);
@@ -624,7 +702,10 @@ initDb().then(() => {
   app.listen(PORT, () => console.log(`Pool à vie en écoute sur le port ${PORT}`));
   // Mise à jour régulière des stats tant que le serveur est éveillé.
   if (process.env.NO_AUTO_REFRESH !== '1') {
-    setInterval(() => refreshIfStale().catch(e => console.error(e)), 60 * 1000);
+    setInterval(() => {
+      refreshIfStale().catch(e => console.error(e));
+      live.tick().catch(e => console.error('Direct :', e.message));
+    }, 60 * 1000);
     refreshIfStale().catch(e => console.error(e));
   }
 }).catch(e => {

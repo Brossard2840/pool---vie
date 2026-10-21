@@ -87,6 +87,13 @@ Un joueur du pool qui n'a pas encore joué cette saison (ex. espoir dans la LAH)
 « sans fiche LNH » ; il est relié automatiquement à son premier match. Si son nom est écrit
 différemment dans la LNH, ouvrez sa fiche et utilisez **Fusionner**.
 
+## En direct
+
+L'onglet **En direct** suit les matchs de la journée à partir des sommaires de match de la LNH
+(`api-web.nhle.com`, la source de NHL.com) : rafraîchi chaque minute pendant les matchs.
+Au premier démarrage d'une saison, le serveur télécharge tous les matchs déjà joués (quelques
+minutes) ; ensuite, les totaux de la saison sont la somme de ces matchs, matchs en cours inclus.
+
 ## Développement local
 
 ```bash

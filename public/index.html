@@ -102,6 +102,28 @@
   .pick{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #1a2938;font-size:14px;}
   .pick input{width:20px;height:20px;flex:none;}
   a.link{color:var(--gold);}
+  .datebar{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .datebar input{flex:1;text-align:center;padding:9px;}
+  .games{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin:0 -16px 12px;padding-left:16px;padding-right:16px;scrollbar-width:none;}
+  .game{flex:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-size:12px;min-width:96px;font-variant-numeric:tabular-nums;}
+  .game .t{display:flex;justify-content:space-between;gap:10px;font-weight:700;}
+  .game .s{color:var(--dim);font-size:11px;margin-top:3px;}
+  .game.live{border-color:var(--red);} .game.live .s{color:var(--red);font-weight:700;}
+  .lt{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums;}
+  .lt th{font-size:10px;color:var(--dim);font-weight:700;text-transform:uppercase;padding:6px 3px;text-align:right;}
+  .lt th.grp{text-align:center;color:var(--gold);letter-spacing:.06em;border-bottom:1px dashed var(--gold);}
+  .lt td{padding:10px 3px;text-align:right;border-top:1px solid #1a2938;}
+  .lt td.n,.lt th.n{text-align:left;}
+  .lt td.n{font-weight:700;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lt td.hot{background:#2b2512;color:var(--gold);font-weight:800;}
+  .lt tr.me td.n{color:var(--gold);}
+  .lt tr.lrow{cursor:pointer;}
+  .lt tr.detail td{padding:0 3px 10px;text-align:left;border-top:none;}
+  .lt .sep{border-left:1px solid var(--line);}
+  .pl{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);padding:3px 0 3px 8px;}
+  .pl b{color:var(--text);}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:4px;animation:pulse 1.4s infinite;}
+  @keyframes pulse{50%{opacity:.25}}
 </style>
 </head>
 <body>
@@ -116,7 +138,7 @@
 <nav class="tabbar" id="tabbar" hidden>
   <a href="#/classement" data-r="classement"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>Classement</a>
   <a href="#/mon-equipe" data-r="mon-equipe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>Mon équipe</a>
-  <a href="#/equipes" data-r="equipes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M15 14.5c3 0 6 2 6 5.5"/></svg>Équipes</a>
+  <a href="#/direct" data-r="direct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>En direct</a>
   <a href="#/joueurs" data-r="joueurs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Joueurs</a>
   <a href="#/plus" data-r="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Plus</a>
 </nav>
@@ -205,7 +227,8 @@ function localStorageSet(k, v){ try { localStorage.setItem(k, v); } catch {} }
 async function loadState(){ S = await api('/api/state'); renderChrome(); }
 function renderChrome(){
   $('#top').hidden = false; $('#tabbar').hidden = false;
-  $('#updated').textContent = `Stats LNH : ${ago(S.config.lastUpdate)}`;
+  const lastStats = [S.config.lastUpdate, S.config.lastLive].filter(Boolean).sort().pop();
+  $('#updated').textContent = `Stats LNH : ${ago(lastStats)}`;
   $('#meLabel').innerHTML = `<b>${esc(S.me.name)}</b>${S.me.isAdmin ? '<br>commissaire' : ''}`;
 }
 async function boot(){
@@ -220,10 +243,11 @@ function route(){
   closeSheet();
   const [, r = 'classement', arg] = location.hash.split('/');
   document.querySelectorAll('.tabbar a').forEach(a => a.classList.toggle('on', a.dataset.r === r ||
-    (r === 'equipe' && a.dataset.r === (Number(arg) === S.me.teamId ? 'mon-equipe' : 'equipes')) ||
-    (['liste','historique','commissaire'].includes(r) && a.dataset.r === 'plus')));
+    (r === 'equipe' && a.dataset.r === (Number(arg) === S.me.teamId ? 'mon-equipe' : 'classement')) ||
+    (['liste','historique','commissaire','equipes'].includes(r) && a.dataset.r === 'plus')));
+  clearInterval(liveTimer); liveTimer = null;
   window.scrollTo(0, 0);
-  const views = { classement: vStandings, 'mon-equipe': () => vTeam(S.me.teamId), equipe: () => vTeam(arg), equipes: vTeams,
+  const views = { classement: vStandings, 'mon-equipe': () => vTeam(S.me.teamId), equipe: () => vTeam(arg), equipes: vTeams, direct: () => vLive(arg),
                   joueurs: vPlayers, plus: vMore, liste: vWatchlist, historique: vMoves, commissaire: vAdmin };
   (views[r] || vStandings)();
 }
@@ -411,6 +435,66 @@ const savePlayer = run(async () => {
 });
 const addWatch = run(async id => { await api('/api/watchlist/add', { playerId: id }); toast('Ajouté à ma liste'); });
 
+// ---------- En direct ----------
+let liveTimer = null, liveOpen = new Set();
+const STATE_FR = { FUT:'À venir', PRE:'Avant-match', LIVE:'En cours', CRIT:'En cours', FINAL:'Final', OFF:'Final' };
+function gameStatus(g){
+  if (g.state === 'LIVE' || g.state === 'CRIT') {
+    if (g.in_intermission) return `Entracte ${g.period || ''}`;
+    const per = g.period_type === 'OT' ? 'Prol.' : g.period_type === 'SO' ? 'Fus.' : `${g.period || ''}e`;
+    return `${per} ${g.clock || ''}`;
+  }
+  if (g.state === 'FUT' || g.state === 'PRE') return g.start_utc ? new Date(g.start_utc).toLocaleTimeString('fr-CA', { hour:'2-digit', minute:'2-digit' }) : STATE_FR[g.state];
+  return g.period_type === 'OT' ? 'Final (prol.)' : g.period_type === 'SO' ? 'Final (fus.)' : 'Final';
+}
+function shiftDate(d, n){ const x = new Date(d + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); }
+const fr2 = v => v.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const vLive = run(async (date) => {
+  const first = !$('#liveWrap');
+  if (first) $('#view').innerHTML = `<h2 class="title">En direct</h2><div id="liveWrap"><div class="empty">Chargement des matchs…</div></div>`;
+  const L = await api('/api/live' + (date ? '?date=' + date : ''));
+  if (!$('#liveWrap')) return;
+  const isToday = L.date === L.today;
+  const anyLive = L.games.some(g => g.state === 'LIVE' || g.state === 'CRIT');
+  const games = L.games.map(g => `<div class="game ${g.state === 'LIVE' || g.state === 'CRIT' ? 'live' : ''}">
+      <div class="t"><span>${esc(g.away)}</span><span>${g.away_score ?? ''}</span></div>
+      <div class="t"><span>${esc(g.home)}</span><span>${g.home_score ?? ''}</span></div>
+      <div class="s">${g.state === 'LIVE' || g.state === 'CRIT' ? '<span class="dot"></span>' : ''}${esc(gameStatus(g))}</div></div>`).join('');
+  const rows = L.teams.map(t => {
+    const open = liveOpen.has(t.id);
+    const detail = open ? `<tr class="detail"><td colspan="9">${t.players.length ? t.players.map(p => `<div class="pl">
+        <span><span class="pos pos-${p.pos}">${p.pos}</span> <b>${esc(p.name)}</b> · ${esc(p.team || '')}${p.state === 'LIVE' || p.state === 'CRIT' ? ' <span class="dot"></span>' : ''}</span>
+        <span>${p.pos === 'G' ? `${p.wins ? 'V' : p.ot_losses ? 'DP' : '—'}${p.shutouts ? ' · BL' : ''}` : `${p.goals} B · ${p.assists} A`} · <b>${p.pts} pt${p.pts > 1 ? 's' : ''}</b></span></div>`).join('')
+        : '<div class="pl">Aucun joueur n\'a encore joué.</div>'}</td></tr>` : '';
+    return `<tr class="lrow ${t.id === S.me.teamId ? 'me' : ''}" onclick="toggleLive(${t.id})">
+      <td class="n">${t.rank}. ${esc(t.name)}</td><td>${t.scheduled}</td>
+      <td class="sep">${t.liveGp}</td><td class="hot">${t.livePts}</td><td>${fr2(t.liveAvg)}</td>
+      <td class="sep">${t.cumGp}</td><td class="hot">${t.cumPts}</td><td>${fr2(t.cumAvg)}</td><td>${t.diff ? '+' + t.diff : '–'}</td></tr>${detail}`;
+  }).join('');
+  $('#liveWrap').innerHTML = `
+    <div class="datebar">
+      <button class="btn small ghost" onclick="location.hash='#/direct/${shiftDate(L.date, -1)}'">‹</button>
+      <input type="date" id="liveDate" value="${L.date}" max="${L.today}">
+      <button class="btn small ghost" onclick="location.hash='#/direct/${shiftDate(L.date, 1)}'" ${isToday ? 'disabled' : ''}>›</button>
+    </div>
+    ${L.games.length ? `<div class="games">${games}</div>` : '<p class="muted">Aucun match de la LNH cette journée.</p>'}
+    ${L.ready ? '' : '<div class="issues">Premier chargement : le serveur récupère tous les matchs de la saison (quelques minutes). Les totaux se compléteront tout seuls.</div>'}
+    <div class="card" style="padding:8px 8px 4px;overflow-x:auto">
+      <table class="lt">
+        <tr><th></th><th></th><th class="grp" colspan="3">${isToday ? 'Live' : 'Journée'}</th><th class="grp" colspan="4">Cumulatif</th></tr>
+        <tr><th class="n">Poolers</th><th title="Joueurs dont l'équipe joue">📅</th><th class="sep">PJ</th><th>Tot</th><th>Moy</th><th class="sep">PJ</th><th>Tot</th><th>Moy</th><th>Dif</th></tr>
+        ${rows}
+      </table>
+    </div>
+    <p class="muted">📅 joueurs dont l'équipe joue · PJ/Tot/Moy de la journée : tous les joueurs de l'alignement ·
+      Cumulatif : les 9 A, 4 D et 2 G qui comptent (art. 2.3), matchs en cours inclus. Touchez une équipe pour voir ses marqueurs.
+      ${isToday ? `Mis à jour ${ago(L.lastLive)}${anyLive ? ', rafraîchi chaque minute' : ''}.` : ''}</p>`;
+  $('#liveDate').onchange = e => { if (e.target.value) location.hash = '#/direct/' + e.target.value; };
+  window._liveDate = L.date;
+  if (isToday && !liveTimer) liveTimer = setInterval(() => { if (!document.hidden && $('#liveWrap')) vLive(); }, 60 * 1000);
+});
+function toggleLive(id){ liveOpen.has(id) ? liveOpen.delete(id) : liveOpen.add(id); vLive(window._liveDate); }
+
 // ---------- Plus ----------
 function vMore(){
   const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
@@ -418,6 +502,7 @@ function vMore(){
     <h2 class="title">Plus</h2>
     <div class="card"><div class="list">
       <div class="item" onclick="location.hash='#/liste'"><div class="grow"><div class="name">☆ Ma liste</div><div class="meta">Mes joueurs ciblés, en ordre de préférence</div></div>›</div>
+      <div class="item" onclick="location.hash='#/equipes'"><div class="grow"><div class="name">Équipes</div><div class="meta">Tous les alignements et leur conformité</div></div>›</div>
       <div class="item" onclick="location.hash='#/historique'"><div class="grow"><div class="name">Historique des mouvements</div><div class="meta">Ajouts, libérations, échanges</div></div>›</div>
       ${S.me.isAdmin ? `<div class="item" onclick="location.hash='#/commissaire'"><div class="grow"><div class="name">Commissaire</div><div class="meta">Codes d'accès, import, échanges, réglages</div></div>›</div>` : ''}
       <div class="item" onclick="logout()"><div class="grow"><div class="name" style="color:var(--red)">Se déconnecter</div></div></div>
