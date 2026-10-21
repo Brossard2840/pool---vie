@@ -413,6 +413,7 @@ function renderSheet(){
       <label class="f">Équipe du pool</label>
       <div class="row"><select id="spTeam"><option value="">— Agent libre —</option>${S.teams.slice().sort((a,b)=>a.name.localeCompare(b.name,'fr')).map(t => `<option value="${t.id}" ${owner && owner.id===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}</select></div>
       <div class="row"><input id="spNote" placeholder="Note (optionnel), ex. réclamé au ballottage"></div>
+      <label class="pick"><input type="checkbox" id="spDirect"> Libération sans ballottage (agent libre directement)</label>
       <button class="btn small" onclick="assignPlayer()">Appliquer le mouvement</button>
       <hr style="border:none;border-top:1px solid var(--line);margin:14px 0">
       <div class="row">
@@ -440,7 +441,11 @@ function renderSheet(){
     <div class="kv">${kv.map(([l,v]) => `<div><div class="l">${l}</div><div class="v">${v ?? 0}</div></div>`).join('')}</div>
     <div class="muted">Points de pool : <b style="color:var(--text)">${p.pts ?? 0}</b>${goalie ? ' (B + A + 2×V + DP + BL)' : ''}</div>
     <div style="height:12px"></div>
-    ${owner ? '' : `<button class="btn" style="width:100%;margin-bottom:8px" onclick="openClaim(${p.id})">Réclamer (agent libre) — coûte un choix de 1re ronde</button>`}
+    ${p.waiver ? `<div class="issues" style="background:#2b2512;border-color:#5a4a1e;color:var(--gold)">⏳ Au ballottage jusqu'au ${fmtDate(p.waiver.ends_at)}${p.waiver.mine ? ' · <b>tu l\'as réclamé</b>' : ''}</div>
+        ${p.waiver.mine ? `<button class="btn danger" style="width:100%;margin-bottom:8px" onclick="unclaimWaiver(${p.waiver.id})">Retirer ma réclamation</button>`
+          : `<button class="btn" style="width:100%;margin-bottom:8px" onclick="openWaiverClaim(${p.waiver.id})">Réclamer au ballottage</button>`}`
+      : owner ? (owner.id === S.me.teamId ? `<button class="btn danger" style="width:100%;margin-bottom:8px" onclick="releaseMine(${p.id})">Libérer (passe au ballottage)</button>` : '')
+      : `<button class="btn" style="width:100%;margin-bottom:8px" onclick="openClaim(${p.id})">Réclamer (agent libre) — coûte un choix de 1re ronde</button>`}
     <button class="btn ghost" style="width:100%" onclick="addWatch(${p.id})">☆ Ajouter à ma liste</button>
     ${admin}`;
   const mq = $('#spMergeQ');
@@ -465,7 +470,7 @@ const mergeInto = run(async intoId => {
 });
 const assignPlayer = run(async () => {
   const toTeamId = Number($('#spTeam').value) || null;
-  const r = await api('/api/admin/assign', { playerId: sheetPlayer.id, toTeamId, note: $('#spNote').value });
+  const r = await api('/api/admin/assign', { playerId: sheetPlayer.id, toTeamId, note: $('#spNote').value, direct: $('#spDirect').checked });
   toast(r.moved.length ? 'Mouvement enregistré' : 'Aucun changement'); await refresh();
 });
 const savePlayer = run(async () => {
@@ -509,6 +514,51 @@ const openClaim = run(async id => {
     const r = await api('/api/claims', { playerId: p.id, pickId, releasePlayerId });
     toast(`${r.player} ajouté à ton équipe`); await refresh();
   });
+});
+function fmtDate(iso){ return new Date(iso).toLocaleString('fr-CA', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }); }
+function timeLeft(iso){
+  const m = Math.max(0, Math.round((new Date(iso).getTime() - Date.now()) / 60000));
+  return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}` : `${m} min`;
+}
+const releaseMine = run(async id => {
+  const p = sheetPlayer;
+  if (!confirm(`Libérer ${p.name} ? Il passe au ballottage et les autres équipes pourront le réclamer (art. 5.5).`)) return;
+  await api('/api/release', { playerId: id });
+  toast(`${p.name} est au ballottage`); await refresh();
+});
+// Réclamation au ballottage : on peut nommer un joueur à libérer si l'équipe est pleine ou au plafond.
+const openWaiverClaim = run(async waiverId => {
+  const W = await api('/api/waivers');
+  const w = W.waivers.find(x => x.id === waiverId); if (!w) return toast('Ballottage terminé');
+  const mine = myTeam(), roster = ['F','D','G'].flatMap(pos => mine.positions[pos].players);
+  const O = W.costsPick ? await api('/api/claims/options') : null;
+  $('#sheetBody').innerHTML = `<h3>Réclamer ${esc(w.name)} au ballottage</h3>
+    <p class="muted">${esc(w.nhl_team || '')} · ${w.pos} · AAV <span class="aav">${money(w.aav)}</span> · fin dans ${timeLeft(w.ends_at)}</p>
+    ${W.costsPick ? (O.forced ? `<p class="muted">Si tu l'obtiens, tu abandonnes : <b>${esc(O.forced.label)}</b> (art. 5.4).</p>`
+      : '<div class="issues">Aucun choix de 1re ronde disponible : réclamation impossible.</div>') : ''}
+    <label class="f">Joueur à libérer si tu l'obtiens (optionnel)</label>
+    <select id="wcRelease"><option value="">— Aucun —</option>${roster.map(r => `<option value="${r.id}">${r.pos} · ${esc(r.name)} · ${money(r.aav)}</option>`).join('')}</select>
+    <div id="wcPreview" style="margin-top:10px"></div>
+    <button class="btn" style="width:100%" id="wcGo" ${W.costsPick && !O.forced ? 'disabled' : ''}>Envoyer ma réclamation</button>
+    <p class="muted">À la fin du ballottage, le joueur va à l'équipe prioritaire qui l'a réclamé (${esc(W.priority.basis)}). Ton rang de priorité : <b>${(W.priority.teams.find(t => t.id === S.me.teamId) || {}).priority || '?'}</b>.</p>`;
+  const preview = () => {
+    const rel = Number($('#wcRelease').value) || null;
+    const s = summarize(roster.filter(r => r.id !== rel).concat({ ...w }));
+    $('#wcPreview').innerHTML = `<div class="impact ${s.issues.length ? 'issues' : 'okbox'}">Après : masse <b>${money(s.cap)}</b> · ${s.n.F} A, ${s.n.D} D, ${s.n.G} G${s.issues.length ? '<br>⚠ ' + s.issues.join('<br>⚠ ') : ' ✓'}</div>`;
+  };
+  $('#wcRelease').onchange = preview; preview();
+  $('#wcGo').onclick = run(async () => {
+    await api(`/api/waivers/${waiverId}/claim`, { releasePlayerId: Number($('#wcRelease').value) || null });
+    toast('Réclamation envoyée'); closeSheet(); if (location.hash.startsWith('#/echanges')) vTrades();
+  });
+  $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open');
+});
+const unclaimWaiver = run(async id => {
+  await api(`/api/waivers/${id}/unclaim`, {}); toast('Réclamation retirée'); closeSheet(); if (location.hash.startsWith('#/echanges')) vTrades();
+});
+const waiverAdmin = run(async (id, action) => {
+  if (!confirm(action === 'end' ? 'Terminer ce ballottage maintenant et attribuer le joueur ?' : 'Annuler ce ballottage (le joueur devient agent libre) ?')) return;
+  await api(`/api/admin/waivers/${id}/${action}`, {}); toast('Fait'); await loadState(); vTrades();
 });
 const addWatch = run(async id => { await api('/api/watchlist/add', { playerId: id }); toast('Ajouté à ma liste'); });
 
@@ -607,7 +657,7 @@ function tradeCard(t){
   </div>`;
 }
 const vTrades = run(async () => {
-  const T = await api('/api/trades');
+  const [T, W] = await Promise.all([api('/api/trades'), api('/api/waivers')]);
   const me = S.me.teamId, list = T.trades;
   const todo = list.filter(t => (t.to_team_id === me && t.status === 'proposed') || (S.me.isAdmin && t.status === 'accepted'));
   const sent = list.filter(t => t.from_team_id === me && ['proposed','accepted'].includes(t.status) && !todo.includes(t));
@@ -621,6 +671,7 @@ const vTrades = run(async () => {
     <div class="row" style="margin-top:8px"><a class="btn ghost small" style="text-align:center;text-decoration:none" href="#/choix">🎟️ Choix de repêchage</a></div>
     ${T.deadline ? `<p class="muted">Date limite des transactions : <b>${esc(T.deadline)} à 21 h</b>${T.deadlinePassed ? ' — <span style="color:var(--red)">passée</span>' : ''} (art. 5.1).</p>` : ''}
     <p class="muted">${T.approvalRequired ? 'Une fois acceptée par l\'autre pooler, l\'offre est approuvée par le commissaire.' : 'Une offre acceptée est complétée immédiatement.'}</p>
+    ${waiverSection(W)}
     ${sec('À traiter', todo, 'Rien en attente.')}
     ${sec('Mes offres envoyées', sent, 'Aucune offre en cours.')}
     ${S.me.isAdmin ? sec('Négociations en cours (autres équipes)', pendingOthers, 'Aucune.') : ''}
@@ -635,6 +686,25 @@ const tradeAct = run(async (id, action) => {
   toast({ accept:'Offre acceptée', refuse:'Offre refusée', cancel:'Offre annulée', approve:'Échange complété', reject:'Échange rejeté' }[action]);
   await loadState(); vTrades();
 });
+
+function waiverSection(W){
+  const open = W.waivers.filter(w => w.status === 'open'), past = W.waivers.filter(w => w.status !== 'open');
+  const row = w => `<div class="trade">
+    <div class="hd"><span><span class="pos pos-${w.pos}">${w.pos}</span> ${esc(w.name)}</span>
+      <span class="pill ${w.status === 'open' ? 'wait' : w.status === 'claimed' ? 'ok' : ''}">${w.status === 'open' ? '⏳ ' + timeLeft(w.ends_at) : w.status === 'claimed' ? '→ ' + esc(w.winner_team) : 'agent libre'}</span></div>
+    <div class="muted" style="font-size:13px">${esc(w.nhl_team || '')} · ${w.pts} pts · <span class="aav">${money(w.aav)}</span> · libéré par ${esc(w.from_team || '—')}
+      ${w.status === 'open' ? ` · ${w.claims} réclamation${w.claims > 1 ? 's' : ''}` : ''}${w.note ? ' · ' + esc(w.note) : ''}</div>
+    ${w.status === 'open' ? `<div class="actions">${w.mine ? `<button class="btn small danger" onclick="unclaimWaiver(${w.id})">Retirer ma réclamation</button>`
+        : w.from_team === S.me.name ? '' : `<button class="btn small" onclick="openWaiverClaim(${w.id})">Réclamer</button>`}
+      ${S.me.isAdmin ? `<button class="btn small ghost" onclick="waiverAdmin(${w.id},'end')">Terminer</button><button class="btn small ghost" onclick="waiverAdmin(${w.id},'cancel')">Annuler</button>` : ''}</div>` : ''}
+  </div>`;
+  return `<h3 class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px">Ballottage${open.length ? ' · ' + open.length : ''}</h3>
+    ${open.length ? open.map(row).join('') : '<p class="muted">Aucun joueur au ballottage.</p>'}
+    <details style="margin-bottom:6px"><summary>Ordre de priorité (${esc(W.priority.basis)}) · période de ${W.hours} h${W.costsPick ? ' · coûte un choix de 1re ronde' : ''}</summary>
+      <div class="list">${W.priority.teams.map(t => `<div class="item" style="cursor:default"><div class="rank">${t.priority}</div><div class="grow"><div class="name">${esc(t.name)}</div>
+        <div class="meta">${W.priority.basis === 'saison précédente' ? (t.prev_rank ? t.prev_rank + 'e la saison passée' : 'rang inconnu') : t.points + ' pts · ' + ppg(t) + ' pt/match'}</div></div></div>`).join('')}</div></details>
+    ${past.length ? `<details><summary>Résultats récents (${past.length})</summary>${past.map(row).join('')}</details>` : ''}`;
+}
 
 // Montage d'une offre : deux plateaux, comme l'écran d'échange du jeu NHL.
 let OF = null;
@@ -858,6 +928,14 @@ const vAdmin = run(async () => {
       <div id="impResult"></div>
     </div>
 
+    <div class="card"><h3>Ballottage (art. 5.5 et 5.6)</h3>
+      <div class="row"><div><label class="f">Durée du ballottage (heures)</label><input id="wvHours" inputmode="numeric"></div></div>
+      <label class="pick"><input type="checkbox" id="wvCost"> Une réclamation au ballottage coûte un choix de 1re ronde (comme l'art. 5.4)</label>
+      <p class="muted">Classement de la saison précédente (1 = champion), pour la priorité avant le 1er novembre :</p>
+      <div id="wvRanks"></div>
+      <button class="btn small" onclick="saveWaiverSettings()">Enregistrer</button>
+    </div>
+
     <div class="card"><h3>Échanges et choix</h3>
       <label class="pick"><input type="checkbox" id="trApproval"> Le commissaire approuve chaque échange accepté</label>
       <div class="row" style="margin-top:8px">
@@ -890,6 +968,12 @@ const vAdmin = run(async () => {
     toast(`${$('#impText').value.trim().split(/\n/).length} lignes chargées`);
   };
   $('#trA').onchange = $('#trB').onchange = renderTradeLists;
+  api('/api/waivers').then(W => {
+    $('#wvHours').value = W.hours; $('#wvCost').checked = W.costsPick;
+    const ranks = new Map(W.priority.teams.map(t => [t.id, t.prev_rank]));
+    $('#wvRanks').innerHTML = S.teams.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr')).map(t => `<div class="row" style="align-items:center">
+      <span style="flex:2">${esc(t.name)}</span><input style="flex:1" class="wvRank" data-t="${t.id}" inputmode="numeric" value="${ranks.get(t.id) ?? ''}" placeholder="rang"></div>`).join('');
+  }).catch(() => {});
   api('/api/trades').then(T => { $('#trApproval').checked = T.approvalRequired; $('#trDeadline').value = T.deadline || ''; }).catch(() => {});
   renderTradeLists();
 });
@@ -928,6 +1012,11 @@ const refreshStats = run(async btn => {
   btn.disabled = true; btn.textContent = 'Mise à jour…';
   try { const r = await api('/api/admin/stats/refresh', {}); toast(`${r.nhlPlayers} joueurs LNH mis à jour`); await refresh(); }
   finally { btn.disabled = false; }
+});
+const saveWaiverSettings = run(async () => {
+  const prevRanks = {}; document.querySelectorAll('.wvRank').forEach(i => { prevRanks[i.dataset.t] = i.value.trim(); });
+  await api('/api/admin/waiver-settings', { hours: Number($('#wvHours').value), costsPick: $('#wvCost').checked, prevRanks });
+  toast('Réglages du ballottage enregistrés');
 });
 const saveTradeSettings = run(async () => {
   await api('/api/admin/trade-settings', { approval: $('#trApproval').checked, deadline: $('#trDeadline').value });

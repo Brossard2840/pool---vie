@@ -8,6 +8,7 @@ const nhl = require('./lib/nhl');
 const auth = require('./lib/auth');
 const { createLive, addDays } = require('./lib/live');
 const { registerTrades } = require('./lib/trades');
+const { createWaivers } = require('./lib/waivers');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -113,6 +114,7 @@ async function initDb() {
   `);
   await live.initTables();
   await trades.initTables();
+  await waivers.initTables();
   await setDefault('cap', '104000000');   // plafond LNH 2026-27
   await setDefault('floor', '76900000');  // plancher LNH 2026-27
 
@@ -314,6 +316,7 @@ const requireAdmin = (req, res, next) => req.me?.isAdmin ? next() : res.status(4
 app.get('/healthz', h(async (req, res) => {
   await refreshIfStale();
   live.tick().catch(e => console.error('Direct :', e.message));
+  waivers.processDue().catch(e => console.error('Ballottage :', e.message));
   res.json({ ok: true, lastUpdate: await getConfig('last_stats_update'), lastLive: await getConfig('last_live_sync') });
 }));
 
@@ -409,7 +412,10 @@ app.get('/api/players/:id', h(async (req, res) => {
     FROM players p LEFT JOIN picks pk ON pk.player_id = p.id LEFT JOIN teams t ON t.id = pk.team_id
     WHERE p.id = $1`, [req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'Joueur introuvable' });
-  res.json(clean(rows[0]));
+  const { rows: w } = await pool.query(`
+    SELECT w.id, w.ends_at, EXISTS (SELECT 1 FROM waiver_claims c WHERE c.waiver_id=w.id AND c.team_id=$2) AS mine
+    FROM waivers w WHERE w.player_id=$1 AND w.status='open'`, [req.params.id, req.me.teamId]);
+  res.json({ ...clean(rows[0]), waiver: w[0] || null });
 }));
 
 // Points de la journée (en direct) + classement cumulatif.
@@ -491,7 +497,11 @@ const admin = express.Router();
 admin.use(requireAdmin);
 
 // Échanges et choix de repêchage (lib/trades.js). Déclaré ici : les fonctions utilitaires plus bas sont « hissées ».
-const trades = registerTrades(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, seasonId, rules });
+const trades = registerTrades(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, seasonId, rules,
+  putOnWaivers: (...a) => waivers.putOnWaivers(...a) });
+// Ballottage (lib/waivers.js).
+const waivers = createWaivers(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, seasonId, rules,
+  standings: async () => (await buildLeague()).teams, claimPicks: id => trades.claimPicks(id), deadlinePassed: () => trades.deadlinePassed() });
 
 admin.post('/config', h(async (req, res) => {
   const { cap, floor, seasonId: sid } = req.body;
@@ -609,9 +619,13 @@ async function inTransaction(fn) {
 
 // Ajout / libération d'un joueur. toTeamId = null pour libérer.
 admin.post('/assign', h(async (req, res) => {
-  const { playerId, toTeamId, note } = req.body;
-  const kind = toTeamId ? 'Ajout' : 'Libération';
-  const moved = await inTransaction(c => movePlayers(c, [{ playerId, toTeamId: toTeamId || null }], kind, note, req.me.name));
+  const { playerId, toTeamId, note, direct } = req.body;
+  const moved = await inTransaction(async c => {
+    if (!toTeamId && !direct) { await waivers.putOnWaivers(c, playerId, req.me.name, note || 'Au ballottage (art. 5.5)'); return [{}]; }
+    const r = await movePlayers(c, [{ playerId, toTeamId: toTeamId || null }], toTeamId ? 'Ajout' : 'Libération', note, req.me.name);
+    await c.query(`UPDATE waivers SET status='cleared', note='Réglé par le commissaire' WHERE player_id=$1 AND status='open'`, [playerId]);
+    return r;
+  });
   res.json({ moved });
 }));
 
@@ -732,6 +746,7 @@ initDb().then(() => {
     setInterval(() => {
       refreshIfStale().catch(e => console.error(e));
       live.tick().catch(e => console.error('Direct :', e.message));
+      waivers.processDue().catch(e => console.error('Ballottage :', e.message));
     }, 60 * 1000);
     refreshIfStale().catch(e => console.error(e));
   }

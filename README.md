@@ -107,6 +107,16 @@ Agents libres (art. 5.4) : depuis la fiche d'un joueur libre, « Réclamer » ab
 1re ronde dans un ordre imposé (son propre choix d'abord, puis ceux acquis du plus ancien au plus récent) et peut libérer
 un joueur dans la même opération ; le maximum par position et le plafond sont vérifiés.
 
+## Ballottage (art. 5.5 et 5.6)
+
+Un joueur libéré (par son pooler, depuis sa fiche, ou par le commissaire) passe au ballottage
+pendant une période réglable (24 h par défaut). Les autres équipes peuvent le réclamer, en nommant
+au besoin un joueur à libérer. À la fin, il va à l'équipe prioritaire : avant le 1er novembre, la
+pire au classement de la saison précédente (rangs saisis par le commissaire) ; ensuite, le pire
+pointage actuel ; égalité : le plus faible ratio de points par match. Par défaut, une réclamation
+réussie coûte un choix de 1re ronde, comme l'art. 5.4 (réglable). Sans réclamation, le joueur
+devient agent libre.
+
 ## Développement local
 
 ```bash
