@@ -9,6 +9,7 @@ const auth = require('./lib/auth');
 const { createLive, addDays } = require('./lib/live');
 const { registerTrades } = require('./lib/trades');
 const { createWaivers } = require('./lib/waivers');
+const { createProtection } = require('./lib/protection');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -115,6 +116,7 @@ async function initDb() {
   await live.initTables();
   await trades.initTables();
   await waivers.initTables();
+  await protection.initTables();
   await setDefault('cap', '104000000');   // plafond LNH 2026-27
   await setDefault('floor', '76900000');  // plancher LNH 2026-27
 
@@ -383,7 +385,7 @@ async function buildLeague() {
 
 app.get('/api/state', h(async (req, res) => {
   const league = await buildLeague();
-  res.json({ me: req.me, pendingTrades: await trades.pendingCount(req.me), ...league });
+  res.json({ me: req.me, pendingTrades: await trades.pendingCount(req.me), pendingProtection: await protection.pendingFor(req.me.teamId), ...league });
 }));
 
 app.get('/api/players', h(async (req, res) => {
@@ -502,6 +504,9 @@ const trades = registerTrades(app, admin, { pool, h, inTransaction, movePlayers,
 // Ballottage (lib/waivers.js).
 const waivers = createWaivers(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, seasonId, rules,
   standings: async () => (await buildLeague()).teams, claimPicks: id => trades.claimPicks(id), deadlinePassed: () => trades.deadlinePassed() });
+// Listes de protection (lib/protection.js).
+const protection = createProtection(app, admin, { pool, h, inTransaction, getConfig, setConfig, seasonId,
+  generatePicks: y => trades.generatePicks(y) });
 
 admin.post('/config', h(async (req, res) => {
   const { cap, floor, seasonId: sid } = req.body;

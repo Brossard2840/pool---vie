@@ -82,3 +82,29 @@ test('sommaire de match : points des patineurs et des gardiens', () => {
   assert.strictEqual(rules.poolPoints(by[10]), 3); // victoire + blanchissage
   assert.strictEqual(rules.poolPoints(by[20]), 1); // défaite en prolongation
 });
+
+test('protection : recrues et combinaisons permises (art. 4.3)', () => {
+  const { isRookie, categories, assignCategories } = require('../lib/protection');
+  const S = o => new Map(Object.entries(o).map(([k, v]) => [Number(k), v]));
+  // Recrue 2026-27 : 20 ans, 10 matchs en 2025-26 (< 25), jamais plus de 6 matchs deux ans de suite
+  assert.ok(isRookie(2026, '2006-03-01', S({ 2025: 10, 2026: 60 })));
+  assert.ok(!isRookie(2026, '2006-03-01', S({ 2025: 30 })));            // plus de 25 matchs une saison
+  assert.ok(!isRookie(2026, '2006-03-01', S({ 2024: 7, 2025: 8 })));    // plus de 6 matchs deux saisons de suite
+  assert.ok(!isRookie(2026, '2000-09-01', S({})));                      // 26 ans au 15 septembre
+  // Catégories
+  assert.deepStrictEqual(categories({ pos: 'F', gp: 70 }, 2026, S({ 2026: 70 }), '2006-01-01'), ['R']);
+  assert.deepStrictEqual(categories({ pos: 'F', gp: 30 }, 2026, S({ 2026: 30, 2020: 80 }), '1995-01-01'), ['GP']);
+  assert.deepStrictEqual(categories({ pos: 'G', gp: 25 }, 2026, S({ 2026: 25, 2020: 80 }), '1995-01-01'), []);
+  assert.deepStrictEqual(categories({ pos: 'D', gp: 70 }, 2026, S({ 2025: 60, 2026: 70 }), '2005-01-01'), ['R2']);
+  // 4.3.4 : les 4 combinaisons de la convention passent, les autres non
+  const P = (...c) => ({ cats: c });
+  assert.ok(assignCategories([P('R'), P('R'), P('R')]));
+  assert.ok(assignCategories([P('R'), P('R'), P('R2')]));
+  assert.ok(assignCategories([P('R'), P('GP'), P('GP')]));
+  assert.ok(assignCategories([P('R'), P('GP'), P('R2')]));
+  assert.strictEqual(assignCategories([P('GP'), P('GP'), P('GP')]), null);
+  assert.strictEqual(assignCategories([P('R2'), P('GP'), P('GP')]), null);
+  assert.strictEqual(assignCategories([P('R2'), P('R2')]), null);
+  assert.deepStrictEqual(assignCategories([P('GP', 'R'), P('GP'), P('GP')]), ['R', 'GP', 'GP']); // un joueur admissible à deux catégories
+  assert.strictEqual(assignCategories([P('R'), P('R'), P('R'), P('R')]), null);
+});

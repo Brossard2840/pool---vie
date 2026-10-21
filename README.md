@@ -117,6 +117,16 @@ pointage actuel ; égalité : le plus faible ratio de points par match. Par déf
 réussie coûte un choix de 1re ronde, comme l'art. 5.4 (réglable). Sans réclamation, le joueur
 devient agent libre.
 
+## Listes de protection (art. 4.2 et 4.3)
+
+Le commissaire ouvre la période (Plus → Liste de protection) avec une date limite. Chaque pooler
+choisit 10 joueurs protégés (🛡️) et jusqu'à 3 protections automatiques (⚡) parmi ses joueurs
+admissibles : R (recrue de la saison qui se termine), GP (39 matchs ou moins, 20 pour un gardien),
+R2 (recrue la saison d'avant). Les combinaisons de l'art. 4.3.4 sont validées. Le statut de recrue
+suit les critères de la LNH à partir de l'historique de chaque joueur sur NHL.com (le commissaire
+peut forcer l'admissibilité d'un joueur). Le commissaire dévoile ensuite les listes, puis les applique :
+les joueurs non protégés retournent dans le bassin du repêchage et les choix de l'année suivante sont créés.
+
 ## Développement local
 
 ```bash

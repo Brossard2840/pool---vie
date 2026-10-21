@@ -160,7 +160,7 @@
   <a href="#/direct" data-r="direct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>En direct</a>
   <a href="#/echanges" data-r="echanges"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg>Échanges<span class="badge" id="tradeBadge" hidden></span></a>
   <a href="#/joueurs" data-r="joueurs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Joueurs</a>
-  <a href="#/plus" data-r="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Plus</a>
+  <a href="#/plus" data-r="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Plus<span class="badge" id="plusBadge" hidden>!</span></a>
 </nav>
 
 <div class="sheet-bg" id="sheetBg"></div>
@@ -265,6 +265,7 @@ function renderChrome(){
   $('#updated').textContent = `Stats LNH : ${ago(lastStats)}`;
   $('#meLabel').innerHTML = `<b>${esc(S.me.name)}</b>${S.me.isAdmin ? '<br>commissaire' : ''}`;
   const b = $('#tradeBadge'); b.hidden = !S.pendingTrades; b.textContent = S.pendingTrades || '';
+  $('#plusBadge').hidden = !S.pendingProtection;
 }
 async function boot(){
   try { await loadState(); } catch { showLogin(); return; }
@@ -279,12 +280,12 @@ function route(){
   const [, r = 'classement', arg] = location.hash.split('/');
   document.querySelectorAll('.tabbar a').forEach(a => a.classList.toggle('on', a.dataset.r === r ||
     (r === 'equipe' && a.dataset.r === (Number(arg) === S.me.teamId ? 'mon-equipe' : 'classement')) ||
-    (['liste','historique','commissaire','equipes'].includes(r) && a.dataset.r === 'plus') ||
+    (['liste','historique','commissaire','equipes','protection'].includes(r) && a.dataset.r === 'plus') ||
     (['offre','choix'].includes(r) && a.dataset.r === 'echanges')));
   clearInterval(liveTimer); liveTimer = null;
   window.scrollTo(0, 0);
   const views = { classement: vStandings, 'mon-equipe': () => vTeam(S.me.teamId), equipe: () => vTeam(arg), equipes: vTeams, direct: () => vLive(arg),
-                  echanges: vTrades, offre: () => vOffer(arg), choix: () => vPicks(arg),
+                  protection: () => vProtection(arg), echanges: vTrades, offre: () => vOffer(arg), choix: () => vPicks(arg),
                   joueurs: vPlayers, plus: vMore, liste: vWatchlist, historique: vMoves, commissaire: vAdmin };
   (views[r] || vStandings)();
 }
@@ -815,6 +816,108 @@ const savePick = run(async id => {
   toast('Choix mis à jour'); closeSheet(); vPicks(location.hash.split('/')[2]);
 });
 
+// ---------- Liste de protection ----------
+let PR = null;
+const vProtection = run(async (teamArg) => {
+  const D = await api('/api/protection' + (teamArg ? '?team=' + teamArg : ''));
+  const L = D.rules, mine = D.teamId === S.me.teamId || S.me.isAdmin;
+  PR = { D, prot: new Set(D.picks.filter(p => p.kind === 'P').map(p => p.player_id)), auto: new Set(D.picks.filter(p => p.kind === 'A').map(p => p.player_id)) };
+  const season = `${D.season.slice(0, 4)}-${D.season.slice(6)}`;
+  const statusTxt = { closed: 'Période fermée', open: `Ouverte${D.deadline ? ` jusqu'au ${D.deadline} à 21 h` : ''}`, revealed: 'Listes dévoilées', applied: 'Listes appliquées (joueurs non protégés libérés)' }[D.status];
+  const adminCard = S.me.isAdmin ? `<div class="card"><h3>Commissaire</h3>
+      <div class="row"><div><label class="f">Date limite de remise (21 h)</label><input type="date" id="prDeadline" value="${D.deadline || ''}"></div></div>
+      <div class="actions" style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn small" onclick="protAdmin('open')">${D.status === 'open' ? 'Mettre à jour la date' : 'Ouvrir la période'}</button>
+        <button class="btn small ghost" onclick="protAdmin('history')">Recalculer les recrues</button>
+        ${D.status === 'open' ? `<button class="btn small ghost" onclick="protAdmin('reveal')">Dévoiler les listes</button>` : ''}
+        ${D.status === 'revealed' ? `<button class="btn small danger" onclick="protAdmin('apply')">Appliquer (libérer les non-protégés)</button>` : ''}
+        ${D.status !== 'closed' ? `<button class="btn small ghost" onclick="protAdmin('close')">Fermer</button>` : ''}
+      </div>
+      <p class="muted">Historique LNH des joueurs (pour les recrues) : ${D.historyAt ? 'mis à jour ' + ago(D.historyAt) : 'jamais calculé'}.</p>
+      <div class="list">${D.submissions.map(t => `<div class="item" onclick="location.hash='#/protection/${t.id}'"><div class="grow"><div class="name">${esc(t.name)}</div>
+        <div class="meta">${t.submitted_at ? '✓ remise ' + ago(t.submitted_at) : '<span style="color:var(--red)">pas encore remise</span>'}</div></div>›</div>`).join('')}</div></div>` : '';
+
+  if (D.status === 'closed' || D.status === 'applied' || (D.status === 'revealed' && !teamArg)) {
+    const lists = D.lists ? S.teams.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr')).map(t => {
+      const l = D.lists.filter(x => x.team_id === t.id);
+      return l.length ? `<div class="card"><h3>${esc(t.name)}</h3>${l.map(x => `<div class="pl"><span><span class="pos pos-${x.pos}">${x.pos}</span> <b>${esc(x.name)}</b></span>
+        <span>${x.kind === 'A' ? '⚡ ' + esc(L.labels[x.category] || '') : '🛡️ protégé'}</span></div>`).join('')}</div>` : '';
+    }).join('') : '';
+    $('#view').innerHTML = `<h2 class="title">Listes de protection</h2><p class="muted">Saison ${season} · ${statusTxt}.</p>${adminCard}
+      ${lists || '<p class="muted">Le commissaire ouvre la période quelques semaines avant le repêchage (art. 4.2).</p>'}`;
+    return;
+  }
+  renderProtection(adminCard, statusTxt, season, mine);
+});
+function renderProtection(adminCard, statusTxt, season, mine){
+  const D = PR.D, L = D.rules;
+  const autoList = D.roster.filter(p => PR.auto.has(p.id));
+  const combo = assignAuto(autoList);
+  const rows = ['F','D','G'].map(pos => {
+    const list = D.roster.filter(p => p.pos === pos).sort((a, b) => (b.aav || 0) - (a.aav || 0));
+    return `<div class="card"><h3>${POS_LABEL[pos]}</h3><div class="list">${list.map(p => {
+      const isP = PR.prot.has(p.id), isA = PR.auto.has(p.id);
+      return `<div class="item" style="cursor:default;${isP ? 'background:#13261f' : isA ? 'background:#2b2512' : ''}">
+        <div class="grow"><div class="name">${esc(p.name)}</div>
+          <div class="meta">${esc(p.nhl_team || '')} · ${p.gp} PJ · <span class="aav">${money(p.aav)}</span>${p.cats.length ? ' · ' + p.cats.map(c => `<span class="tag pts">${c}</span>`).join('') : ''}
+          ${S.me.isAdmin ? ` <a class="link" style="font-size:11px" onclick="protOverride(${p.id})">⚙</a>` : ''}</div></div>
+        ${mine && D.status === 'open' ? `<button class="btn small ${isP ? '' : 'ghost'}" onclick="protToggle('prot',${p.id})">🛡️</button>
+        <button class="btn small ${isA ? '' : 'ghost'}" onclick="protToggle('auto',${p.id})" ${p.cats.length ? '' : 'disabled'}>⚡</button>` : (isP ? '🛡️' : isA ? '⚡' : '')}
+      </div>`; }).join('')}</div></div>`;
+  }).join('');
+  const nP = PR.prot.size, nA = PR.auto.size;
+  const problems = [];
+  if (nP > L.protected) problems.push(`Trop de joueurs protégés : ${nP}/${L.protected}`);
+  if (nA && !combo) problems.push('Combinaison automatique non permise (art. 4.3.4)');
+  $('#view').innerHTML = `<h2 class="title">Liste de protection</h2>
+    <p class="muted">Saison ${season} · ${statusTxt}. ${D.teamId !== S.me.teamId ? `Équipe : <b>${esc((team(D.teamId) || {}).name || '')}</b>.` : ''}
+      ${D.submittedAt ? `<br>✓ Liste remise ${ago(D.submittedAt)} (modifiable jusqu'à la date limite).` : ''}</p>
+    ${adminCard}
+    <div class="stats">
+      <div class="stat"><div class="l">🛡️ Protégés</div><div class="v" style="color:${nP > L.protected ? 'var(--red)' : 'inherit'}">${nP}/${L.protected}</div></div>
+      <div class="stat"><div class="l">⚡ Automatiques</div><div class="v" style="color:${nA && !combo ? 'var(--red)' : 'inherit'}">${nA}/${L.auto}</div></div>
+      <div class="stat"><div class="l">Libérés</div><div class="v">${D.roster.length - nP - nA}</div></div>
+    </div>
+    ${problems.length ? `<div class="issues">${problems.join('<br>')}</div>` : nA ? `<div class="okbox">Protections automatiques : ${autoList.map((p, i) => `${esc(p.name)} (${combo[i]})`).join(', ')}</div>` : ''}
+    <details class="card"><summary>Règles (art. 4.3)</summary><p class="muted">
+      <b>R</b> : recrue pendant la saison qui se termine · <b>GP</b> : attaquant/défenseur avec 39 matchs ou moins, gardien avec 20 ou moins ·
+      <b>R2</b> : recrue la saison précédente (année supplémentaire). Au plus 3 automatiques : 3 R, 2 R + 1 R2, 1 R + 2 GP, ou 1 R + 1 GP + 1 R2.
+      Recrue selon la LNH : moins de 26 ans au 15 septembre, jamais plus de 25 matchs en une saison, pas plus de 6 matchs dans chacune des deux saisons précédentes.</p></details>
+    ${rows}
+    ${mine && D.status === 'open' ? `<div class="row"><button class="btn ghost" onclick="protSave(false)">Enregistrer le brouillon</button>
+      <button class="btn" onclick="protSave(true)" ${problems.length ? 'disabled' : ''}>Remettre ma liste</button></div>` : ''}`;
+  window._prArgs = [adminCard, statusTxt, season, mine];
+}
+function assignAuto(list){
+  if (list.length > 3) return null;
+  const ok = a => { const n = c => a.filter(x => x === c).length; return n('R2') <= 1 && n('GP') <= 2 && n('GP') + n('R2') <= 2; };
+  const walk = (i, acc) => { if (i === list.length) return ok(acc) ? acc : null; for (const c of list[i].cats) { const r = walk(i + 1, [...acc, c]); if (r) return r; } return null; };
+  return walk(0, []);
+}
+function protToggle(which, id){
+  const set = which === 'prot' ? PR.prot : PR.auto, other = which === 'prot' ? PR.auto : PR.prot;
+  if (set.has(id)) set.delete(id); else { set.add(id); other.delete(id); }
+  renderProtection(...window._prArgs);
+}
+const protSave = run(async submit => {
+  if (submit && !confirm('Remettre ta liste de protection ? Tu pourras la modifier jusqu\'à la date limite.')) return;
+  await api('/api/protection', { teamId: PR.D.teamId, protected: [...PR.prot], auto: [...PR.auto], submit });
+  toast(submit ? 'Liste remise' : 'Brouillon enregistré'); await loadState(); vProtection(PR.D.teamId !== S.me.teamId ? PR.D.teamId : undefined);
+});
+const protAdmin = run(async action => {
+  const msgs = { reveal: 'Dévoiler toutes les listes à tous les poolers ?', apply: 'Appliquer les listes ? Tous les joueurs non protégés seront retirés des équipes et les choix de l\'année suivante seront créés.', close: 'Fermer la période ?' };
+  if (msgs[action] && !confirm(msgs[action])) return;
+  const r = await api(`/api/admin/protection/${action}`, action === 'open' ? { deadline: $('#prDeadline').value } : {});
+  toast(action === 'apply' ? `${r.released} joueurs libérés · ${r.picksCreated} choix ${r.picksYear} créés` : action === 'history' ? 'Calcul lancé (quelques minutes)' : 'Fait');
+  await loadState(); vProtection();
+});
+const protOverride = run(async id => {
+  const v = prompt('Admissibilité forcée pour ce joueur : vide = automatique, none = jamais, ou R, GP, R2 (séparés par des virgules)', '');
+  if (v === null) return;
+  await api('/api/admin/protection/override', { playerId: id, value: v });
+  vProtection(PR.D.teamId !== S.me.teamId ? PR.D.teamId : undefined);
+});
+
 // ---------- Plus ----------
 function vMore(){
   const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
@@ -822,6 +925,7 @@ function vMore(){
     <h2 class="title">Plus</h2>
     <div class="card"><div class="list">
       <div class="item" onclick="location.hash='#/liste'"><div class="grow"><div class="name">☆ Ma liste</div><div class="meta">Mes joueurs ciblés, en ordre de préférence</div></div>›</div>
+      <div class="item" onclick="location.hash='#/protection'"><div class="grow"><div class="name">🛡️ Liste de protection${S.pendingProtection ? ' <span class="tag" style="border-color:var(--red);color:var(--red)">à remettre</span>' : ''}</div><div class="meta">10 joueurs protégés + 3 automatiques (art. 4.2 et 4.3)</div></div>›</div>
       <div class="item" onclick="location.hash='#/equipes'"><div class="grow"><div class="name">Équipes</div><div class="meta">Tous les alignements et leur conformité</div></div>›</div>
       <div class="item" onclick="location.hash='#/historique'"><div class="grow"><div class="name">Historique des mouvements</div><div class="meta">Ajouts, libérations, échanges</div></div>›</div>
       ${S.me.isAdmin ? `<div class="item" onclick="location.hash='#/commissaire'"><div class="grow"><div class="name">Commissaire</div><div class="meta">Codes d'accès, import, échanges, réglages</div></div>›</div>` : ''}
