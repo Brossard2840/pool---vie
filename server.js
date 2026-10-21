@@ -345,6 +345,7 @@ app.post('/api/login', h(async (req, res) => {
   const t = rows[0];
   if (!t || !auth.checkCode(code, t.code_hash)) {
     a.n++; loginAttempts.set(ip, a);
+    console.warn(`Connexion refusée pour l'équipe ${JSON.stringify(teamId)} (essai ${a.n}/10).`);
     return res.status(401).json({ error: 'Code invalide' });
   }
   loginAttempts.delete(ip);

@@ -193,7 +193,10 @@ function statLine(p){
 async function api(path, body){
   const opts = body === undefined ? {} : { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) };
   const res = await fetch(path, opts);
-  if (res.status === 401 && !path.startsWith('/api/login')) { S = null; showLogin(); throw new Error('Connexion requise'); }
+  if (res.status === 401 && !path.startsWith('/api/login')) {
+    if (S) { S = null; showLogin(); }
+    throw new Error('Connexion requise (session non conservée)');
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Erreur ${res.status}`);
   return data;
@@ -227,17 +230,28 @@ async function showLogin(){
         <input id="lgCode" autocomplete="current-password" autocapitalize="characters" placeholder="ex. K7PM2Q">
         <div style="height:14px"></div>
         <button class="btn" style="width:100%" id="lgGo">Entrer</button>
+        <p id="lgErr" class="muted" style="color:var(--red);margin:10px 0 0" hidden></p>
         ${loadError ? `<p class="muted" style="color:var(--red)">Le serveur ne répond pas (${esc(loadError)}). Réessaie dans 30 secondes.</p>`
           : teamsCache.length ? '' : '<p class="muted">Aucune équipe n\'a encore de code. Le commissaire doit définir COMMISSAIRE_CODE dans Render.</p>'}
       </div>
       <p class="muted" style="text-align:center">Ton code t'est remis par le commissaire.</p>
     </div>`;
-  const go = run(async () => {
-    const v = $('#lgTeam').value, teamId = v === 'admin' ? 'admin' : Number(v);
-    await api('/api/login', { teamId, code: $('#lgCode').value });
-    localStorageSet('pav_team', String(teamId));
-    await boot();
-  });
+  // Les erreurs restent affichées sous le bouton (un message éphémère passe trop vite sur téléphone).
+  const showErr = msg => { const e = $('#lgErr'); if (e) { e.textContent = msg; e.hidden = !msg; } };
+  const go = async () => {
+    showErr(''); $('#lgGo').disabled = true; $('#lgGo').textContent = 'Connexion…';
+    try {
+      const v = $('#lgTeam').value, teamId = v === 'admin' ? 'admin' : Number(v);
+      await api('/api/login', { teamId, code: $('#lgCode').value });
+      localStorageSet('pav_team', String(teamId));
+      try { await loadState(); }
+      catch (e) { throw new Error(`Connecté, mais le chargement a échoué : ${e.message}. Si ça se répète, les témoins (cookies) sont peut-être bloqués dans ce navigateur.`); }
+      route();
+    } catch (e) {
+      showErr(e.message);
+      $('#lgGo').disabled = false; $('#lgGo').textContent = 'Entrer';
+    }
+  };
   $('#lgGo').onclick = go;
   $('#lgCode').onkeydown = e => { if (e.key === 'Enter') go(); };
 }
@@ -253,7 +267,7 @@ function renderChrome(){
   const b = $('#tradeBadge'); b.hidden = !S.pendingTrades; b.textContent = S.pendingTrades || '';
 }
 async function boot(){
-  try { await loadState(); } catch { return; }
+  try { await loadState(); } catch { showLogin(); return; }
   route();
 }
 
