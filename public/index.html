@@ -7,7 +7,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Pool à vie">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/logo.svg" type="image/svg+xml">
@@ -29,6 +29,8 @@
        padding:calc(10px + var(--safe-t)) 16px 10px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
   .brand{display:flex;align-items:center;gap:8px;min-width:0;}
   .brand .logo{width:34px;height:34px;flex:none;display:block;}
+  /* Application ouverte depuis l'écran d'accueil : un peu d'air sous la barre d'état (effet de flou d'iOS). */
+  @media (display-mode: standalone){ .top{padding-top:calc(16px + var(--safe-t));} }
   .brand h1{font-size:15px;letter-spacing:.05em;margin:0;font-weight:800;}
   .brand .sub{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .top .me{font-size:12px;color:var(--dim);text-align:right;white-space:nowrap;}
@@ -182,7 +184,7 @@
 <body>
 
 <header class="top" id="top" hidden>
-  <div class="brand"><img class="logo" src="/logo.svg" alt=""><div><h1>POOL À VIE</h1><div class="sub" id="updated">—</div></div></div>
+  <div class="brand"><img class="logo" src="/logo-mark.svg" alt=""><div><h1>POOL À VIE</h1><div class="sub" id="updated">—</div></div></div>
   <div style="display:flex;align-items:center;gap:12px">
     <a class="bell" href="#/notifications" aria-label="Notifications">🔔<span class="badge" id="bellBadge" hidden></span></a>
     <div class="me" id="meLabel"></div>
