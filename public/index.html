@@ -487,9 +487,9 @@ const openClaim = run(async id => {
   $('#sheetBody').innerHTML = `<h3>Réclamer ${esc(p.name)}</h3>
     <p class="muted">${esc(p.nhl_team || '')} · ${p.pos} · AAV <span class="aav">${p.aav ? moneyFull(p.aav) : 'inconnu'}</span></p>
     <label class="f">Choix abandonné (art. 5.4)</label>
-    ${O.forced ? `<div class="chip sel" style="display:inline-block;margin-bottom:4px">${esc(O.forced.label)}</div>
-        <p class="muted" style="margin-top:4px">Tu détiens ton propre choix de 1re ronde du prochain repêchage : c'est lui qui part.</p>`
-      : `<select id="clPick">${O.options.map(k => `<option value="${k.id}">${esc(k.label)}</option>`).join('')}</select>`}
+    <div class="chip sel" style="display:inline-block;margin-bottom:4px">${esc(O.forced.label)}</div>
+    <p class="muted" style="margin-top:4px">Ordre imposé : ton propre choix de 1re ronde d'abord, puis ceux acquis d'autres équipes (du plus ancien au plus récent).
+      ${O.queue.length > 1 ? `Ensuite : ${O.queue.slice(1).map(k => esc(k.label.replace('Choix ', ''))).join(' · ')}.` : ''}</p>
     <div style="height:10px"></div>
     <label class="f">Libérer un joueur en même temps (optionnel)</label>
     <select id="clRelease"><option value="">— Aucun —</option>${roster.map(r => `<option value="${r.id}">${r.pos} · ${esc(r.name)} · ${money(r.aav)}</option>`).join('')}</select>
@@ -503,7 +503,7 @@ const openClaim = run(async id => {
   };
   $('#clRelease').onchange = preview; preview();
   $('#clGo').onclick = run(async () => {
-    const pickId = O.forced ? O.forced.id : Number($('#clPick').value);
+    const pickId = O.forced.id;
     const releasePlayerId = Number($('#clRelease').value) || null;
     if (!confirm(`Réclamer ${p.name} et abandonner ce choix de 1re ronde ?`)) return;
     const r = await api('/api/claims', { playerId: p.id, pickId, releasePlayerId });

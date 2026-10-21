@@ -104,7 +104,7 @@ salariale et les positions des deux équipes après l'échange. La page **Choix 
 qui possède chaque choix et l'historique de leurs échanges. Date limite (art. 5.1) réglable.
 
 Agents libres (art. 5.4) : depuis la fiche d'un joueur libre, « Réclamer » abandonne un choix de
-1re ronde (obligatoirement son propre choix du prochain repêchage s'il le détient) et peut libérer
+1re ronde dans un ordre imposé (son propre choix d'abord, puis ceux acquis du plus ancien au plus récent) et peut libérer
 un joueur dans la même opération ; le maximum par position et le plafond sont vérifiés.
 
 ## Développement local
