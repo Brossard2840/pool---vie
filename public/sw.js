@@ -1,6 +1,6 @@
 // Service worker : rend l'application installable et garde la coquille en cache.
 // Les données (/api) ne sont jamais mises en cache : on veut toujours les stats à jour.
-const CACHE = 'pav-v18';
+const CACHE = 'pav-v19';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icons/icon-192-v2.png', '/logo.svg'];
 
 self.addEventListener('install', e => {
@@ -16,17 +16,31 @@ self.addEventListener('activate', e => {
     .then(() => self.clients.claim()));
 });
 
+// Nouvelle version reçue en arrière-plan : la page le demande une fois chargée (« pav-hello »).
+let newVersion = false;
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'pav-hello' && newVersion && e.source) e.source.postMessage({ type: 'pav-update' });
+});
+
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith('/api')) return;
   // Cache d'abord : l'application s'ouvre tout de suite, même si le serveur gratuit dort encore.
   // La nouvelle version est téléchargée en arrière-plan et sert à la prochaine ouverture.
   const key = e.request.mode === 'navigate' ? '/' : e.request;
-  const update = fetch(e.request).then(res => {
-    if (res.ok && res.headers.get('X-Pool-App')) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(key, copy)); }
-    return res;
-  });
   e.respondWith(caches.match(key).then(hit => {
+    const update = fetch(e.request).then(res => {
+      if (res.ok && res.headers.get('X-Pool-App')) {
+        const copy = res.clone(); caches.open(CACHE).then(c => c.put(key, copy));
+        // Page différente de celle en cache : on avise l'application qu'une nouvelle version est prête.
+        const was = hit && hit.headers.get('ETag'), now = res.headers.get('ETag');
+        if (key === '/' && was && now && was !== now) {
+          newVersion = true;
+          self.clients.matchAll({ type: 'window' }).then(list => list.forEach(c => c.postMessage({ type: 'pav-update' })));
+        }
+      }
+      return res;
+    });
     if (hit) { e.waitUntil(update.catch(() => {})); return hit; }
     return update.catch(() => caches.match('/'));
   }));

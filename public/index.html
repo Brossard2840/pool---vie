@@ -2735,6 +2735,25 @@ async function reloadApp(){
   location.reload();
 }
 
+// Nouvelle version de l'application : bandeau « Mettre à jour » (au lieu d'attendre la prochaine ouverture).
+function showUpdateBanner(){
+  if (document.getElementById('updBar')) return;
+  const el = document.createElement('div'); el.id = 'updBar'; el.className = 'banner';
+  el.style.cssText = 'position:fixed;left:10px;right:10px;bottom:calc(74px + var(--safe-b));z-index:65;max-width:540px;margin:0 auto';
+  el.innerHTML = '<div class="ico">✨</div><div><div class="tt">Nouvelle version de l\'application</div><div class="bd">Touche ici pour la mettre à jour.</div></div>';
+  el.onclick = () => reloadApp();
+  document.body.appendChild(el);
+}
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'pav-update') showUpdateBanner(); });
+  // La page vient d'ouvrir : le service worker a-t-il reçu une nouvelle version entre-temps ?
+  const hello = () => { if (navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({ type: 'pav-hello' }); };
+  setTimeout(hello, 2500); setTimeout(hello, 8000);
+  let hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController) showUpdateBanner(); hadController = true; });
+  // Au retour dans l'application, on vérifie s'il y a une mise à jour.
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {}); });
+}
 function urlB64(b64){ const p = '='.repeat((4 - b64.length % 4) % 4); const raw = atob((b64 + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...raw].map(c => c.charCodeAt(0))); }
 async function renderPush(N){
   const reg = await navigator.serviceWorker.ready;
