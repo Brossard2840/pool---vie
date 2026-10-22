@@ -3,6 +3,7 @@ const express = require('express');
 const { Pool } = require('pg');
 const crypto = require('crypto');
 const path = require('path');
+const fs = require('fs');
 const rules = require('./lib/rules');
 const nhl = require('./lib/nhl');
 const auth = require('./lib/auth');
@@ -272,7 +273,8 @@ async function refreshStats() {
       const result = { at: new Date().toISOString(), season, nhlPlayers: 0, linked: 0, unlinked: [] };
       await setConfig('last_stats_update', result.at);
       await setConfig('last_stats_result', JSON.stringify(result));
-      return result;
+      await applyKnownSalaries().catch(e => console.warn('Salaires de référence :', e.message));
+    return result;
     }
 
     const byKey = new Map();
@@ -331,6 +333,8 @@ async function refreshStats() {
     await setConfig('last_stats_result', JSON.stringify(result));
     console.log(`Stats mises à jour (${season}) : ${rows.length} joueurs LNH, ${linked} nouveau(x) lien(s), ` +
       `${result.unlinked.length} joueur(s) de pool sans fiche LNH${result.unlinked.length ? ' : ' + result.unlinked.join(', ') : ''}`);
+    // Nouveaux joueurs LNH au catalogue : salaire de référence s'ils n'en ont pas.
+    await applyKnownSalaries().catch(e => console.warn('Salaires de référence :', e.message));
     return result;
   })().finally(() => { refreshing = null; });
   return refreshing;
@@ -744,6 +748,34 @@ const block = createBlock(app, { pool, h, notify, injuryOf: p => injuries.of(p) 
 // Contrats : import en lot et échéances du 1er juillet (lib/contracts.js).
 const contracts = createContracts(admin, { pool, h, inTransaction, getConfig, setConfig, notify });
 
+// Salaires de référence (liste Fantrax des joueurs disponibles, data/salaires-reference.json) : donnent un salaire
+// aux joueurs qui n'en ont pas, y compris ceux qui apparaîtront plus tard dans les stats de la LNH.
+// Un salaire déjà enregistré (alignements, import de contrats, commissaire) n'est jamais remplacé.
+async function seedKnownSalaries() {
+  const file = path.join(__dirname, 'data', 'salaires-reference.json');
+  if (!fs.existsSync(file)) return;
+  const stamp = String(fs.statSync(file).size);
+  await pool.query(`CREATE TABLE IF NOT EXISTS known_salaries(name_key TEXT NOT NULL, team TEXT NOT NULL, pos TEXT, aav BIGINT NOT NULL, PRIMARY KEY (name_key, team))`);
+  if ((await getConfig('known_salaries_stamp')) !== stamp) {
+    const rows = JSON.parse(fs.readFileSync(file, 'utf8')).players.map(([name, team, pos, aav]) => ({ k: rules.normalizeName(name), t: team, p: pos, a: aav }));
+    await pool.query(`DELETE FROM known_salaries`);
+    await pool.query(`INSERT INTO known_salaries(name_key, team, pos, aav) SELECT k, t, p, a FROM json_to_recordset($1::json) AS r(k TEXT, t TEXT, p TEXT, a BIGINT) ON CONFLICT DO NOTHING`, [JSON.stringify(rows)]);
+    await setConfig('known_salaries_stamp', stamp);
+  }
+  await applyKnownSalaries();
+}
+async function applyKnownSalaries() {
+  // Même nom : l'entrée de la même équipe LNH d'abord, sinon l'entrée unique de ce nom.
+  const { rowCount } = await pool.query(`
+    UPDATE players p SET aav = ks.aav FROM (
+      SELECT DISTINCT ON (p2.id) p2.id, k.aav FROM players p2 JOIN known_salaries k ON k.name_key = p2.name_key
+      WHERE p2.aav IS NULL AND (k.team = p2.nhl_team OR (SELECT COUNT(*) FROM known_salaries k2 WHERE k2.name_key = p2.name_key) = 1)
+      ORDER BY p2.id, (k.team = p2.nhl_team) DESC) ks
+    WHERE p.id = ks.id`);
+  if (rowCount) console.log(`Salaires de référence : ${rowCount} joueur(s) sans salaire complété(s)`);
+  return rowCount;
+}
+
 // Dates de naissance de tous les joueurs de la LNH (une fois par semaine) : l'âge de chacun est toujours exact.
 async function refreshBirthDates(force = false) {
   const last = await getConfig('bios_at');
@@ -1007,6 +1039,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 initDb().then(() => {
+  seedKnownSalaries().catch(e => console.warn('Salaires de référence :', e.message));
   app.listen(PORT, () => console.log(`Pool à vie en écoute sur le port ${PORT}`));
   // Mise à jour régulière des stats tant que le serveur est éveillé.
   if (process.env.NO_AUTO_REFRESH !== '1') {

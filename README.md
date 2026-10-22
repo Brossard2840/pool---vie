@@ -224,6 +224,9 @@ et « → équipe » quand le choix a été échangé.
   identique, à vérifier (salaire inhabituel, non coché d'office), introuvable, ambigu. Liste des contrats à
   surveiller (échus ou fin inconnue) avec un bouton pour copier les noms. Chaque 1er juillet, les poolers et
   le commissaire sont avisés des contrats échus. La LNH ne publie pas les salaires : ils viennent de PuckPedia.
+- **Salaires de référence** (`data/salaires-reference.json`, tirés de la liste Fantrax des 8 504 joueurs
+  disponibles) : tout joueur sans salaire en reçoit un au démarrage et après chaque mise à jour des stats
+  (nouveaux joueurs LNH compris). Un salaire déjà enregistré n'est jamais remplacé.
 - **Âge** : calculé chaque jour à partir de la date de naissance officielle de tous les joueurs de la LNH
   (rapports « bios » de la LNH, relus chaque semaine).
 - **🔊 Sons** (Réglages → Sons) : de vrais enregistrements libres de droits (orgue à tuyaux joué note par note,
