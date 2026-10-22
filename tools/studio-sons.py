@@ -150,3 +150,27 @@ seq = [('G4', .13), ('C5', .13), ('E5', .13), (['G5', 'C5', 'G4'], .7)]
 mel, t = melody(seq)
 master(reverb(mix(t + 1.8, [(0, mel, 1.0), (t - .15, applause(1.6, 16), .55), (t - .1, trim(crowd, .5, 1.6, .2, .6), .35)]), 1.4, .2), 'rep-selection')
 master(trim(whistle_s, 0, 1.0, .002, .15), 'rep-temps-ecoule')
+
+# ---------- Orgue « Diane Bibeau » (hommage) : enchaînement original d'orgue d'aréna ----------
+def tremolo(x, rate=6.2, depth=.22):
+    t = np.arange(len(x)) / SR
+    return x * (1 - depth / 2 + depth / 2 * np.sin(2 * np.pi * rate * t))
+def arena_chord(notes, dur, gain=1.0):
+    # Un peu d'éclat : chaque note doublée à l'octave, comme les registres d'un orgue d'aréna.
+    sig = sum(organ(n, dur) + .45 * organ(n[:-1] + str(int(n[-1]) + 1), dur) for n in notes) / len(notes) ** 0.6
+    return sig * gain
+t, parts = 0.0, []
+for n in ['C4', 'E4', 'G4', 'C5', 'E5', 'G5']:                    # 1. arpège qui monte
+    parts.append((t, arena_chord([n], .11), .8)); t += .09
+t += .12
+for notes, d in [(['C4', 'E4', 'G4'], .24), (['C4', 'E4', 'G4'], .24), (None, .10),   # 2. « Let's go ! »
+                 (['D4', 'F4', 'A4'], .14), (['D4', 'F4', 'A4'], .14), (['E4', 'G4', 'C5'], .34)]:
+    if notes:
+        parts.append((t, arena_chord(notes, d), 1.0)); parts.append((t, drum, .5)); parts.append((t + .01, applause(.12, 60, seed=int(t * 100)), .45))
+    t += d
+t += .15
+for n in ['G4', 'G#4', 'A4', 'A#4', 'B4']:                         # 3. montée chromatique
+    parts.append((t, arena_chord([n], .12), .9)); t += .1
+parts.append((t, arena_chord(['C4', 'G4', 'C5', 'E5', 'G5'], 1.5), 1.15))  # 4. grand accord
+parts.append((t + .15, trim(crowd, 0, 2.6, .2, 1.0), .5)); parts.append((t + .1, applause(2.4, 14), .4))
+master(reverb(tremolo(mix(t + 3.0, parts)), 1.9, .26), 'orgue-bibeau')

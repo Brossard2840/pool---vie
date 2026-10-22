@@ -3,6 +3,8 @@ réverbération d'aréna (script de préparation : orgue joué note par note à 
 
 - Orgue à tuyaux, sifflet de l'arbitre, sirène à manivelle, cloches tubulaires, claves, mains, grosse caisse :
   Versilian Community Sample Library (VCSL), https://github.com/sgossner/VCSL — CC0
+- Orgue « Diane Bibeau » (orgue-bibeau) : hommage à l'organiste du Centre Bell ; air original joué sur
+  l'orgue à tuyaux VCSL. Ce n'est pas un enregistrement de Diane Bibeau.
 - « Boat Horn » par Alexander (orangefreesounds.com) — CC BY 4.0 (klaxon-but, paquebot, bateau-deux-coups)
 - « rocky_mtns_train_horn_moving » par polymorpheva (freesound.org) — CC0 (train)
 - « steam train horn 01 » par eliasheuninck (freesound.org) — CC BY 3.0 (locomotive-vapeur)
