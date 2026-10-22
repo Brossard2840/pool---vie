@@ -166,6 +166,15 @@ Onglet **Repêchage** (il remplace « En direct » pendant la préparation et le
 3. Repêchage en direct : même ordre à chaque ronde ; l'équipe au choix (ou le commissaire) choisit un
    joueur disponible. Une équipe à 23 joueurs a terminé (art. 4.5) : ses choix restants sont passés.
    Le commissaire peut annuler la dernière sélection, mettre en pause ou terminer.
+4. Minuteur : le commissaire choisit le temps par choix (2 min par défaut, ou sans minuteur) et
+   appuie sur « Lancer le repêchage ». Un compte à rebours reste en haut de l'écran ; la case au choix
+   est encadrée. Dans les 30 dernières secondes, il passe au rouge avec un tic-tac. Temps écoulé :
+   le choix est « passé » (orange) et c'est au suivant ; l'équipe peut le faire en retard quand elle
+   veut (ou le commissaire, en touchant la case). Sons : fanfare à chaque sélection, carillon au
+   changement de pooler (mélodie spéciale quand c'est ton tour), sirène au lancement. Le minuteur
+   tourne sur le serveur : tout le monde voit le même temps. Pause et reprise par le commissaire.
+5. 🧪 Simulation (bouton sous le tableau) : un repêchage pour pratiquer, sur ton téléphone seulement,
+   rien n'est enregistré. Tu choisis pour ton équipe ; les autres choisissent toutes seules.
 Le tableau montre les rondes en lignes et les équipes en colonnes : le joueur repêché dans chaque case,
 et « → équipe » quand le choix a été échangé.
 

@@ -160,7 +160,24 @@
   table.db td b{display:block;color:var(--text);font-size:12px;line-height:1.2;}
   table.db td small{display:block;color:var(--dim);}
   table.db td .own{display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;background:#13261f;color:#9fd8bf;font-weight:700;}
-  table.db td.mine{background:#141d2c;} table.db td.cur{background:#2b2512;box-shadow:inset 0 0 0 2px var(--gold);}
+  table.db td.mine{background:#141d2c;} table.db td.cur{background:#2b2512;box-shadow:inset 0 0 0 3px var(--gold);animation:curglow 1.2s ease-in-out infinite;}
+  table.db td.cur.red{background:#3a1616;box-shadow:inset 0 0 0 3px #ff5a4f;}
+  table.db td.passed{background:#2a1d10;} table.db td.passed small{color:#f0a35a;font-weight:700;}
+  @keyframes curglow{50%{box-shadow:inset 0 0 0 3px var(--gold),0 0 14px rgba(201,162,75,.55);}}
+  .dclock{position:sticky;top:var(--toph,64px);z-index:15;display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;
+    background:#2b2512;border:1px solid var(--gold);border-radius:14px;padding:10px 12px 12px;margin:0 0 12px;box-shadow:0 6px 18px rgba(0,0,0,.35);}
+  .dclock .k{font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--gold);text-transform:uppercase;}
+  .dclock .tm{font-size:20px;font-weight:800;line-height:1.2;}
+  .dclock .sub{font-size:12px;color:var(--dim);}
+  .dclock .time{font-variant-numeric:tabular-nums;font-size:40px;font-weight:900;letter-spacing:-.02em;text-align:right;line-height:1;}
+  .dclock .snd{background:none;border:0;font-size:18px;padding:2px 0 0;color:var(--dim);text-align:right;width:100%;}
+  .dclock .bar{grid-column:1/-1;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:6px;}
+  .dclock .bar i{display:block;height:100%;background:var(--gold);transition:width .2s linear;}
+  .dclock.red{background:#3a1212;border-color:#ff5a4f;animation:redpulse 1s ease-in-out infinite;}
+  .dclock.red .time{color:#ff6b5f;} .dclock.red .bar i{background:#ff5a4f;} .dclock.red .k{color:#ff8a80;}
+  .dclock.paused .time{color:var(--dim);} .dclock.mine{border-width:2px;}
+  @keyframes redpulse{50%{box-shadow:0 0 0 4px rgba(255,90,79,.25),0 6px 18px rgba(0,0,0,.35);}}
+  .simbar{background:#16233a;border:1px dashed #8fb4d6;color:#b5d3ee;border-radius:10px;padding:8px 10px;font-size:13px;margin-bottom:10px;}
   table.db td.gone{opacity:.5;}
   .clock{background:#2b2512;border:1px solid var(--gold);border-radius:12px;padding:12px;margin-bottom:12px;}
   .lot{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #1a2938;font-size:15px;}
@@ -365,12 +382,13 @@ function route(){
   const [, r = 'classement', arg] = location.hash.split('/');
   document.querySelectorAll('.tabbar a').forEach(a => a.classList.toggle('on', a.dataset.r === r ||
     (r === 'equipe' && a.dataset.r === (Number(arg) === S.me.teamId ? 'mon-equipe' : 'classement')) ||
-    (['liste','historique','commissaire','equipes','protection','projections','projection','mur','trophees','temple'].includes(r) && a.dataset.r === 'plus') ||
+    (['liste','historique','commissaire','equipes','protection','projections','projection','mur','trophees','temple','simulation'].includes(r) && a.dataset.r === 'plus') ||
     (['offre','choix','echange','bloc','marche'].includes(r) && a.dataset.r === 'echanges')));
   clearInterval(liveTimer); liveTimer = null; clearInterval(draftTimer); draftTimer = null;
+  clearInterval(DCK.timer); DCK.timer = null; if (SIM) { clearTimeout(SIM.bot); SIM = null; }
   window.scrollTo(0, 0);
   const views = { classement: vStandings, 'mon-equipe': () => neutral() ? vTeams() : vTeam(S.me.teamId), equipe: () => vTeam(arg), equipes: vTeams, direct: () => vLive(arg),
-                  repechage: () => vDraft(arg), protection: () => vProtection(arg), echanges: vTrades, echange: () => vTradeOne(arg), mur: vWall, marche: vBlock, bloc: vBlock, trophees: vAwards, temple: vHall, projections: vProjections, projection: () => vProjection(arg), notifications: vNotifications, offre: () => vOffer(arg), choix: () => vPicks(arg),
+                  repechage: () => vDraft(arg), simulation: vDraftSim, protection: () => vProtection(arg), echanges: vTrades, echange: () => vTradeOne(arg), mur: vWall, marche: vBlock, bloc: vBlock, trophees: vAwards, temple: vHall, projections: vProjections, projection: () => vProjection(arg), notifications: vNotifications, offre: () => vOffer(arg), choix: () => vPicks(arg),
                   joueurs: vPlayers, plus: vMore, liste: vWatchlist, historique: vMoves, commissaire: vAdmin };
   (views[r] || vStandings)();
 }
@@ -1215,12 +1233,120 @@ const vDraft = run(async (yearArg) => {
   if (!D.year) { $('#view').innerHTML = '<h2 class="title">Repêchage</h2><p class="muted">Aucun choix de repêchage pour l\'instant.</p>'; return; }
   if (!lotteryAnim) renderDraft();
   if (!draftTimer && D.status === 'live') draftTimer = setInterval(() => {
-    if (document.hidden || !location.hash.startsWith('#/repechage') || $('#sheet').classList.contains('open')) return;
-    api('/api/draft?year=' + DR.year).then(x => { DR = x; renderDraft(); }).catch(() => {});
-  }, 6000);
+    if (document.hidden || !location.hash.startsWith('#/repechage')) return;
+    api('/api/draft?year=' + DR.year).then(x => {
+      const prev = DR; DR = x; draftEvents(prev, x, S.me.teamId);
+      // On ne redessine la page que si quelque chose a changé (et pas pendant qu'on choisit un joueur) ;
+      // sinon, seul le minuteur avance.
+      const sig = d => JSON.stringify({ ...d, clock: { ...d.clock, serverNow: 0 } });
+      if ($('#sheet').classList.contains('open') || sig(prev) === sig(x)) draftClock(x); else renderDraft();
+    }).catch(() => {});
+  }, 2000);
 });
+
+// ---------- Minuteur du repêchage (réel et simulation) ----------
+// DCK.D : le repêchage affiché ; le temps restant se calcule à partir de l'échéance (heure du serveur).
+const DCK = { D: null, offset: 0, lastSec: null, timer: null };
+const redAt = c => Math.min(30, c.seconds / 4);
+function clockLeft(D){
+  const c = D && D.clock;
+  if (!c || !D.current || !c.seconds) return null;
+  if (c.paused) return c.left;
+  if (!c.deadline) return c.seconds;
+  return Math.max(0, (Date.parse(c.deadline) - Date.now() - DCK.offset) / 1000);
+}
+function draftClock(D){
+  DCK.D = D;
+  DCK.offset = D.clock && D.clock.serverNow && !D.sim ? Date.parse(D.clock.serverNow) - Date.now() : 0;
+  if (!DCK.timer) DCK.timer = setInterval(draftClockTick, 200);
+  draftClockTick();
+}
+const mmss = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+function draftClockTick(){
+  const D = DCK.D, left = clockLeft(D);
+  const box = $('#dclock'), mini = $('#dcMini');
+  if (left === null || (!box && !mini)) return;
+  const sec = Math.ceil(left), red = !D.clock.paused && left <= redAt(D.clock);
+  for (const el of [$('#dcTime'), mini]) if (el) el.textContent = D.clock.paused ? '⏸ ' + mmss(sec) : mmss(sec);
+  if (mini) mini.style.color = red ? '#ff6b5f' : '';
+  const bar = $('#dcBar'); if (bar) bar.style.width = Math.max(0, Math.min(100, left / D.clock.seconds * 100)) + '%';
+  if (box) { box.classList.toggle('red', red); box.classList.toggle('paused', !!D.clock.paused); }
+  const cell = document.querySelector('table.db td.cur'); if (cell) cell.classList.toggle('red', red);
+  // Tic-tac chaque seconde dans la zone rouge.
+  if (red && sec !== DCK.lastSec && sec > 0) draftSound(sec % 2 ? 'tick' : 'tock');
+  if (D.sim && left <= 0 && !D.clock.paused) simAdvance(null);
+  DCK.lastSec = sec;
+}
+function clockBanner(D, mineId){
+  const cur = D.picks.find(p => p.id === D.current); if (!cur) return '';
+  const next = D.picks.find(p => !p.player && !p.used && !p.passed && !p.skipped && p.overall > cur.overall);
+  const mine = cur.owner_team_id === mineId;
+  const on = localStorageGet('pav_draft_sound') !== 'off';
+  return `<div class="dclock ${mine ? 'mine' : ''}" id="dclock">
+    <div><div class="k">${mine ? '⭐ À TON TOUR' : 'Au choix'} · ronde ${cur.round} · choix #${cur.overall}</div>
+      <div class="tm">${esc(cur.owner_team)}${cur.owner_team_id !== cur.original_team_id ? ` <span class="sub">(choix de ${esc(cur.original_team)})</span>` : ''}</div>
+      <div class="sub">${next ? 'Ensuite : ' + esc(next.owner_team) : 'Dernier choix'}</div></div>
+    <div><div class="time" id="dcTime">${D.clock && D.clock.seconds ? mmss(D.clock.seconds) : '∞'}</div>
+      <button class="snd" onclick="toggleDraftSound(this)">${on ? '🔊' : '🔇'}</button></div>
+    ${D.clock && D.clock.seconds ? '<div class="bar"><i id="dcBar"></i></div>' : ''}</div>`;
+}
+function toggleDraftSound(btn){
+  const off = localStorageGet('pav_draft_sound') !== 'off';
+  localStorageSet('pav_draft_sound', off ? 'off' : 'on'); btn.textContent = off ? '🔇' : '🔊';
+  if (!off) draftSound('next');
+}
+// Sons du repêchage, synthétisés (aucun fichier à télécharger).
+function draftSound(kind){
+  if (!audioCtx || localStorageGet('pav_draft_sound') === 'off') return;
+  const t0 = audioCtx.currentTime + .01, out = audioCtx.createDynamicsCompressor(); out.connect(audioCtx.destination);
+  const tone = (f, at, dur, type = 'sine', vol = .2) => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(0, t0 + at); g.gain.linearRampToValueAtTime(vol, t0 + at + .008); g.gain.exponentialRampToValueAtTime(.0001, t0 + at + dur);
+    o.connect(g); g.connect(out); o.start(t0 + at); o.stop(t0 + at + dur + .05);
+  };
+  const noise = (at, dur, vol, freq) => {
+    const n = audioCtx.createBufferSource(), g = audioCtx.createGain(), bp = audioCtx.createBiquadFilter();
+    n.buffer = noiseBuffer(dur + .1); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = .7;
+    g.gain.setValueAtTime(0, t0 + at); g.gain.linearRampToValueAtTime(vol, t0 + at + .25); g.gain.exponentialRampToValueAtTime(.0001, t0 + at + dur);
+    n.connect(bp); bp.connect(g); g.connect(out); n.start(t0 + at); n.stop(t0 + at + dur + .1);
+  };
+  if (kind === 'tick') { tone(2400, 0, .035, 'square', .2); tone(1200, 0, .06, 'triangle', .3); }
+  else if (kind === 'tock') { tone(1700, 0, .035, 'square', .18); tone(850, 0, .06, 'triangle', .3); }
+  else if (kind === 'next') { for (const [f, a] of [[988, 0], [784, .32]]) { tone(f, a, .9, 'sine', .22); tone(f * 2, a, .4, 'sine', .05); } }
+  else if (kind === 'mine') {
+    [659, 784, 988, 1319].forEach((f, i) => tone(f, i * .11, .35, 'triangle', .2));
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  }
+  else if (kind === 'pick') {
+    // « Ta-da ! » : arpège de cuivres + foule qui applaudit.
+    [523, 659, 784].forEach((f, i) => { tone(f, i * .12, .25, 'sawtooth', .07); tone(f, i * .12, .25, 'triangle', .12); });
+    for (const f of [523, 659, 784, 1047]) { tone(f, .38, 1.1, 'sawtooth', .05); tone(f, .38, 1.1, 'triangle', .09); }
+    noise(.3, 1.8, .18, 1400);
+  }
+  else if (kind === 'buzz') { for (const f of [180, 182, 360]) tone(f, 0, 1.1, 'square', .07); }
+  else if (kind === 'start') playSynth(HORNS[hornChoice()] && !HORNS[hornChoice()].sweep ? HORNS[hornChoice()] : HORNS.original);
+}
+// Compare deux états du repêchage pour jouer les sons et annoncer les sélections.
+function draftEvents(prev, next, mineId){
+  if (!prev || !next || prev.year !== next.year) return;
+  if (prev.status !== 'live' && next.status === 'live') { draftSound('start'); return; }
+  const was = id => prev.picks.find(x => x.id === id) || {};
+  const picked = next.picks.filter(p => p.player && !was(p.id).player);
+  const passed = next.picks.filter(p => p.passed && !was(p.id).passed);
+  for (const p of picked) toast(`🎯 #${p.overall} ${p.owner_team} : ${p.player.name}`);
+  if (picked.length) draftSound('pick'); else if (passed.length) { draftSound('buzz'); toast(`⏱️ Temps écoulé pour ${passed[0].owner_team}`); }
+  if (next.current && next.current !== prev.current) {
+    const cur = next.picks.find(p => p.id === next.current);
+    setTimeout(() => draftSound(cur && cur.owner_team_id === mineId ? 'mine' : 'next'), picked.length || passed.length ? 1400 : 0);
+    setTimeout(scrollToCurrent, 50);
+  }
+}
+function scrollToCurrent(){
+  const cell = document.querySelector('table.db td.cur'), wrap = document.querySelector('.boardwrap');
+  if (cell && wrap) wrap.scrollTo({ left: Math.max(0, cell.offsetLeft - wrap.clientWidth / 2 + cell.offsetWidth / 2), top: Math.max(0, cell.offsetTop - 60), behavior: 'smooth' });
+}
 function shortName(n){ return n.length > 12 ? n.slice(0, 11) + '…' : n; }
-function draftBoard(D){
+function draftBoard(D, mineId = S.me.teamId){
   const cur = D.picks.find(p => p.id === D.current);
   const head = D.order.map((t, i) => `<th title="${esc(t.name)}">${i + 1}. ${esc(shortName(t.name))}</th>`).join('');
   const rows = [];
@@ -1229,12 +1355,13 @@ function draftBoard(D){
       const p = D.picks.find(x => x.round === r && x.original_team_id === t.id);
       if (!p) return '<td></td>';
       const traded = p.owner_team_id !== p.original_team_id;
-      const cls = [p.id === D.current ? 'cur' : '', p.owner_team_id === S.me.teamId ? 'mine' : '', (p.used && !p.player) || p.skipped ? 'gone' : ''].join(' ');
+      const cls = [p.id === D.current ? 'cur' : '', p.owner_team_id === mineId ? 'mine' : '', (p.used && !p.player) || p.skipped ? 'gone' : '', p.passed ? 'passed' : ''].join(' ');
       const body = p.player ? `<b>${esc(p.player.name)}</b><small>${p.player.pos} · ${esc(p.player.nhl_team || '')}</small>`
         : p.used ? `<small>${esc(p.note || 'utilisé')}</small>`
+        : p.passed ? '<small>⏱️ passé</small>'
         : p.skipped ? '<small>équipe complète</small>'
         : p.id === D.current ? '<small style="color:var(--gold);font-weight:700">⏳ au choix</small>' : `<small>#${p.overall}</small>`;
-      return `<td class="${cls}" title="Choix #${p.overall}">${body}${traded ? `<span class="own">→ ${esc(shortName(p.owner_team))}</span>` : ''}</td>`;
+      return `<td class="${cls}" title="Choix #${p.overall}" ${p.passed && S.me.isAdmin && !D.sim ? `onclick="openDraftPicker(${p.id})"` : ''}>${body}${traded ? `<span class="own">→ ${esc(shortName(p.owner_team))}</span>` : ''}</td>`;
     }).join('');
     rows.push(`<tr><th class="r">R${r}</th>${cells}</tr>`);
   }
@@ -1245,6 +1372,8 @@ function renderDraft(){
   const cur = D.picks.find(p => p.id === D.current);
   const statusTxt = { setup: 'en préparation', live: 'en cours', done: 'terminé' }[D.status] || '';
   const mineOnClock = cur && (cur.owner_team_id === S.me.teamId);
+  const clockSel = (id, val) => `<select id="${id}" style="width:auto">${[[0, 'Sans minuteur'], [30, '30 s'], [60, '1 min'], [90, '1 min 30'], [120, '2 min'], [180, '3 min'], [300, '5 min']]
+    .map(([v, l]) => `<option value="${v}" ${v === val ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
   // Loterie
   let lottery = '';
   if (D.status === 'setup') {
@@ -1267,22 +1396,42 @@ function renderDraft(){
         <div class="grow"><div class="name">${esc(t.name)}</div><div class="meta">${t.size} joueur(s) · ${Math.max(0, D.rosterFull - t.size)} à repêcher</div></div>
         ${A ? `<button class="btn small ghost" onclick="moveOrder(${i},-1)" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn small ghost" onclick="moveOrder(${i},1)" ${i === D.order.length - 1 ? 'disabled' : ''}>↓</button>` : ''}</div>`).join('')}</div>
       <p class="muted">Choix 1 à 5 : loterie. À partir du 6e : selon les séries puis la saison précédente, le champion repêche dernier. Même ordre à chaque ronde.</p>
-      ${A ? `<button class="btn" style="width:100%" onclick="draftStart(false)">▶ Commencer le repêchage</button>` : ''}</div>` : '';
-  const clock = D.status === 'live' ? (cur ? `<div class="clock"><div class="muted" style="color:var(--gold)">AU CHOIX · ronde ${cur.round}, choix #${cur.overall}</div>
-      <div style="font-size:20px;font-weight:800;margin:4px 0">${esc(cur.owner_team)}${cur.owner_team_id !== cur.original_team_id ? ` <span class="muted" style="font-size:13px">(choix de ${esc(cur.original_team)})</span>` : ''}</div>
-      ${mineOnClock || A ? `<button class="btn" style="width:100%" onclick="openDraftPicker()">${mineOnClock ? 'Faire mon choix' : 'Choisir pour ' + esc(cur.owner_team)}</button>` : '<div class="muted">La page se met à jour toute seule.</div>'}
-      ${A ? `<div class="row" style="margin-top:8px"><button class="btn small ghost" onclick="draftUndo()">↶ Annuler la dernière sélection</button><button class="btn small ghost" onclick="draftStart(true)">⏸ Pause</button></div>` : ''}</div>`
+      ${A ? `<div class="row" style="align-items:center;gap:8px;margin-bottom:8px"><span class="muted">Temps par choix</span>${clockSel('dcSec', D.clock ? D.clock.seconds : 120)}</div>
+        <button class="btn" style="width:100%" onclick="draftStart(false)">▶ Lancer le repêchage</button>` : ''}</div>` : '';
+  const myLate = D.picks.filter(p => p.passed && p.owner_team_id === S.me.teamId);
+  const paused = D.clock && D.clock.paused;
+  const clock = D.status === 'live' ? (cur ? `${clockBanner(D, S.me.teamId)}
+      ${mineOnClock || A ? `<button class="btn" style="width:100%;margin-bottom:10px" onclick="openDraftPicker()">${mineOnClock ? '🎯 Faire mon choix' : 'Choisir pour ' + esc(cur.owner_team)}</button>` : ''}
+      ${myLate.length ? `<div class="issues" style="background:#2a1d10;border-color:#6b4a1e;color:#f0a35a">⏱️ Ton choix #${myLate.map(p => p.overall).join(', #')} est passé (temps écoulé). Tu peux le faire en retard, quand tu veux.
+        <button class="btn small" style="display:block;margin-top:8px" onclick="openDraftPicker(${myLate[0].id})">Faire mon choix en retard</button></div>` : ''}
+      ${A ? `<div class="card"><h3>Commissaire</h3><div class="row" style="align-items:center;gap:8px;flex-wrap:wrap">
+          <button class="btn small" onclick="draftPause(${paused ? 'false' : 'true'})">${paused ? '▶ Reprendre le minuteur' : '⏸ Pause du minuteur'}</button>
+          <span class="muted">Temps par choix</span>${clockSel('dcSec', D.clock ? D.clock.seconds : 120)}</div>
+        <div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn small ghost" onclick="draftUndo()">↶ Annuler la dernière sélection</button><button class="btn small ghost" onclick="draftStart(true)">Retour en préparation</button></div>
+        <p class="muted" style="font-size:12px">Un choix passé (orange) : touche sa case pour le faire au nom de l'équipe.</p></div>` : ''}`
       : `<div class="okbox">Toutes les équipes sont complètes (23 joueurs).${A ? ' <a class="link" onclick="draftFinish()">Terminer le repêchage</a>' : ''}</div>`) : '';
   const last = D.picks.filter(p => p.player && p.picked_at).sort((a, b) => b.picked_at.localeCompare(a.picked_at)).slice(0, 5);
+  const bw = document.querySelector('.boardwrap'), keep = bw ? [bw.scrollLeft, bw.scrollTop] : null;
   $('#view').innerHTML = `<h2 class="title">Repêchage ${D.year} <span class="pill ${D.status === 'live' ? 'wait' : D.status === 'done' ? 'ok' : ''}" style="font-size:12px;vertical-align:4px">${statusTxt}</span></h2>
     ${D.years.length > 1 ? `<div class="seg">${D.years.map(y => `<button class="${y === D.year ? 'on' : ''}" onclick="location.hash='#/repechage/${y}'">${y}</button>`).join('')}</div>` : ''}
     ${clock}${lottery}
     <h3 class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:6px 0 8px">Tableau des choix · rondes 1 à ${D.rounds}</h3>
     ${draftBoard(D)}
-    <p class="muted">En vert « → équipe » : le choix appartient maintenant à une autre équipe. Glisse le tableau de côté pour voir toutes les équipes.</p>
+    <p class="muted">En vert « → équipe » : le choix appartient maintenant à une autre équipe. En orange : choix passé (temps écoulé), à faire en retard. Glisse le tableau de côté pour voir toutes les équipes.</p>
+    <button class="btn ghost" style="width:100%;margin-bottom:12px" onclick="location.hash='#/simulation'">🧪 Simuler un repêchage (pour pratiquer)</button>
     ${last.length ? `<div class="card"><h3>Dernières sélections</h3>${last.map(p => `<div class="pl"><span>#${p.overall} <b>${esc(p.player.name)}</b> (${p.player.pos})</span><span>${esc(p.owner_team)}</span></div>`).join('')}</div>` : ''}
     ${orderCard}`;
+  document.documentElement.style.setProperty('--toph', ($('#top').offsetHeight || 64) + 'px');
+  const bw2 = document.querySelector('.boardwrap'); if (bw2 && keep) [bw2.scrollLeft, bw2.scrollTop] = keep;
+  const sel = $('#dcSec'); if (sel && A) sel.onchange = () => draftSetClock(Number(sel.value));
+  if (D.status === 'live') { draftClock(D); if (DCK.firstScroll !== D.current) { DCK.firstScroll = D.current; setTimeout(scrollToCurrent, 50); } }
 }
+const draftSetClock = run(async sec => {
+  await api('/api/admin/draft/settings', { year: DR.year, clockSeconds: sec }); toast(sec ? `Minuteur : ${mmss(sec)} par choix` : 'Sans minuteur'); vDraft(DR.year);
+});
+const draftPause = run(async pause => {
+  await api('/api/admin/draft/start', { year: DR.year, [pause ? 'pause' : 'resume']: true }); vDraft(DR.year);
+});
 const saveWeights = run(async () => {
   const weights = [...document.querySelectorAll('.lotPct')].map(i => Number(i.value) || 0);
   await api('/api/admin/draft/settings', { year: DR.year, weights }); toast('Pourcentages enregistrés'); vDraft(DR.year);
@@ -1314,8 +1463,12 @@ const resetDraftOrder = run(async () => {
   await api('/api/admin/draft/settings', { year: DR.year, resetOrder: true }); vDraft(DR.year);
 });
 const draftStart = run(async stop => {
-  if (!confirm(stop ? 'Mettre le repêchage en pause ?' : 'Commencer le repêchage ? Les poolers pourront faire leurs choix à leur tour.')) return;
-  await api('/api/admin/draft/start', { year: DR.year, stop }); await loadState(); vDraft(DR.year);
+  if (!confirm(stop ? 'Revenir en préparation ? Le minuteur s\'arrête et personne ne peut choisir.' : 'Lancer le repêchage ? Le minuteur du premier choix part tout de suite.')) return;
+  const sel = $('#dcSec');
+  if (!stop && sel) await api('/api/admin/draft/settings', { year: DR.year, clockSeconds: Number(sel.value) });
+  await api('/api/admin/draft/start', { year: DR.year, stop });
+  if (!stop) draftSound('start');
+  await loadState(); vDraft(DR.year);
 });
 const draftUndo = run(async () => {
   if (!confirm('Annuler la dernière sélection ?')) return;
@@ -1325,12 +1478,119 @@ const draftFinish = run(async () => {
   if (!confirm('Terminer le repêchage ? Les choix restants seront marqués non utilisés.')) return;
   await api('/api/admin/draft/finish', { year: DR.year }); await loadState(); vDraft(DR.year);
 });
+// ---------- Simulation du repêchage (rien n'est enregistré) ----------
+// Mêmes écrans, minuteur et sons que le vrai repêchage. Tu contrôles une équipe ; les autres choisissent
+// toutes seules (vite, parfois à la dernière seconde, parfois trop tard pour montrer un choix passé).
+let SIM = null;
+const vDraftSim = run(async () => {
+  const D = await api('/api/draft');
+  if (!D.year) { $('#view').innerHTML = '<h2 class="title">🧪 Simulation</h2><p class="muted">Aucun choix de repêchage pour l\'instant.</p>'; return; }
+  const teams = D.order.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  const meDefault = S.me.teamId || teams[0].id;
+  $('#view').innerHTML = `<h2 class="title">🧪 Simulation du repêchage</h2>
+    <div class="simbar">Pour pratiquer : rien n'est enregistré, aucune notification n'est envoyée.</div>
+    <div class="card"><h3>Réglages</h3>
+      <label class="f">Mon équipe (je fais ses choix ; les autres choisissent toutes seules)</label>
+      <select id="smTeam">${teams.map(t => `<option value="${t.id}" ${t.id === meDefault ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>
+      <div class="row" style="margin-top:8px"><div><label class="f">Temps par choix</label><select id="smSec">${[[120, '2 min (comme le vrai)'], [60, '1 min'], [30, '30 s'], [15, '15 s (accéléré)']].map(([v, l]) => `<option value="${v}" ${v === 30 ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <div><label class="f">Rondes</label><select id="smRounds">${[1, 2, 3, 5].map(r => `<option ${r === 2 ? 'selected' : ''}>${r}</option>`).join('')}</select></div></div>
+      <p class="muted">Monte le son 🔊 : tic-tac dans les dernières secondes, carillon au changement de pooler, fanfare à chaque sélection.</p>
+      <button class="btn" style="width:100%" onclick="simStart()">▶ Lancer la simulation</button></div>`;
+  SIM = { base: D };
+});
+const simStart = run(async () => {
+  const base = SIM.base, me = Number($('#smTeam').value), seconds = Number($('#smSec').value), rounds = Number($('#smRounds').value);
+  const avail = await api('/api/players?status=available&sort=pts&limit=200');
+  const name = id => (base.order.find(t => t.id === id) || {}).name || '?';
+  const n = base.order.length, picks = [];
+  for (let r = 1; r <= rounds; r++) base.order.forEach((t, i) => {
+    const real = base.picks.find(p => p.round === r && p.original_team_id === t.id);
+    const owner = real ? real.owner_team_id : t.id;
+    picks.push({ id: r * 1000 + i, round: r, position: i + 1, overall: (r - 1) * n + i + 1, original_team_id: t.id, original_team: t.name,
+      owner_team_id: owner, owner_team: name(owner), player: null, passed: false, used: false });
+  });
+  SIM = { me, avail, D: { sim: true, year: base.year, status: 'live', order: base.order, rounds, picks, current: null, clock: { seconds } } };
+  draftSound('start');
+  simNext(true);
+});
+function simNext(first){
+  const D = SIM.D, cur = D.picks.find(p => !p.player && !p.passed);
+  D.current = cur ? cur.id : null;
+  D.clock = { seconds: D.clock.seconds, deadline: cur ? new Date(Date.now() + D.clock.seconds * 1000).toISOString() : null };
+  clearTimeout(SIM.bot);
+  if (!cur) { renderSim(); setTimeout(() => draftSound('start'), 1500); toast('🏁 Simulation terminée !'); return; }
+  setTimeout(() => draftSound(cur.owner_team_id === SIM.me ? 'mine' : 'next'), first ? 2600 : 1400);
+  if (cur.owner_team_id !== SIM.me) {
+    // Un robot : souvent vite, parfois dans la zone rouge, parfois trop tard.
+    const sec = D.clock.seconds, red = redAt(D.clock), x = Math.random();
+    const wait = x < .6 ? 2 + Math.random() * Math.min(5, sec / 3) : x < .88 ? sec - red + 1 + Math.random() * (red - 2) : null;
+    if (wait !== null) SIM.bot = setTimeout(() => {
+      const top = SIM.avail.slice(0, 4);
+      simAdvance(top[Math.floor(Math.random() * Math.min(top.length, 3))]);
+    }, wait * 1000);
+  }
+  renderSim();
+  setTimeout(scrollToCurrent, 50);
+}
+function simAdvance(player){
+  if (!SIM || !SIM.D.current) return;
+  const D = SIM.D, cur = D.picks.find(p => p.id === D.current);
+  clearTimeout(SIM.bot); closeSheet();
+  if (player) {
+    cur.player = { id: player.id, name: player.name, pos: player.pos, nhl_team: player.nhl_team }; cur.picked_at = new Date().toISOString();
+    SIM.avail = SIM.avail.filter(p => p.id !== player.id);
+    draftSound('pick'); toast(`🎯 #${cur.overall} ${cur.owner_team} : ${player.name}`);
+  } else { cur.passed = true; draftSound('buzz'); toast(`⏱️ Temps écoulé pour ${cur.owner_team}`); }
+  D.current = null; DCK.lastSec = null;
+  simNext(false);
+}
+function renderSim(){
+  if (!SIM || !location.hash.startsWith('#/simulation')) return;
+  const D = SIM.D, cur = D.picks.find(p => p.id === D.current), mine = cur && cur.owner_team_id === SIM.me;
+  const last = D.picks.filter(p => p.player).sort((a, b) => b.picked_at.localeCompare(a.picked_at)).slice(0, 5);
+  const bw = document.querySelector('.boardwrap'), keep = bw ? [bw.scrollLeft, bw.scrollTop] : null;
+  $('#view').innerHTML = `<h2 class="title">🧪 Simulation ${D.year}</h2>
+    <div class="simbar">Simulation : rien n'est enregistré. Tu joues <b>${esc((D.order.find(t => t.id === SIM.me) || {}).name || '')}</b>.</div>
+    ${cur ? clockBanner(D, SIM.me) : '<div class="okbox">🏁 Simulation terminée !</div>'}
+    ${mine ? `<button class="btn" style="width:100%;margin-bottom:10px" onclick="simPicker()">🎯 Faire mon choix</button>` : ''}
+    <div class="row" style="margin-bottom:10px">${cur ? `<button class="btn small ghost" onclick="simPause()">${D.clock.paused ? '▶ Reprendre' : '⏸ Pause'}</button>` : ''}
+      <button class="btn small ghost" onclick="vDraftSim()">↻ Recommencer</button><button class="btn small ghost" onclick="location.hash='#/repechage'">Quitter</button></div>
+    ${draftBoard(D, SIM.me)}
+    ${last.length ? `<div class="card" style="margin-top:12px"><h3>Dernières sélections</h3>${last.map(p => `<div class="pl"><span>#${p.overall} <b>${esc(p.player.name)}</b> (${p.player.pos})</span><span>${esc(p.owner_team)}</span></div>`).join('')}</div>` : ''}`;
+  document.documentElement.style.setProperty('--toph', ($('#top').offsetHeight || 64) + 'px');
+  const bw2 = document.querySelector('.boardwrap'); if (bw2 && keep) [bw2.scrollLeft, bw2.scrollTop] = keep;
+  if (cur) draftClock(D);
+}
+function simPause(){
+  const c = SIM.D.clock;
+  if (c.paused) { c.deadline = new Date(Date.now() + c.left * 1000).toISOString(); c.paused = false; delete c.left; }
+  else { c.left = Math.ceil(clockLeft(SIM.D)); c.paused = true; clearTimeout(SIM.bot); }
+  renderSim();
+}
+function simPicker(){
+  const D = SIM.D, cur = D.picks.find(p => p.id === D.current); if (!cur) return;
+  const list = q => SIM.avail.filter(p => (!DP.pos || p.pos === DP.pos) && (!q || p.name.toLowerCase().includes(q.toLowerCase()))).slice(0, 40);
+  $('#sheetBody').innerHTML = `<h3 style="display:flex;justify-content:space-between"><span>Choix #${cur.overall} · ${esc(cur.owner_team)}</span><b id="dcMini" style="font-variant-numeric:tabular-nums"></b></h3>
+    <input id="smQ" type="search" placeholder="Rechercher un joueur disponible…">
+    <div class="seg" style="margin-top:8px">${[['','Tous'],['F','Att.'],['D','Déf.'],['G','Gard.']].map(([v, l]) => `<button class="${DP.pos === v ? 'on' : ''}" data-v="${v}">${l}</button>`).join('')}</div>
+    <div class="list" id="smList"></div>`;
+  const draw = () => { $('#smList').innerHTML = list($('#smQ').value).map(p => `<div class="item" onclick="simChoose(${p.id})"><span class="pos pos-${p.pos}">${p.pos}</span>
+    <div class="grow"><div class="name">${esc(p.name)}</div><div class="meta">${esc(p.nhl_team || '')} · ${p.age ? p.age + ' ans · ' : ''}${statLine(p)}</div></div>
+    <div class="num"><b>${p.pts}</b><div class="meta aav">${money(p.aav)}</div></div></div>`).join('') || '<div class="empty">Aucun joueur.</div>'; };
+  $('#smQ').oninput = draw;
+  document.querySelectorAll('#sheetBody .seg button').forEach(b => b.onclick = () => { DP.pos = b.dataset.v; document.querySelectorAll('#sheetBody .seg button').forEach(x => x.classList.toggle('on', x === b)); draw(); });
+  draw(); draftClockTick();
+  $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open');
+}
+function simChoose(id){ const p = SIM.avail.find(x => x.id === id); if (p && SIM.D.picks.find(x => x.id === SIM.D.current).owner_team_id === SIM.me) simAdvance(p); }
+
 // Choisir un joueur disponible : ma liste d'abord, puis la recherche.
 let DP = { q: '', pos: '', names: {} };
-const openDraftPicker = run(async () => {
-  const cur = DR.picks.find(p => p.id === DR.current); if (!cur) return;
+const openDraftPicker = run(async (pickId) => {
+  const cur = DR.picks.find(p => p.id === (pickId || DR.current)); if (!cur) return;
+  DP.pickId = pickId || null;
   const watch = cur.owner_team_id === S.me.teamId ? (await api('/api/watchlist')).filter(p => !p.team) : [];
-  $('#sheetBody').innerHTML = `<h3>Choix #${cur.overall} · ${esc(cur.owner_team)}</h3>
+  $('#sheetBody').innerHTML = `<h3 style="display:flex;justify-content:space-between"><span>Choix #${cur.overall} · ${esc(cur.owner_team)}${pickId ? ' (en retard)' : ''}</span>${pickId ? '' : '<b id="dcMini" style="font-variant-numeric:tabular-nums"></b>'}</h3>
     ${watch.length ? `<label class="f">☆ Ma liste (disponibles)</label><div class="list">${watch.slice(0, 8).map(p => draftRow(p)).join('')}</div><div style="height:10px"></div>` : ''}
     <input id="dpQ" type="search" placeholder="Rechercher un joueur disponible…" value="${esc(DP.q)}">
     <div class="seg" style="margin-top:8px">${[['','Tous'],['F','Att.'],['D','Déf.'],['G','Gard.']].map(([v, l]) => `<button class="${DP.pos === v ? 'on' : ''}" onclick="DP.pos='${v}';this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));this.classList.add('on');loadDraftList()">${l}</button>`).join('')}</div>
@@ -1353,12 +1613,14 @@ const loadDraftList = run(async () => {
 const draftChoose = run(async (id) => {
   const name = DP.names[id] || 'ce joueur';
   if (!confirm(`Repêcher ${name} ?`)) return;
-  try { await api('/api/draft/pick', { year: DR.year, playerId: id }); }
+  const body = { year: DR.year, playerId: id, pickId: DP.pickId || undefined };
+  try { await api('/api/draft/pick', body); }
   catch (e) {
     if (!(S.me.isAdmin && /Sélection impossible/.test(e.message) && confirm(e.message + '\n\nForcer quand même (commissaire) ?'))) throw e;
-    await api('/api/draft/pick', { year: DR.year, playerId: id, force: true });
+    await api('/api/draft/pick', { ...body, force: true });
   }
-  toast(`${name} repêché`); closeSheet(); await loadState(); vDraft(DR.year);
+  closeSheet(); await loadState();
+  const prev = DR; DR = await api('/api/draft?year=' + DR.year); draftEvents(prev, DR, S.me.teamId); renderDraft();
 });
 
 // ---------- Liste de protection ----------
