@@ -172,7 +172,8 @@ Onglet **Repêchage** (il remplace « En direct » pendant la préparation et le
    le choix est « passé » (orange) et c'est au suivant ; l'équipe peut le faire en retard quand elle
    veut (ou le commissaire, en touchant la case). Sons : fanfare à chaque sélection, carillon au
    changement de pooler (mélodie spéciale quand c'est ton tour), sirène au lancement. Le minuteur
-   tourne sur le serveur : tout le monde voit le même temps. Pause et reprise par le commissaire.
+   tourne sur le serveur : tout le monde voit le même temps. Pause et reprise par le commissaire ;
+   pause automatique après 3 choix passés de suite (personne n'est là).
 5. 🧪 Simulation (bouton sous le tableau) : un repêchage pour pratiquer, sur ton téléphone seulement,
    rien n'est enregistré. Tu choisis pour ton équipe ; les autres choisissent toutes seules.
 Le tableau montre les rondes en lignes et les équipes en colonnes : le joueur repêché dans chaque case,
@@ -200,6 +201,11 @@ et « → équipe » quand le choix a été échangé.
   qui grimpent ou glissent au classement, pooler de la soirée, victoires écrasantes (4 buts d'écart)
   et toujours le résultat du CH. Le récap est aussi publié sur le mur de la gang.
 
+- **Fiche du joueur** (toucher un joueur) : en-tête aux couleurs de son équipe avec sa photo, son numéro,
+  son rang à sa position et ses points de pool ; boutons ronds (offre, marché, libérer, réclamer, ma liste) ;
+  onglets Aperçu (rapport de blessure, dernières nouvelles et analyse, stats de la saison, 5 derniers
+  matchs avec tirs et temps de glace, forme, contrat), Stats, Carrière et Gestion (commissaire).
+  Données de la fiche LNH du joueur (api-web.nhle.com), gardées 3 h en mémoire.
 - **❌ Blessures** : rapport des blessés de la LNH (flux public d'ESPN, relu aux 2 heures ; bouton
   « Mettre à jour les blessures » dans Commissaire). X rouge à côté du joueur (orange : au jour le jour),
   durée en français (absence indéterminée, absent 4 semaines, pour la saison, retour prévu…), partie du

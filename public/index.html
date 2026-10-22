@@ -110,6 +110,38 @@
   .sheet.open{transform:none;visibility:visible;} .sheet-bg.open{display:block;}
   .sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:4px auto 12px;}
   .sheet h3{margin:0 0 4px;font-size:19px;}
+  /* Fiche du joueur */
+  .pc{margin:-8px -16px 0;}
+  .pc-hero{position:relative;overflow:hidden;display:flex;align-items:flex-end;gap:12px;padding:14px 16px 12px;min-height:128px;
+    background:linear-gradient(115deg,var(--tc) 0%,color-mix(in srgb,var(--tc) 45%,var(--panel)) 55%,var(--panel) 100%);}
+  .pc-hero .wm{position:absolute;right:-28px;top:-26px;width:190px;height:190px;opacity:.16;pointer-events:none;}
+  .pc-photo{width:104px;height:104px;flex:none;margin:-4px 0 -12px -6px;object-fit:cover;object-position:top;filter:drop-shadow(0 4px 10px rgba(0,0,0,.35));}
+  .pc-noph{width:84px;height:84px;flex:none;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:#fff;}
+  .pc-id{flex:1;min-width:0;position:relative;}
+  .pc-name{font-size:24px;font-weight:900;line-height:1.1;color:#fff;letter-spacing:-.01em;}
+  .pc-sub{font-size:14px;font-weight:700;color:rgba(255,255,255,.88);margin:4px 0 8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .pc-pills{display:flex;flex-wrap:wrap;gap:4px 12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:6px 10px;font-size:12px;color:rgba(255,255,255,.75);}
+  .pc-pills b{color:#fff;}
+  .pc-x{position:absolute;right:12px;top:12px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(0,0,0,.35);color:#fff;font-size:18px;z-index:2;}
+  .pc-acts{display:flex;justify-content:center;gap:14px;padding:14px 12px 4px;flex-wrap:wrap;}
+  .pc-act{display:flex;flex-direction:column;align-items:center;gap:5px;width:64px;font-size:11px;color:var(--dim);text-align:center;background:none;border:0;padding:0;}
+  .pc-act i{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:21px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);}
+  .pc-act.go i{background:var(--gold);color:#1a1405;border-color:var(--gold);} .pc-act.red i{background:#3a1616;border-color:#6b2a2a;}
+  .pc-tabs{display:flex;gap:4px;margin:10px 16px 4px;padding:4px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line);overflow-x:auto;}
+  .pc-tabs button{flex:1;border:0;background:none;color:var(--dim);font-weight:700;font-size:14px;padding:8px 10px;border-radius:999px;white-space:nowrap;}
+  .pc-tabs button.on{background:var(--gold);color:#1a1405;}
+  .pc-body{padding:4px 16px 8px;}
+  .pc-body h4{font-size:20px;font-weight:900;margin:16px 0 8px;letter-spacing:-.01em;}
+  .pc-card{background:var(--panel-2);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:10px;font-size:15px;line-height:1.4;}
+  .pc-card .when{font-size:12px;color:var(--dim);margin:-4px 0 8px;}
+  .pc-card .an{font-weight:800;margin-top:10px;}
+  .pc-tw{overflow-x:auto;border-radius:16px;border:1px solid var(--line);background:var(--panel-2);margin-bottom:10px;}
+  table.pc-t{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap;}
+  table.pc-t th{color:var(--gold);font-weight:800;padding:9px 8px;text-align:center;border-bottom:1px solid var(--line);}
+  table.pc-t td{padding:9px 8px;text-align:center;border-bottom:1px solid #1a2938;} table.pc-t tr:last-child td{border-bottom:0;}
+  table.pc-t td:first-child,table.pc-t th:first-child{text-align:left;}
+  .pc-kv{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;font-size:14px;} .pc-kv span{color:var(--dim);display:block;font-size:12px;}
+  .injx{display:inline-block;vertical-align:-2px;}
   .kv{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0;}
   .kv div{background:var(--ice);border-radius:10px;padding:8px;text-align:center;}
   .kv .l{font-size:10px;color:var(--dim);text-transform:uppercase;} .kv .v{font-weight:800;font-size:16px;margin-top:2px;}
@@ -495,13 +527,17 @@ function rookieTags(p){
     + (!c.length && p.rookie ? '<span class="tag rk">🍼 Recrue</span>' : '');
 }
 // Blessure (rapport de la LNH) : X rouge, ou orange si « au jour le jour ».
+// Croix de blessure : carré rouge et croix blanche (orange : au jour le jour).
+function injIcon(dtd, size = 14){
+  return `<svg class="injx" width="${size}" height="${size}" viewBox="0 0 16 16" aria-label="Blessé"><rect width="16" height="16" rx="3.5" fill="${dtd ? '#e8902a' : '#e5383b'}"/><path d="M6.4 3.2h3.2v3.2h3.2v3.2H9.6v3.2H6.4V9.6H3.2V6.4h3.2z" fill="#fff"/></svg>`;
+}
 function injTag(p){
   const i = p.injury; if (!i) return '';
-  return `<span class="inj ${i.dtd ? 'dtd' : ''}" title="${esc(i.label + (i.injury ? ' · ' + i.injury : ''))}">✕</span>`;
+  return ` <span title="${esc(i.label + (i.injury ? ' · ' + i.injury : ''))}">${injIcon(i.dtd)}</span>`;
 }
 function injLine(p){
   const i = p.injury; if (!i) return '';
-  return `<div class="meta injline ${i.dtd ? 'dtd' : ''}">${i.dtd ? '⚠️' : '❌'} ${esc(i.label)}${i.injury ? ' · ' + esc(i.injury) : ''}</div>`;
+  return `<div class="meta injline ${i.dtd ? 'dtd' : ''}">${esc(i.label.charAt(0).toUpperCase() + i.label.slice(1))}${i.injury ? ' · ' + esc(i.injury) : ''}</div>`;
 }
 function playerItem(p, { showFlags = false, showOwner = false } = {}){
   const flags = showFlags ? `${p.counts_points ? '<span class="tag pts">PTS</span>' : ''}${p.counts_cap ? '<span class="tag cap">$</span>' : ''}` : '';
@@ -559,7 +595,9 @@ const loadPlayers = run(async () => {
 let sheetPlayer = null;
 async function openPlayer(id){
   sheetPlayer = await api(`/api/players/${id}`);
+  pcTab = 'apercu';
   renderSheet();
+  $('#sheet').scrollTop = 0;
 }
 function findPlayer(id){
   for (const t of S.teams) for (const pos of ['F','D','G']) {
@@ -601,36 +639,108 @@ function renderSheet(){
         <input id="spMergeQ" placeholder="Nom dans la LNH">
         <div class="list" id="spMergeList"></div>`}
     </div>` : '';
-  $('#sheetBody').innerHTML = `
-    <h3>${esc(p.name)} <span class="pos pos-${p.pos}">${p.pos}</span></h3>
-    <div class="muted">${esc(p.nhl_team || '—')} · ${p.age ? p.age + ' ans' : 'âge ?'} · AAV <span class="aav">${p.aav ? moneyFull(p.aav) : 'inconnu'}</span>
-      ${p.contract_end ? ' · fin ' + p.contract_end : ''}</div>
-    <div class="muted" style="margin-top:4px">${owner ? 'Équipe : <b>' + esc(owner.name) + '</b>' : '<span style="color:var(--green)">Agent libre</span>'}</div>
-    ${p.injury ? `<div class="issues" style="margin:10px 0 0;${p.injury.dtd ? 'background:#2a1d10;border-color:#6b4a1e;color:#f0a35a' : ''}">
-      <b>${p.injury.dtd ? '⚠️' : '❌'} ${esc(p.injury.label.charAt(0).toUpperCase() + p.injury.label.slice(1))}</b>${p.injury.injury ? ' · blessure : ' + esc(p.injury.injury) : ''}
-      ${p.injury.returnDate ? `<br>Retour estimé : ${new Date(String(p.injury.returnDate).slice(0, 10) + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' })}` : ''}
-      ${p.injury.comment ? `<div style="font-size:12px;opacity:.85;margin-top:4px">Rapport (en anglais) : « ${esc(p.injury.comment)} »</div>` : ''}</div>` : ''}
-    <div class="kv">${kv.map(([l,v]) => `<div><div class="l">${l}</div><div class="v">${v ?? 0}</div></div>`).join('')}</div>
-    <div class="muted">Points de pool : <b style="color:var(--text)">${p.pts ?? 0}</b>${goalie ? ' (B + A + 2×V + DP + BL)' : ''}</div>
-    ${p.lastGames && p.lastGames.length ? `<div class="card" style="margin-top:10px;padding:10px 12px"><h3 style="margin-bottom:0"><span>Forme · ${p.lastGames.length} derniers matchs</span>
-      <span>${p.trend.form === 'hot' ? '🔥 en feu' : p.trend.form === 'cold' ? '🧊 froid' : ''}</span></h3>${formChart(p.lastGames)}
-      <div class="muted" style="font-size:12px;margin-top:4px">${p.trend.last5} pt${p.trend.last5 > 1 ? 's' : ''} à ses ${Math.min(5, p.lastGames.length)} derniers matchs · 🔥 = 5 pts ou plus en 5 matchs · 🧊 = aucun point en 5 matchs</div></div>` : ''}
-    <div style="height:12px"></div>
-    ${p.waiver ? `<div class="issues" style="background:#2b2512;border-color:#5a4a1e;color:var(--gold)">⏳ Au ballottage jusqu'au ${fmtDate(p.waiver.ends_at)}${p.waiver.mine ? ' · <b>tu l\'as réclamé</b>' : ''}</div>
-        ${p.waiver.mine ? `<button class="btn danger" style="width:100%;margin-bottom:8px" onclick="unclaimWaiver(${p.waiver.id})">Retirer ma réclamation</button>`
-          : `<button class="btn" style="width:100%;margin-bottom:8px" onclick="openWaiverClaim(${p.waiver.id})">Réclamer au ballottage</button>`}`
-      : neutral() ? ''
-      : owner ? (owner.id === S.me.teamId
-          ? ((S.block || []).includes(p.id) ? `<button class="btn ghost" style="width:100%;margin-bottom:8px" onclick="blockRemove(${p.id})">📣 Retirer du marché des transactions</button>`
-              : `<button class="btn ghost" style="width:100%;margin-bottom:8px" onclick="blockAddSheet(${p.id})">📣 Mettre sur le marché des transactions</button>`)
-            + `<button class="btn danger" style="width:100%;margin-bottom:8px" onclick="releaseMine(${p.id})">Libérer (passe au ballottage)</button>`
-          : `<button class="btn" style="width:100%;margin-bottom:8px" onclick="closeSheet();location.hash='#/offre/${owner.id}-0-p${p.id}'">⇄ Faire une offre pour ${esc(p.name)}</button>`)
-      : `<button class="btn" style="width:100%;margin-bottom:8px" onclick="openClaim(${p.id})">Réclamer (agent libre) — coûte un choix de 1re ronde</button>`}
-    ${neutral() ? '' : `<button class="btn ghost" style="width:100%" onclick="addWatch(${p.id})">☆ Ajouter à ma liste</button>`}
-    ${admin}`;
+  $('#sheetBody').innerHTML = playerCardHtml(p, owner, admin);
   const mq = $('#spMergeQ');
   if (mq) { let h; mq.oninput = () => { clearTimeout(h); h = setTimeout(searchMerge, 250); }; mq.value = p.name; searchMerge(); }
   $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open');
+}
+// Couleur principale de chaque équipe LNH (en-tête de la fiche du joueur).
+const TEAM_COLOR = { ANA:'#f47a38', BOS:'#c99a1c', BUF:'#003087', CGY:'#c8102e', CAR:'#ce1126', CHI:'#cf0a2c', COL:'#6f263d', CBJ:'#002654', DAL:'#006847',
+  DET:'#ce1126', EDM:'#ff4c00', FLA:'#c8102e', LAK:'#5b6770', MIN:'#154734', MTL:'#af1e2d', NSH:'#c99a1c', NJD:'#ce1126', NYI:'#00539b', NYR:'#0038a8',
+  OTT:'#c52032', PHI:'#f74902', PIT:'#c99a1c', SJS:'#006d75', SEA:'#355464', STL:'#002f87', TBL:'#002868', TOR:'#00205b', UTA:'#4a8cc4', VAN:'#00205b',
+  VGK:'#8c7a4a', WSH:'#c8102e', WPG:'#2a6ebb' };
+let pcTab = 'apercu';
+const frDay = d => new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('fr-CA', { weekday: 'short', day: 'numeric', month: 'short' });
+const pct = v => v === null || v === undefined ? '—' : (v < 1 ? (v * 100).toFixed(1) : Number(v).toFixed(1)).replace('.', ',');
+function playerCardHtml(p, owner, admin){
+  const c = p.card || {}, goalie = p.pos === 'G', tc = TEAM_COLOR[c.team || p.nhl_team] || '#33475e';
+  const logo = c.teamLogo || (p.nhl_team ? `https://assets.nhle.com/logos/nhl/svg/${p.nhl_team}_dark.svg` : '');
+  const ppg = p.gp ? (p.pts / p.gp).toFixed(2).replace('.', ',') : '—';
+  const rank = p.rank ? `<span>Rang ${p.pos} <b>${p.rank.pos_rank}/${p.rank.pos_total}</b></span><span>Total <b>${p.rank.all_rank}/${p.rank.all_total}</b></span>` : '';
+  const initials = p.name.split(' ').map(x => x[0]).slice(0, 2).join('');
+  const hero = `<div class="pc-hero" style="--tc:${tc}">
+    ${logo ? `<img class="wm" src="${esc(logo)}" alt="" onerror="this.remove()">` : ''}
+    <button class="pc-x" onclick="closeSheet()" aria-label="Fermer">✕</button>
+    ${c.photo ? `<img class="pc-photo" src="${esc(c.photo)}" alt="" onerror="this.outerHTML='<div class=pc-noph>${esc(initials)}</div>'">` : `<div class="pc-noph">${esc(initials)}</div>`}
+    <div class="pc-id"><div class="pc-name">${esc(p.name)}</div>
+      <div class="pc-sub">${esc(c.teamName || p.nhl_team || '—')} · ${p.pos}${c.number !== null && c.number !== undefined ? ' · #' + c.number : ''}${p.injury ? injIcon(p.injury.dtd, 18) : ''}</div>
+      <div class="pc-pills">${rank}<span>Pts pool <b>${p.pts ?? 0}</b></span><span>Pts/m <b>${ppg}</b></span>
+        <span>${owner ? 'Chez <b>' + esc(owner.name) + '</b>' : '<b style="color:#8ff0c2">Agent libre</b>'}</span></div></div></div>`;
+
+  // Boutons ronds (selon qui regarde).
+  const act = (icon, label, on, cls = '') => `<button class="pc-act ${cls}" onclick="${on}"><i>${icon}</i>${label}</button>`;
+  const acts = [];
+  if (p.waiver) acts.push(p.waiver.mine ? act('↩', 'Retirer ma réclamation', `unclaimWaiver(${p.waiver.id})`, 'red') : act('⏳', 'Réclamer au ballottage', `openWaiverClaim(${p.waiver.id})`, 'go'));
+  else if (!neutral()) {
+    if (!owner) acts.push(act('＋', 'Réclamer (1re ronde)', `openClaim(${p.id})`, 'go'));
+    else if (owner.id === S.me.teamId) {
+      acts.push((S.block || []).includes(p.id) ? act('📣', 'Retirer du marché', `blockRemove(${p.id})`) : act('📣', 'Mettre sur le marché', `blockAddSheet(${p.id})`));
+      acts.push(act('⤓', 'Libérer', `releaseMine(${p.id})`, 'red'));
+    } else acts.push(act('⇄', 'Faire une offre', `closeSheet();location.hash='#/offre/${owner.id}-0-p${p.id}'`, 'go'));
+    acts.push(act('☆', 'Ma liste', `addWatch(${p.id})`));
+  }
+  const tabs = [['apercu', 'Aperçu'], ['stats', 'Stats'], ['carriere', 'Carrière'], ...(admin ? [['gestion', 'Gestion']] : [])];
+  if (!tabs.some(t => t[0] === pcTab)) pcTab = 'apercu';
+  const tabBar = `<div class="pc-tabs">${tabs.map(([k, l]) => `<button class="${pcTab === k ? 'on' : ''}" onclick="pcTab='${k}';renderSheet()">${l}</button>`).join('')}</div>`;
+
+  let body = '';
+  if (pcTab === 'apercu') {
+    const i = p.injury;
+    if (i) {
+      const ret = i.returnDate ? `Retour prévu le ${frDay(i.returnDate)}` : i.label.charAt(0).toUpperCase() + i.label.slice(1);
+      body += `<h4>${injIcon(i.dtd, 20)} Rapport de blessure</h4><div class="pc-card">${esc(ret)} – <i>${esc(i.statusFr || i.status)}</i>.${i.injury ? `<br><span class="muted">Blessure : ${esc(i.injury)}</span>` : ''}</div>`;
+      if (i.comment || i.analysis) body += `<h4>Dernières nouvelles</h4>${i.reportedAt ? `<div class="muted" style="margin:-6px 0 8px;font-size:12px">${new Date(i.reportedAt).toLocaleString('fr-CA', { dateStyle: 'medium', timeStyle: 'short' })} · en anglais, selon le rapport</div>` : ''}
+        <div class="pc-card">${esc(i.comment || '')}${i.analysis ? `<div class="an">Analyse</div>${esc(i.analysis)}` : ''}</div>`;
+    }
+    if (p.waiver) body += `<div class="issues" style="background:#2b2512;border-color:#5a4a1e;color:var(--gold);margin-top:12px">⏳ Au ballottage jusqu'au ${fmtDate(p.waiver.ends_at)}${p.waiver.mine ? ' · <b>tu l\'as réclamé</b>' : ''}</div>`;
+    body += seasonTable(p, c, goalie) + recentTable(p, c, goalie);
+    if (p.lastGames && p.lastGames.length) body += `<h4>Forme ${p.trend.form === 'hot' ? '🔥' : p.trend.form === 'cold' ? '🧊' : ''}</h4><div class="pc-card">${formChart(p.lastGames)}
+      <div class="muted" style="font-size:12px;margin-top:4px">${p.trend.last5} pt${p.trend.last5 > 1 ? 's' : ''} de pool à ses ${Math.min(5, p.lastGames.length)} derniers matchs · 🔥 = 5 pts ou plus en 5 matchs · 🧊 = aucun point en 5 matchs</div></div>`;
+    body += `<h4>Contrat</h4><div class="pc-card pc-kv">
+      <div><span>Salaire (AAV)</span><b class="aav">${p.aav ? moneyFull(p.aav) : 'inconnu'}</b></div><div><span>Fin de contrat</span><b>${p.contract_end || '—'}</b></div>
+      <div><span>Âge</span><b>${p.age ? p.age + ' ans' : '—'}</b></div><div><span>Équipe du pool</span><b>${owner ? esc(owner.name) : 'Agent libre'}</b></div></div>`;
+  } else if (pcTab === 'stats') {
+    const kv = goalie ? [['PJ', p.gp], ['Victoires', p.wins], ['Défaites (prol.)', p.ot_losses], ['Blanchissages', p.shutouts]] : [['PJ', p.gp], ['Buts', p.goals], ['Passes', p.assists], ['Points', p.goals + p.assists]];
+    body += `<h4>Points de pool</h4><div class="pc-card pc-kv">${kv.map(([l, v]) => `<div><span>${l}</span><b>${v ?? 0}</b></div>`).join('')}
+      <div><span>Points de pool</span><b style="color:var(--gold)">${p.pts ?? 0}</b></div><div><span>Par match</span><b>${ppg}</b></div>
+      ${p.rank ? `<div><span>Rang à sa position</span><b>${p.rank.pos_rank} / ${p.rank.pos_total}</b></div><div><span>Rang chez tous les joueurs</span><b>${p.rank.all_rank} / ${p.rank.all_total}</b></div>` : ''}</div>
+      <p class="muted" style="font-size:12px">${goalie ? 'Gardiens : 2 pts par victoire, 1 par défaite en prolongation ou fusillade, 1 par blanchissage (+ buts et passes).' : 'Un point par but et par passe.'}</p>`;
+    if (c.shoots || c.height || c.birthCity) body += `<h4>Profil</h4><div class="pc-card pc-kv">
+      ${c.shoots ? `<div><span>${goalie ? 'Attrape' : 'Lance'}</span><b>${c.shoots === 'L' ? 'de la gauche' : 'de la droite'}</b></div>` : ''}
+      ${c.height ? `<div><span>Taille / poids</span><b>${c.height} cm · ${c.weight || '?'} kg</b></div>` : ''}
+      ${c.birthCity ? `<div><span>Lieu de naissance</span><b>${esc(c.birthCity)}${c.birthCountry ? ', ' + esc(c.birthCountry) : ''}</b></div>` : ''}
+      ${c.draft ? `<div><span>Repêchage LNH</span><b>${c.draft.year}, ${c.draft.round}e ronde, ${c.draft.overallPick}e (${esc(c.draft.teamAbbrev || '')})</b></div>` : ''}</div>`;
+    body += seasonTable(p, c, goalie);
+  } else if (pcTab === 'carriere') {
+    const rows = (c.career || []).slice().reverse();
+    body += `<h4>Carrière dans la LNH</h4>` + (rows.length ? `<div class="pc-tw"><table class="pc-t"><tr><th>Saison</th><th>Équipe</th><th>PJ</th>${goalie ? '<th>V</th><th>MOY</th><th>%ARR</th><th>BL</th>' : '<th>B</th><th>A</th><th>Pts</th><th>+/-</th>'}</tr>
+      ${rows.map(r => `<tr><td>${String(r.season).slice(0, 4)}-${String(r.season).slice(6)}</td><td>${esc(r.team || '')}</td><td>${r.gp ?? ''}</td>${goalie
+        ? `<td>${r.wins ?? ''}</td><td>${r.gaa ? r.gaa.toFixed(2).replace('.', ',') : ''}</td><td>${r.svPct ? pct(r.svPct) : ''}</td><td>${r.shutouts ?? ''}</td>`
+        : `<td>${r.goals ?? ''}</td><td>${r.assists ?? ''}</td><td><b>${r.points ?? ''}</b></td><td>${r.plusMinus ?? ''}</td>`}</tr>`).join('')}</table></div>`
+      : '<p class="muted">Carrière non disponible.</p>');
+  } else if (pcTab === 'gestion') body += admin;
+  return `<div class="pc">${hero}${acts.length ? `<div class="pc-acts">${acts.join('')}</div>` : ''}${tabBar}<div class="pc-body">${body}</div></div>`;
+}
+function seasonTable(p, c, goalie){
+  const st = c.stats, lbl = c.season ? `${String(c.season).slice(0, 4)}-${String(c.season).slice(6)}` : 'Saison';
+  if (st) return `<h4>Stats ${lbl}</h4><div class="pc-tw"><table class="pc-t">${goalie
+    ? `<tr><th>PJ</th><th>V</th><th>D</th><th>DP</th><th>MOY</th><th>%ARR</th><th>BL</th></tr><tr><td>${st.gamesPlayed ?? 0}</td><td>${st.wins ?? 0}</td><td>${st.losses ?? 0}</td><td>${st.otLosses ?? 0}</td><td>${st.goalsAgainstAvg !== undefined ? Number(st.goalsAgainstAvg).toFixed(2).replace('.', ',') : '—'}</td><td>${pct(st.savePctg)}</td><td>${st.shutouts ?? 0}</td></tr>`
+    : `<tr><th>PJ</th><th>B</th><th>A</th><th>Pts</th><th>+/-</th><th>PUN</th><th>Tirs</th><th>%Tir</th><th>BAN</th><th>PAN</th><th>BIN</th></tr><tr><td>${st.gamesPlayed ?? 0}</td><td>${st.goals ?? 0}</td><td>${st.assists ?? 0}</td><td><b>${st.points ?? 0}</b></td><td>${st.plusMinus ?? 0}</td><td>${st.pim ?? 0}</td><td>${st.shots ?? 0}</td><td>${pct(st.shootingPctg)}</td><td>${st.powerPlayGoals ?? 0}</td><td>${st.powerPlayPoints ?? 0}</td><td>${st.shorthandedGoals ?? 0}</td></tr>`}</table></div>`;
+  return `<h4>Stats de la saison</h4><div class="pc-tw"><table class="pc-t">${goalie
+    ? `<tr><th>PJ</th><th>V</th><th>DP</th><th>BL</th></tr><tr><td>${p.gp}</td><td>${p.wins}</td><td>${p.ot_losses}</td><td>${p.shutouts}</td></tr>`
+    : `<tr><th>PJ</th><th>B</th><th>A</th><th>Pts</th></tr><tr><td>${p.gp}</td><td>${p.goals}</td><td>${p.assists}</td><td><b>${p.goals + p.assists}</b></td></tr>`}</table></div>`;
+}
+// Matchs récents : détail de la LNH (tirs, temps de jeu) si on l'a, sinon nos matchs compilés ; toujours les points de pool.
+function recentTable(p, c, goalie){
+  const ours = new Map((p.recent || []).map(g => [String(g.date).slice(0, 10), g]));
+  const nhl = (c.last5 || []);
+  const rows = nhl.length ? nhl.map(g => ({ ...g, pool: (ours.get(String(g.date).slice(0, 10)) || {}).pts, result: (ours.get(String(g.date).slice(0, 10)) || {}).result }))
+    : (p.recent || []).slice(0, 5).map(g => ({ date: g.date, opp: g.opp, home: g.home, goals: g.goals, assists: g.assists, points: g.goals + g.assists, pool: g.pts, result: g.result, decision: g.wins ? 'W' : g.ot_losses ? 'O' : null }));
+  if (!rows.length) return '';
+  const opp = g => `${g.home ? 'vs' : '@'} ${esc(g.opp || '?')}`;
+  return `<h4>Matchs récents</h4><div class="pc-tw"><table class="pc-t">${goalie
+    ? `<tr><th>Date</th><th>Adv.</th><th>Déc.</th><th>BA</th><th>%ARR</th><th>Pool</th></tr>${rows.map(g => `<tr><td>${frDay(g.date)}</td><td>${opp(g)}</td><td>${{ W: 'V', L: 'D', O: 'DP' }[g.decision] || '—'}</td><td>${g.ga ?? '—'}</td><td>${g.svPct !== undefined && g.svPct !== null ? pct(g.svPct) : '—'}</td><td><b>${g.pool ?? '—'}</b></td></tr>`).join('')}`
+    : `<tr><th>Date</th><th>Adv.</th><th>B</th><th>A</th><th>Pts</th><th>+/-</th><th>Tirs</th><th>TG</th><th>Pool</th></tr>${rows.map(g => `<tr><td>${frDay(g.date)}</td><td>${opp(g)}</td><td>${g.goals ?? 0}</td><td>${g.assists ?? 0}</td><td><b>${g.points ?? 0}</b></td><td>${g.plusMinus ?? '—'}</td><td>${g.shots ?? '—'}</td><td>${g.toi || '—'}</td><td><b style="color:var(--gold)">${g.pool ?? '—'}</b></td></tr>`).join('')}`}</table></div>`;
 }
 function closeSheet(){ $('#sheet').classList.remove('open'); $('#sheetBg').classList.remove('open'); }
 $('#sheetBg').onclick = closeSheet;

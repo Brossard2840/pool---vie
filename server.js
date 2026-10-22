@@ -535,8 +535,59 @@ app.get('/api/players/:id', h(async (req, res) => {
     SELECT game_date, team, goals, assists, wins, ot_losses, shutouts, pos FROM game_log
     WHERE player_nhl_id=$1 AND game_type IN (2,3) ORDER BY game_date DESC LIMIT 10`, [rows[0].nhl_id || -1]);
   const lastGames = last.reverse().map(g => ({ date: g.game_date, pts: rules.poolPoints(g), goals: g.goals, assists: g.assists, wins: g.wins }));
-  res.json({ ...clean(rows[0]), waiver: w[0] || null, lastGames, trend: trendOf(lastGames.map(g => g.pts), rows[0].pos) });
+  const p = rows[0], pp = rules.poolPoints(p);
+  // Rang du joueur à sa position et au total (points de pool, joueurs qui ont joué cette saison).
+  const PTS = `(goals + assists + CASE WHEN pos='G' THEN 2*wins + ot_losses + shutouts ELSE 0 END)`;
+  const { rows: rk } = await pool.query(`
+    SELECT COUNT(*) FILTER (WHERE pos=$1 AND ${PTS} > $2)::int + 1 AS pos_rank, COUNT(*) FILTER (WHERE pos=$1)::int AS pos_total,
+           COUNT(*) FILTER (WHERE ${PTS} > $2)::int + 1 AS all_rank, COUNT(*)::int AS all_total
+    FROM players WHERE gp > 0 AND nhl_id IS NOT NULL`, [p.pos, pp]);
+  // Matchs récents détaillés (adversaire, domicile/visiteur) à partir de nos matchs compilés.
+  const { rows: recent } = await pool.query(`
+    SELECT l.game_date, l.team, l.goals, l.assists, l.wins, l.ot_losses, l.shutouts, l.pos, g.away, g.home, g.away_score, g.home_score, g.state
+    FROM game_log l LEFT JOIN games g ON g.id=l.game_id
+    WHERE l.player_nhl_id=$1 AND l.game_type IN (2,3) ORDER BY l.game_date DESC LIMIT 10`, [p.nhl_id || -1]);
+  res.json({ ...clean(p), waiver: w[0] || null, lastGames, trend: trendOf(lastGames.map(g => g.pts), p.pos),
+    rank: p.gp > 0 ? rk[0] : null,
+    recent: recent.map(g => {
+      const home = g.home === g.team, opp = home ? g.away : g.home, us = home ? g.home_score : g.away_score, them = home ? g.away_score : g.home_score;
+      return { date: g.game_date, opp, home, goals: g.goals, assists: g.assists, wins: g.wins, ot_losses: g.ot_losses, shutouts: g.shutouts,
+        pts: rules.poolPoints(g), result: us === null || us === undefined ? null : `${us > them ? 'V' : 'D'} ${us}-${them}` };
+    }),
+    card: p.nhl_id ? await playerCard(p.nhl_id) : null });
 }));
+
+// Fiche LNH d'un joueur (photo, numéro, stats de la saison, 5 derniers matchs, carrière), gardée 3 h en mémoire.
+const cardCache = new Map();
+async function playerCard(nhlId) {
+  const hit = cardCache.get(nhlId);
+  if (hit && Date.now() - hit.at < 3 * 3600 * 1000) return hit.card;
+  const WEB = process.env.NHL_WEB_BASE || 'https://api-web.nhle.com/v1';
+  try {
+    const r = await fetch(`${WEB}/player/${nhlId}/landing`, { headers: { 'User-Agent': 'pool-a-vie' }, signal: AbortSignal.timeout(5000) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    const t = v => (v && typeof v === 'object' ? v.default || v.fr : v) || null;
+    const sub = d.featuredStats?.regularSeason?.subSeason || null;
+    const card = {
+      photo: d.headshot || null, hero: d.heroImage || null, number: d.sweaterNumber ?? null, position: d.position || null,
+      team: d.currentTeamAbbrev || null, teamName: t(d.fullTeamName) || t(d.teamCommonName), teamLogo: d.teamLogo || null,
+      shoots: d.shootsCatches || null, height: d.heightInCentimeters || null, weight: d.weightInKilograms || null,
+      birthCity: t(d.birthCity), birthCountry: d.birthCountry || null, draft: d.draftDetails || null,
+      season: d.featuredStats?.season || null, stats: sub,
+      last5: (d.last5Games || []).map(g => ({ date: g.gameDate, opp: g.opponentAbbrev, home: g.homeRoadFlag === 'H', goals: g.goals, assists: g.assists,
+        points: g.points, plusMinus: g.plusMinus, shots: g.shots, pim: g.pim, toi: g.toi, decision: g.decision, ga: g.goalsAgainst, svPct: g.savePctg, sa: g.shotsAgainst })),
+      career: (d.seasonTotals || []).filter(s => s.leagueAbbrev === 'NHL' && s.gameTypeId === 2).map(s => ({ season: s.season, team: t(s.teamName),
+        gp: s.gamesPlayed, goals: s.goals, assists: s.assists, points: s.points, plusMinus: s.plusMinus, wins: s.wins, gaa: s.goalsAgainstAvg, svPct: s.savePctg, shutouts: s.shutouts }))
+    };
+    cardCache.set(nhlId, { at: Date.now(), card });
+    return card;
+  } catch (e) {
+    console.warn(`Fiche LNH ${nhlId} :`, e.message);
+    return hit ? hit.card : null;
+  }
+}
+
 
 // Points de la journée (en direct) + classement cumulatif.
 app.get('/api/live', h(async (req, res) => {
