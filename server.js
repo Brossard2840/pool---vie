@@ -18,6 +18,7 @@ const { createProjections } = require('./lib/projections');
 const { createFun } = require('./lib/fun');
 const { createBlock } = require('./lib/block');
 const { createInjuries } = require('./lib/injuries');
+const { createContracts } = require('./lib/contracts');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -455,7 +456,7 @@ function ageOf(p, at = new Date()) {
 }
 
 function clean(p) {
-  return { ...p, aav: p.aav === null ? null : Number(p.aav), pts: rules.poolPoints(p), injury: injuries.of(p) };
+  return { ...p, aav: p.aav === null ? null : Number(p.aav), age: ageOf(p), pts: rules.poolPoints(p), injury: injuries.of(p) };
 }
 
 async function buildLeague() {
@@ -715,6 +716,23 @@ fun = createFun(app, admin, { pool, h, getConfig, seasonId, buildLeague, playoff
 // Rapport des blessés (lib/injuries.js).
 const injuries = createInjuries({ pool, getConfig, setConfig, notify });
 const block = createBlock(app, { pool, h, notify, injuryOf: p => injuries.of(p) });
+// Contrats : import en lot et échéances du 1er juillet (lib/contracts.js).
+const contracts = createContracts(admin, { pool, h, inTransaction, getConfig, setConfig, notify });
+
+// Dates de naissance de tous les joueurs de la LNH (une fois par semaine) : l'âge de chacun est toujours exact.
+async function refreshBirthDates(force = false) {
+  const last = await getConfig('bios_at');
+  if (!force && last && Date.now() - Date.parse(last) < 7 * 864e5) return null;
+  await setConfig('bios_at', new Date().toISOString());
+  const rows = await nhl.fetchBirthDates(await seasonId());
+  if (!rows.length) return 0;
+  const { rowCount } = await pool.query(`
+    UPDATE players p SET birth_date = r.birth_date::date
+    FROM json_to_recordset($1::json) AS r(nhl_id INT, birth_date TEXT)
+    WHERE p.nhl_id = r.nhl_id AND p.birth_date IS DISTINCT FROM r.birth_date::date`, [JSON.stringify(rows)]);
+  console.log(`Dates de naissance : ${rows.length} joueurs LNH, ${rowCount} mise(s) à jour`);
+  return rowCount;
+}
 admin.post('/injuries/refresh', h(async (req, res) => res.json({ count: await injuries.refresh(true) })));
 
 admin.post('/config', h(async (req, res) => {
@@ -945,6 +963,7 @@ admin.post('/horn', h(async (req, res) => {
 
 admin.post('/stats/refresh', h(async (req, res) => {
   const result = await refreshStats();
+  refreshBirthDates(true).catch(e => console.warn('Dates de naissance :', e.message));
   if (await live.isReady()) await live.sync({ force: true });
   else live.backfill().catch(e => console.error('Rattrapage :', e.message));
   res.json(result);
@@ -972,6 +991,10 @@ initDb().then(() => {
       waivers.processDue().catch(e => console.error('Ballottage :', e.message));
       reminders.tick().catch(e => console.error('Rappels :', e.message));
       injuries.refresh().catch(e => console.warn('Blessures :', e.message));
+      if (new Date().getMinutes() % 10 === 5) {
+        contracts.julyFirst().catch(e => console.warn('Contrats :', e.message));
+        refreshBirthDates().catch(e => console.warn('Dates de naissance :', e.message));
+      }
       if (new Date().getMinutes() % 10 === 0) fun.closeWeek().catch(e => console.error('Trophées :', e.message));
       // Historique LNH (statut de recrue) : rafraîchi chaque semaine.
       getConfig('prot_history_at').then(at => {

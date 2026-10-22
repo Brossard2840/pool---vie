@@ -2274,6 +2274,18 @@ const vAdmin = run(async () => {
       <button class="btn small" onclick="doTrade()">Enregistrer l'échange</button>
     </div>
 
+    <div class="card" id="ctCard"><h3><span>📝 Contrats (salaire et fin)</span><span id="ctWatchN"></span></h3>
+      <p class="muted">Colle une liste copiée de PuckPedia ou d'un tableur : <b>une ligne par joueur</b> avec le nom, le salaire (AAV) et la fin du contrat,
+        dans n'importe quel format (ex. <code>Nick Suzuki 7,875,000 2030</code>, <code>Lane Hutson MTL 8.85M 2033-34</code>). Rien ne change avant que tu confirmes.</p>
+      <label class="btn small ghost" style="display:inline-block;margin-bottom:8px">📄 Choisir un fichier…
+        <input type="file" id="ctFile" accept=".txt,.csv,.tsv,text/plain" hidden></label>
+      <textarea id="ctText" placeholder="Nick Suzuki	7875000	2030&#10;Cole Caufield, 7.85M, 2030-31"></textarea>
+      <div style="height:8px"></div>
+      <button class="btn small" onclick="contractsPreview(this)">Analyser la liste</button>
+      <div id="ctResult"></div>
+      <details style="margin-top:12px" id="ctWatch"><summary>Contrats à surveiller (échus ou fin inconnue)</summary><div class="muted">Chargement…</div></details>
+    </div>
+
     <div class="card"><h3>Import des alignements</h3>
       <p class="muted">Une ligne par joueur : <code>ÉquipePool;Nom;Position;AAV;Âge;FinContrat</code>, et l'équipe LNH en 7e colonne au besoin pour les homonymes. Position : F, D ou G.</p>
       <label class="btn small ghost" style="display:inline-block;margin-bottom:8px">📄 Choisir un fichier…
@@ -2319,6 +2331,8 @@ const vAdmin = run(async () => {
       <div class="row"><input id="npAav" inputmode="numeric" placeholder="AAV"><input id="npTeam" placeholder="Équipe LNH" autocapitalize="characters"></div>
       <button class="btn small" onclick="addPlayer()">Créer</button>
     </div>`;
+  $('#ctFile').onchange = async e => { const f = e.target.files[0]; if (f) $('#ctText').value = await f.text(); };
+  contractsWatch();
   $('#impFile').onchange = async e => {
     const f = e.target.files[0]; if (!f) return;
     $('#impText').value = await f.text();
@@ -2370,6 +2384,50 @@ const refreshStats = run(async btn => {
   try { const r = await api('/api/admin/stats/refresh', {}); toast(`${r.nhlPlayers} joueurs LNH mis à jour`); await refresh(); }
   finally { btn.disabled = false; }
 });
+// ---------- Contrats : aperçu, puis application des lignes cochées ----------
+let CT = null;
+const CT_CLS = { 'changé': 'ok', 'identique': '', 'à vérifier': 'wait', 'introuvable': 'no', 'ambigu': 'wait' };
+const contractsPreview = run(async btn => {
+  btn.disabled = true;
+  try { CT = await api('/api/admin/contracts/preview', { text: $('#ctText').value }); } finally { btn.disabled = false; }
+  // Les lignes douteuses (salaire inhabituel…) ne sont pas cochées d'office.
+  CT.rows.forEach(r => { if (r.status === 'à vérifier') r.off = true; });
+  renderContracts();
+});
+function renderContracts(){
+  const R = CT.rows, n = R.filter((r, i) => r.player && r.status !== 'identique' && !r.off).length;
+  const fmt = (v, f) => v === null || v === undefined ? '—' : f(v);
+  $('#ctResult').innerHTML = `<div class="chips" style="margin:12px 0 8px">${Object.entries(CT.counts).map(([k, v]) => `<span class="pill ${CT_CLS[k]}">${v} ${k}</span>`).join('')}</div>
+    <div class="list">${R.map((r, i) => `<div class="item" style="cursor:default;align-items:flex-start">
+      ${r.player && r.status !== 'identique' ? `<input type="checkbox" style="width:20px;height:20px;flex:none;margin-top:2px" ${r.off ? '' : 'checked'} onchange="CT.rows[${i}].off=!this.checked;renderContracts()">` : '<span style="width:20px;flex:none"></span>'}
+      <div class="grow"><div class="name">${esc(r.player ? r.player.name : r.name)} <span class="pill ${CT_CLS[r.status]}">${r.status}</span></div>
+        ${r.player ? `<div class="meta">${esc(r.player.team || '')}${r.player.owner ? ' · ' + esc(r.player.owner) : ' · agent libre'}</div>
+          <div class="meta">Salaire : ${fmt(r.player.aav, moneyFull)} → <b style="color:var(--text)">${fmt(r.aav ?? r.player.aav, moneyFull)}</b> · Fin : ${r.player.end ?? '—'} → <b style="color:var(--text)">${r.end ?? r.player.end ?? '—'}</b></div>`
+          : r.choices ? `<div class="meta">Plusieurs joueurs portent ce nom : ajoute l'équipe LNH sur la ligne (ex. CAR).</div>${r.choices.map(c => `<div class="meta">· ${esc(c.name)} (${esc(c.team || '?')})${c.owner ? ' · ' + esc(c.owner) : ''}</div>`).join('')}`
+          : `<div class="meta">Aucun joueur de ce nom dans la LNH ou le pool. Vérifie l'orthographe.</div>`}
+        ${r.problems && r.problems.length ? `<div class="meta" style="color:var(--orange-ink)">⚠ ${r.problems.join(', ')}</div>` : ''}
+        <div class="meta" style="opacity:.7">« ${esc(r.line)} »</div></div></div>`).join('')}</div>
+    <button class="btn" style="width:100%;margin-top:10px" ${n ? '' : 'disabled'} onclick="contractsApply()">Appliquer ${n} changement${n > 1 ? 's' : ''}</button>`;
+}
+const contractsApply = run(async () => {
+  const rows = CT.rows.filter(r => r.player && r.status !== 'identique' && !r.off).map(r => ({ id: r.player.id, aav: r.aav, end: r.end }));
+  if (!confirm(`Mettre à jour ${rows.length} contrat(s) ?`)) return;
+  const r = await api('/api/admin/contracts/apply', { rows });
+  toast(`${r.updated} contrat(s) mis à jour`); CT = null; $('#ctResult').innerHTML = ''; $('#ctText').value = '';
+  await refresh();
+});
+const contractsWatch = run(async () => {
+  const W = await api('/api/admin/contracts/watch');
+  const exp = W.players.filter(p => p.contract_end !== null), unk = W.players.filter(p => p.contract_end === null);
+  const n = $('#ctWatchN'); if (n) n.innerHTML = W.players.length ? `<span class="pill wait">${W.players.length} à surveiller</span>` : '';
+  const box = $('#ctWatch'); if (!box) return;
+  const line = p => `<div class="meta">· ${esc(p.name)} (${esc(p.nhl_team || '?')}) · ${esc(p.owner)}${p.contract_end ? ' · fin ' + p.contract_end : ''}</div>`;
+  box.innerHTML = `<summary>Contrats à surveiller : ${exp.length} échu(s), ${unk.length} fin inconnue</summary>
+    <p class="muted" style="margin:8px 0 4px">Joueurs des alignements. « Échu » : dernière saison ${W.year - 1}-${String(W.year).slice(2)} ou avant. Copie la liste pour les chercher sur PuckPedia.</p>
+    ${exp.length ? `<b style="font-size:13px">Échus</b>${exp.map(line).join('')}` : ''}${unk.length ? `<b style="font-size:13px;display:block;margin-top:6px">Fin inconnue</b>${unk.map(line).join('')}` : ''}
+    <button class="btn small ghost" style="margin-top:8px" onclick="navigator.clipboard.writeText(${esc(JSON.stringify(W.players.map(p => p.name).join('\n')))}).then(() => toast('Liste copiée'))">📋 Copier les noms</button>`;
+});
+
 const refreshInjuries = run(async btn => {
   btn.disabled = true;
   try { const r = await api('/api/admin/injuries/refresh', {}); toast(r.count ? `Rapport des blessés : ${r.count} joueurs` : 'Rapport des blessés vide (rien de changé)'); await refresh(); }

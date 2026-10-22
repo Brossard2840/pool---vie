@@ -214,6 +214,14 @@ et « → équipe » quand le choix a été échangé.
   les stats en colonnes (rang, âge, salaire, buts ou victoires, points, points par match).
 - **Choix de repêchage** : en bas de chaque équipe, tableau des choix par saison (ronde, propriétaire
   d'origine). Page Choix de repêchage : par équipe, par ronde, choix échangés et historique.
+- **📝 Contrats** (Commissaire → Contrats) : coller une liste copiée de PuckPedia ou d'un tableur, une ligne
+  par joueur (nom, salaire AAV, fin du contrat, dans n'importe quel format : « $12,500,000 », « 7.5M »,
+  « 2027-28 » ou « 2028 » ; l'équipe LNH en plus pour les homonymes). Aperçu avant d'appliquer : changé,
+  identique, à vérifier (salaire inhabituel, non coché d'office), introuvable, ambigu. Liste des contrats à
+  surveiller (échus ou fin inconnue) avec un bouton pour copier les noms. Chaque 1er juillet, les poolers et
+  le commissaire sont avisés des contrats échus. La LNH ne publie pas les salaires : ils viennent de PuckPedia.
+- **Âge** : calculé chaque jour à partir de la date de naissance officielle de tous les joueurs de la LNH
+  (rapports « bios » de la LNH, relus chaque semaine).
 - **Fiche du joueur** (toucher un joueur) : en-tête aux couleurs de son équipe avec sa photo, son numéro,
   son rang à sa position et ses points de pool ; boutons ronds (offre, marché, libérer, réclamer, ma liste) ;
   onglets Aperçu (rapport de blessure, dernières nouvelles et analyse, stats de la saison, 5 derniers
