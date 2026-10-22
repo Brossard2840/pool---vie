@@ -1665,13 +1665,21 @@ document.addEventListener('pointerdown', () => { loadHorn(); }, { passive: true 
 // Le klaxon de locomotive à 5 tons (type Nathan K5LA, utilisé sur les trains CN) est très proche de la sirène du Centre Bell.
 const K5 = [311.1, 370, 415.3, 493.9, 622.3];   // ré#, fa#, sol#, si, ré# : l'accord du klaxon de train
 const HORNS = {
+  original: { label: '📯 Klaxon de but (l\'original)', freqs: [155, 196, 233], blasts: [[0, 2.6]], cutoff: 1400, wave: 'sawtooth', vibrato: 3 },
   train:    { label: '🚂 Train CN (style Centre Bell)', freqs: K5, blasts: [[0, 4.2]], cutoff: 2600, wave: 'sawtooth' },
   passage:  { label: '🚦 Passage à niveau (long, long, court, long)', freqs: K5, blasts: [[0, 1.3], [1.5, 1.3], [3, .45], [3.65, 2.2]], cutoff: 2600, wave: 'sawtooth' },
+  foule:    { label: '🙌 But ! Klaxon et foule en délire', freqs: [155, 196, 233], blasts: [[0, 3.2]], cutoff: 1400, wave: 'sawtooth', vibrato: 3, crowd: 4.5 },
+  charge:   { label: '🎹 Orgue d\'aréna « Charge ! »', organ: [[392, .18], [523.3, .18], [659.3, .18], [784, .38], [0, .08], [659.3, .16], [784, .9]] },
+  orgue:    { label: '🎹 Orgue « Allez, on se lève ! »', organ: [[523.3, .2], [523.3, .2], [0, .1], [587.3, .2], [659.3, .2], [0, .1], [784, .25], [659.3, .25], [784, .7]] },
+  poteau:   { label: '🥅 Lancer frappé… sur le poteau ! (ding)', post: true },
+  buzzer:   { label: '⏱️ Sirène de fin de période', buzzer: 2.2 },
   arena:    { label: '🏟️ Klaxon d\'aréna grave', freqs: [110, 138.6, 164.8, 55], blasts: [[0, 3]], cutoff: 900, wave: 'sawtooth' },
   paquebot: { label: '🚢 Corne de brume', freqs: [65.4, 98, 130.8], blasts: [[0, 2.2], [2.6, 3]], cutoff: 500, wave: 'sawtooth' },
   sirene:   { label: '🚨 Sirène de police', sweep: true }
 };
-function hornChoice(){ const c = localStorageGet('pav_horn'); return c === 'perso' && S && S.config.hornVersion ? 'perso' : (HORNS[c] ? c : 'train'); }
+function hornChoice(){ const c = localStorageGet('pav_horn'); return c === 'perso' && S && S.config.hornVersion ? 'perso' : (HORNS[c] ? c : 'original'); }
+// Bruit blanc (foule, impact de la rondelle).
+function noiseBuffer(sec){ const b = audioCtx.createBuffer(1, audioCtx.sampleRate * sec, audioCtx.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; }
 function playSynth(h){
   const t0 = audioCtx.currentTime, comp = audioCtx.createDynamicsCompressor(); comp.connect(audioCtx.destination);
   if (h.sweep) {   // sirène qui monte et descend
@@ -1680,18 +1688,58 @@ function playSynth(h){
     g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.12, t0 + .05); g.gain.setValueAtTime(.12, t0 + 4.3); g.gain.linearRampToValueAtTime(0, t0 + 4.4);
     o.connect(g); g.connect(comp); o.start(t0); o.stop(t0 + 4.5); return;
   }
+  if (h.organ) {   // orgue d'aréna : fondamentale + harmoniques, un peu de vibrato
+    let t = t0;
+    for (const [f, len] of h.organ) {
+      if (f) for (const [mult, vol] of [[1, .16], [2, .08], [3, .05], [4, .03], [.5, .06]]) {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'sine'; o.frequency.value = f * mult;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .02); g.gain.setValueAtTime(vol, t + len - .04); g.gain.linearRampToValueAtTime(0, t + len);
+        o.connect(g); g.connect(comp); o.start(t); o.stop(t + len + .02);
+      }
+      t += len;
+    }
+    return;
+  }
+  if (h.post) {    // claque du bâton, puis « ding » métallique du poteau (partiels inharmoniques)
+    const n = audioCtx.createBufferSource(), ng = audioCtx.createGain(), bp = audioCtx.createBiquadFilter();
+    n.buffer = noiseBuffer(.15); bp.type = 'bandpass'; bp.frequency.value = 1800; bp.Q.value = .8;
+    ng.gain.setValueAtTime(.9, t0); ng.gain.exponentialRampToValueAtTime(.001, t0 + .12);
+    n.connect(bp); bp.connect(ng); ng.connect(comp); n.start(t0);
+    const tp = t0 + .32;
+    for (const [f, vol, dec] of [[1180, .22, 2.4], [2950, .12, 1.6], [4310, .08, 1.1], [6180, .05, .8]]) {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(vol, tp); g.gain.exponentialRampToValueAtTime(.0005, tp + dec);
+      o.connect(g); g.connect(comp); o.start(tp); o.stop(tp + dec);
+    }
+    return;
+  }
+  if (h.buzzer) {  // sirène électrique de fin de période
+    const g = audioCtx.createGain(), lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3000;
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.18, t0 + .02); g.gain.setValueAtTime(.18, t0 + h.buzzer); g.gain.linearRampToValueAtTime(0, t0 + h.buzzer + .05);
+    for (const f of [180, 182, 360]) { const o = audioCtx.createOscillator(); o.type = 'square'; o.frequency.value = f; o.connect(lp); o.start(t0); o.stop(t0 + h.buzzer + .1); }
+    lp.connect(g); g.connect(comp); return;
+  }
   const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = h.cutoff; lp.Q.value = 2; lp.connect(comp);
+  let lfoGain = null;
+  if (h.vibrato) { const lfo = audioCtx.createOscillator(); lfoGain = audioCtx.createGain(); lfo.frequency.value = 6; lfoGain.gain.value = h.vibrato; lfo.connect(lfoGain); lfo.start(t0); lfo.stop(t0 + 6); }
   for (const [start, len] of h.blasts) {
-    const t = t0 + start, g = audioCtx.createGain();
+    const t = t0 + start, g = audioCtx.createGain(), vol = .26 / Math.sqrt(h.freqs.length / 3);
     // Attaque d'un klaxon à air : le son monte vite et la note se stabilise en une fraction de seconde.
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.26 / Math.sqrt(h.freqs.length / 3), t + .06);
-    g.gain.setValueAtTime(.26 / Math.sqrt(h.freqs.length / 3), t + len - .15); g.gain.linearRampToValueAtTime(0, t + len);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .06);
+    g.gain.setValueAtTime(vol, t + len - .15); g.gain.linearRampToValueAtTime(0, t + len);
     g.connect(lp);
     for (const f of h.freqs) for (const det of [-3, 3]) {
       const o = audioCtx.createOscillator(); o.type = h.wave; o.detune.value = det;
       o.frequency.setValueAtTime(f * .94, t); o.frequency.exponentialRampToValueAtTime(f, t + .18);
+      if (lfoGain) lfoGain.connect(o.frequency);
       o.connect(g); o.start(t); o.stop(t + len + .05);
     }
+  }
+  if (h.crowd) {   // la foule qui se lève : bruit filtré qui gonfle puis retombe
+    const n = audioCtx.createBufferSource(), g = audioCtx.createGain(), bp = audioCtx.createBiquadFilter();
+    n.buffer = noiseBuffer(h.crowd); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = .6;
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.35, t0 + .8); g.gain.setValueAtTime(.35, t0 + h.crowd - 1.5); g.gain.linearRampToValueAtTime(0, t0 + h.crowd);
+    n.connect(bp); bp.connect(g); g.connect(comp); n.start(t0);
   }
 }
 function goalHorn(choice){
@@ -1702,7 +1750,7 @@ function goalHorn(choice){
     const src = audioCtx.createBufferSource(), g = audioCtx.createGain(); g.gain.value = .9;
     src.buffer = hornBuffer; src.connect(g); g.connect(audioCtx.destination); src.start(); return;
   }
-  playSynth(HORNS[c] || HORNS.train);
+  playSynth(HORNS[c] || HORNS.original);
 }
 function showBanner(n){
   const alarm = n.kind === 'trade';
