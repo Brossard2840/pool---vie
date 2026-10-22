@@ -207,11 +207,11 @@ et « → équipe » quand le choix a été échangé.
 - **💬 Mur de la gang** (Plus) : messages, réactions 🍺🔥😂🤦🚨👑. Les transactions, agents libres
   réclamés, résultats de ballottage, trophées et champions y sont publiés automatiquement.
   Chaque nouveau message est envoyé aux téléphones (sauf à son auteur) ; l'auteur est avisé des réactions.
-- **📣 Bloc des échanges** (Échanges ou Plus) : chaque pooler y met les joueurs qu'il est prêt à échanger,
+- **📣 Marché des transactions** (Échanges ou Plus) : chaque pooler y met les joueurs qu'il est prêt à échanger,
   avec une note (ce qu'il demande), et écrit ce qu'il cherche. La gang est avisée d'un nouveau joueur
-  sur le bloc. « 👀 Intéressé » avise le propriétaire sans dire qui (rumeur) ; « Faire une offre » ouvre
-  une offre avec le joueur déjà ajouté. Un joueur échangé ou libéré quitte le bloc tout seul.
-  Les joueurs sur le bloc portent l'étiquette 📣 partout dans l'application.
+  sur le marché. « 👀 Intéressé » avise le propriétaire sans dire qui (rumeur) ; « Faire une offre » ouvre
+  une offre avec le joueur déjà ajouté. Un joueur échangé ou libéré quitte le marché tout seul.
+  Les joueurs sur le marché portent l'étiquette 📣 partout dans l'application.
 - Les catégories de notifications ajoutées après l'abonnement d'un téléphone sont activées d'office ;
   chacun peut les décocher dans 🔔 Notifications.
 - **🏅 Trophées de la semaine** : pooler et joueur de la semaine (lundi au dimanche, tous les points de

@@ -646,7 +646,7 @@ const draft = createDraft(app, admin, { pool, h, inTransaction, movePlayers, get
 const projections = createProjections(app, { pool, h, inTransaction, seasonId, rules });
 // Mur de la gang, trophées de la semaine, temple de la renommée (lib/fun.js).
 fun = createFun(app, admin, { pool, h, getConfig, seasonId, buildLeague, playoffs, notify });
-// Bloc des échanges (lib/block.js).
+// Marché des transactions (lib/block.js).
 const block = createBlock(app, { pool, h, notify });
 
 admin.post('/config', h(async (req, res) => {
