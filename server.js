@@ -907,6 +907,16 @@ initDb().then(() => {
     }, 60 * 1000);
     refreshIfStale().catch(e => console.error(e));
   }
+  // Render (gratuit) endort le serveur après 15 minutes sans visite. Le serveur se visite donc lui-même
+  // par son adresse publique aux 10 minutes : il reste éveillé sans dépendre d'un service externe.
+  const selfUrl = process.env.RENDER_EXTERNAL_URL || process.env.SITE_URL;
+  if (selfUrl && process.env.NO_KEEP_AWAKE !== '1') {
+    const ping = () => fetch(`${selfUrl.replace(/\/$/, '')}/healthz`, { signal: AbortSignal.timeout(30000) })
+      .catch(e => console.warn('Réveil automatique :', e.message));
+    setTimeout(ping, 60 * 1000);
+    setInterval(ping, 10 * 60 * 1000);
+    console.log(`Garde-éveil : ${selfUrl}/healthz aux 10 minutes`);
+  }
 }).catch(e => {
   const msg = String(e && e.message || e);
   const hints = [

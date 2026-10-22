@@ -54,6 +54,10 @@ et que les stats suivent les matchs :
 1. Créez un compte sur [cron-job.org](https://cron-job.org).
 2. **Create cronjob** → URL : `https://VOTRE-SITE.onrender.com/healthz` → **Every 10 minutes** → **Create**.
 
+Le serveur se visite aussi lui-même aux 10 minutes (adresse fournie automatiquement par Render
+dans `RENDER_EXTERNAL_URL`) : cron-job.org devient une simple sécurité. Après un redémarrage de
+Render, la première visite le réveille et il reste ensuite éveillé.
+
 Si l'application affiche « Réveil du serveur… » à l'ouverture, le serveur s'était endormi : vérifiez
 dans cron-job.org que la tâche est toujours **Enabled** (le site la désactive après plusieurs échecs
 de suite) et que l'historique montre des réponses 200.
