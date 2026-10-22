@@ -1069,7 +1069,7 @@ function renderProjection(){
     return `<div class="card"><h3>${POS_LABEL[pos]} · ${list.length}</h3><div class="list">${list.map(p => `<div class="item" onclick="editProjPlayer(${p.id})">
       <span class="pos pos-${p.pos}">${p.pos}</span>
       <div class="grow"><div class="name">${esc(p.name)}${p.counts_cap ? '<span class="tag cap">$</span>' : ''}</div>
-        <div class="meta">${p.age ? p.age + ' ans · ' : ''}${STATUS_TAG[p.status](p)}${p.override !== null ? ' <span class="tag cap">salaire estimé</span>' : ''}${p.owner && p.owner !== S.me.name ? ' · chez ' + esc(p.owner) : ''}</div></div>
+        <div class="meta">${p.age ? p.age + ' ans · ' : ''}${projRookieTag(p.rookie)}${STATUS_TAG[p.status](p)}${p.override !== null ? ' <span class="tag cap">salaire estimé</span>' : ''}${p.owner && p.owner !== S.me.name ? ' · chez ' + esc(p.owner) : ''}</div></div>
       <div class="num"><b class="aav" style="${p.status === 'échu' && p.override === null ? 'color:var(--red)' : ''}">${money(p.aav)}</b>${p.aav !== p.aav_now ? `<div class="meta">auj. ${money(p.aav_now)}</div>` : ''}</div></div>`).join('') || '<div class="empty">Aucun joueur</div>'}</div></div>`;
   };
   $('#view').innerHTML = `<h2 class="title">${esc(P.name)}</h2>
@@ -1080,8 +1080,28 @@ function renderProjection(){
     ${P.issues.length ? `<div class="issues">${P.issues.map(esc).join('<br>')}</div>` : '<div class="okbox">✓ Alignement conforme pour cette saison</div>'}
     ${P.expired ? `<div class="issues" style="background:#2b2512;border-color:#5a4a1e;color:var(--gold)">${P.expired} joueur(s) n'auront plus de contrat : touche-les pour inscrire un salaire estimé (nouveau contrat) ou retire-les.</div>` : ''}
     ${P.unknown ? `<p class="muted">${P.unknown} joueur(s) sans date de fin de contrat connue : leur AAV actuel est utilisé. Touche-les pour inscrire une fin de contrat.</p>` : ''}
+    ${projRookieCard(P)}
     <button class="btn" style="width:100%;margin-bottom:12px" onclick="openProjAdd()">+ Ajouter un joueur</button>
     ${['F','D','G'].map(sec).join('')}`;
+}
+// Recrues qui se protègent automatiquement avant la saison projetée (art. 4.3.1, 4.3.3 et 4.3.4).
+function projRookieTag(r){
+  if (!r) return '';
+  const lbl = r.cat === 'R' ? '🍼 Recrue' : 'Recrue 2e an';
+  return `<span class="tag ${r.cat === 'R' ? 'rk' : 'rk2'}" style="margin-left:0;margin-right:4px">${lbl}${r.sure ? '' : ' ?'}${r.kept ? ' 🛡️' : ''}</span>`;
+}
+function projRookieCard(P){
+  const R = P.rookies;
+  if (R.far) return `<div class="card"><h3>🛡️ Recrues protégées automatiquement</h3><p class="muted">Trop loin pour savoir quelles recrues se protégeront avant ${seasonLbl(P.season_start)} : ça dépend des matchs joués d'ici là.</p></div>`;
+  const kept = R.list.filter(r => r.kept), extra = R.list.filter(r => !r.kept);
+  const row = r => `<div class="item"><span class="pos pos-${r.pos}">${r.pos}</span><div class="grow"><div class="name">${esc(r.name)}</div>
+    <div class="meta">${r.cat === 'R' ? 'Recrue (art. 4.3.1)' : 'Recrue 2e année (art. 4.3.3)'}${r.sure ? '' : ' · possible, s\'il joue son 1er match LNH en ' + R.season}</div></div>${r.kept ? '<span class="tag pts">🛡️ protégé</span>' : ''}</div>`;
+  return `<div class="card"><h3><span>🛡️ Recrues protégées automatiquement</span><span class="muted">${kept.length} / 3</span></h3>
+    <p class="muted">Protégées sans prendre de place dans tes 10 protégés, à la fin de la saison ${R.season}. Maximum 3 par équipe, dont 1 seule recrue de 2e année (art. 4.3.4). Les joueurs à 39 matchs ou moins (art. 4.3.2) partagent ces 3 places : ça se décide à la fin de la saison.</p>
+    <div class="list">${kept.map(row).join('') || '<div class="empty">Aucune recrue admissible dans cette projection</div>'}</div>
+    ${extra.length ? `<p class="muted" style="margin-top:8px">Admissibles mais au-delà de la limite :</p><div class="list">${extra.map(row).join('')}</div>` : ''}
+    ${R.missing.length ? `<div class="issues" style="background:#13261f;border-color:#2f5e4a;color:#9fe0c2;margin-top:10px">${R.missing.length} recrue(s) protégeable(s) de ton équipe ne sont pas dans cette projection : ${R.missing.map(r => esc(r.name)).join(', ')}.
+      <button class="btn small" style="margin-top:8px;display:block" onclick="projUpdate({ addRookies: true })">Les ajouter</button></div>` : ''}</div>`;
 }
 const projUpdate = run(async body => { PJ = await api('/api/projections/' + PJ.id, body); renderProjection(); });
 function editProjPlayer(id){

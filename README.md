@@ -193,6 +193,10 @@ et « → équipe » quand le choix a été échangé.
   Salaire = AAV si le joueur est encore sous contrat cette saison-là, sinon « contrat échu » (0 $)
   tant qu'on n'inscrit pas un salaire estimé. Plafond de l'année (113,5 M$ en 2027-28, puis estimé,
   modifiable), conformité, âge de chaque joueur cette saison-là. On peut ajouter n'importe quel joueur.
+  Section « Recrues protégées automatiquement » : recrues (4.3.1) et recrues de 2e année (4.3.3) qui se
+  protégeront avant cette saison, les 3 retenues selon l'art. 4.3.4, et un bouton pour ajouter celles
+  de son équipe qui manquent dans la projection. Pour la saison suivante, les recrues d'aujourd'hui
+  deviennent des recrues de 2e année ; les joueurs encore sans match LNH sont des recrues « possibles ».
 
 ## La vie de la gang
 
