@@ -202,7 +202,11 @@ et « → équipe » quand le choix a été échangé.
   qui grimpent ou glissent au classement, pooler de la soirée, victoires écrasantes (4 buts d'écart)
   et toujours le résultat du CH. Le récap est aussi publié sur le mur de la gang.
 
-- **Apparence** (Plus → Apparence) : Auto (suit le mode clair ou sombre du téléphone), Clair ou Sombre.
+- **⚙️ Réglages** (roue en haut de l'écran, ou Plus → Réglages) : mon équipe (logo, nom de l'équipe, prénom du
+  pooler affiché à côté du nom ; le commissaire choisit l'équipe à modifier), apparence et page d'ouverture,
+  notifications de ce téléphone, sons (sirène des transactions, sons du repêchage, son de la ligue pour le
+  commissaire), compte (changer de compte, se déconnecter) et application (version, recharger).
+- **Apparence** (Réglages → Apparence) : Auto (suit le mode clair ou sombre du téléphone), Clair ou Sombre.
   Nouveau look : cartes arrondies, gros titres, onglets en pilule, photo officielle de chaque joueur dans
   les listes (pastille de position), en-tête de l'équipe aux couleurs du pool.
 - **Logo d'équipe** (bouton « 🎨 Logo » sur la page de son équipe) : chandail, bâton, patins, casque,

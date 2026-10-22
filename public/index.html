@@ -307,6 +307,11 @@
   .av img.ok{opacity:1;}
   .av .ini{display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;background:color-mix(in srgb,var(--tc) 70%,#333);}
   .av .pos{position:absolute;right:-5px;bottom:-4px;z-index:2;font-size:9px;padding:1px 4px;border:2px solid var(--panel);border-radius:6px;}
+  /* Réglages */
+  .bell.gear{font-size:21px;}
+  .setp{display:flex;align-items:center;gap:14px;}
+  .setp .nm{font-size:22px;font-weight:900;letter-spacing:-.01em;} .setp .sb{color:var(--dim);font-size:13px;margin-top:2px;}
+  .owner{display:inline-block;background:var(--info-bg);color:var(--info-ink);border-radius:999px;padding:2px 9px;font-size:12px;font-weight:800;vertical-align:3px;margin-left:6px;}
   /* Logo d'équipe */
   .tav{display:inline-block;flex:none;vertical-align:middle;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.25));}
   .tname{display:inline-flex;align-items:center;gap:6px;min-width:0;}
@@ -367,6 +372,7 @@
   <div class="brand"><img class="logo" src="/logo-mark.svg" alt=""><div><h1>POOL À VIE</h1><div class="sub" id="updated">—</div></div></div>
   <div style="display:flex;align-items:center;gap:12px">
     <a class="bell" href="#/notifications" aria-label="Notifications">🔔<span class="badge" id="bellBadge" hidden></span></a>
+    <a class="bell gear" href="#/reglages" aria-label="Réglages">⚙️</a>
     <div class="me" id="meLabel"></div>
   </div>
 </header>
@@ -531,16 +537,16 @@ window.addEventListener('hashchange', () => route());
 function route(){
   if (!S) return;
   closeSheet();
-  const [, r = 'classement', arg] = location.hash.split('/');
+  const [, r = (localStorageGet('pav_home') || 'classement'), arg] = location.hash.split('/');
   document.querySelectorAll('.tabbar a').forEach(a => a.classList.toggle('on', a.dataset.r === r ||
     (r === 'equipe' && a.dataset.r === (Number(arg) === S.me.teamId ? 'mon-equipe' : 'classement')) ||
-    (['liste','historique','commissaire','equipes','protection','projections','projection','mur','trophees','temple','simulation'].includes(r) && a.dataset.r === 'plus') ||
+    (['liste','historique','commissaire','equipes','protection','projections','projection','mur','trophees','temple','simulation','reglages'].includes(r) && a.dataset.r === 'plus') ||
     (['offre','choix','echange','bloc','marche'].includes(r) && a.dataset.r === 'echanges')));
   clearInterval(liveTimer); liveTimer = null; clearInterval(draftTimer); draftTimer = null;
   clearInterval(DCK.timer); DCK.timer = null; if (SIM) { clearTimeout(SIM.bot); SIM = null; }
   window.scrollTo(0, 0);
   const views = { classement: vStandings, 'mon-equipe': () => neutral() ? vTeams() : vTeam(S.me.teamId), equipe: () => vTeam(arg), equipes: vTeams, direct: () => vLive(arg),
-                  repechage: () => vDraft(arg), simulation: vDraftSim, protection: () => vProtection(arg), echanges: vTrades, echange: () => vTradeOne(arg), mur: vWall, marche: vBlock, bloc: vBlock, trophees: vAwards, temple: vHall, projections: vProjections, projection: () => vProjection(arg), notifications: vNotifications, offre: () => vOffer(arg), choix: () => vPicks(arg),
+                  repechage: () => vDraft(arg), simulation: vDraftSim, protection: () => vProtection(arg), echanges: vTrades, echange: () => vTradeOne(arg), mur: vWall, reglages: vSettings, marche: vBlock, bloc: vBlock, trophees: vAwards, temple: vHall, projections: vProjections, projection: () => vProjection(arg), notifications: vNotifications, offre: () => vOffer(arg), choix: () => vPicks(arg),
                   joueurs: vPlayers, plus: vMore, liste: vWatchlist, historique: vMoves, commissaire: vAdmin };
   (views[r] || vStandings)();
 }
@@ -606,7 +612,7 @@ function vStandings(){
     ${t.rank === 9 ? '<div class="cutline">Ligne des séries (top 8)</div>' : ''}
     <div class="scard ${t.id === S.me.teamId ? 'me' : ''}" onclick="location.hash='#/equipe/${t.id}'">
       <div class="grow" style="min-width:0"><div style="display:flex;align-items:center;gap:8px">${teamAv(t, 46)}<span class="rk">${t.rank}</span></div>
-        <div class="nm">${esc(t.name)}</div>
+        <div class="nm">${esc(t.name)}${t.ownerName ? `<span class="owner">${esc(t.ownerName)}</span>` : ''}</div>
         <div class="chips"><span class="chip" id="sd-${t.id}" title="Joueurs dont l'équipe joue aujourd'hui">👥 —</span><span class="chip">${money(t.capUsed)}</span>${t.issues.length ? `<span class="chip" style="color:var(--red)">⚠ ${t.issues.length}</span>` : ''}</div></div>
       <div class="pts"><small>Saison</small><b>${t.points}</b><div class="muted" style="font-size:12px">${ppg(t)}/m</div></div>
       <div class="pts day"><small>Jour</small><b id="dp-${t.id}">—</b></div>
@@ -640,7 +646,7 @@ function vTeam(id){
   $('#view').innerHTML = `
     <div class="thero"><span class="big">${teamAv(t, 76)}</span>
       ${t.id === S.me.teamId || S.me.isAdmin ? `<button class="edit" onclick="openAvatarEditor(${t.id})">🎨 Logo</button>` : ''}
-      <div class="tn">${esc(t.name)}${t.id === S.me.teamId ? ' <span style="font-size:14px;opacity:.85">· mon équipe</span>' : ''}</div>
+      <div class="tn">${esc(t.name)}${t.ownerName ? ` <span style="font-size:15px;opacity:.9">· ${esc(t.ownerName)}</span>` : ''}${t.id === S.me.teamId ? ' <span style="font-size:14px;opacity:.85">· mon équipe</span>' : ''}</div>
       <div class="ts">${t.rank}${t.rank === 1 ? 're' : 'e'} sur ${S.teams.length} · ${t.points} pts · ${ppg(t)} pt/match</div>
       <div class="chipz"><span>${t.size} joueurs</span><span>${money(t.capUsed)} / ${money(c.cap)}</span>${t.avgAge ? `<span>🎂 ${t.avgAge.toLocaleString('fr-CA')} ans</span>` : ''}</div></div>
     <div class="stats">
@@ -2166,10 +2172,8 @@ function vMore(){
   const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   $('#view').innerHTML = `
     <h2 class="title">Plus</h2>
-    <div class="card"><h3>Apparence</h3>
-      <div class="seg" style="margin:0">${[['auto', '📱 Auto'], ['light', '☀️ Clair'], ['dark', '🌙 Sombre']].map(([v, l]) => `<button class="${themePref() === v ? 'on' : ''}" onclick="setTheme('${v}');vMore()">${l}</button>`).join('')}</div>
-      <p class="muted" style="margin:8px 0 0;font-size:12px">Auto suit le mode clair ou sombre de ton téléphone.</p></div>
     <div class="card"><div class="list">
+      <div class="item" onclick="location.hash='#/reglages'"><div class="grow"><div class="name">⚙️ Réglages</div><div class="meta">Mon équipe et son logo, apparence, notifications, sons, compte</div></div>›</div>
       ${neutral() ? '' : `<div class="item" onclick="location.hash='#/liste'"><div class="grow"><div class="name">☆ Ma liste</div><div class="meta">Mes joueurs ciblés, en ordre de préférence</div></div>›</div>`}
       <div class="item" onclick="location.hash='#/marche'"><div class="grow"><div class="name">📣 Marché des transactions</div><div class="meta">Joueurs offerts, rumeurs et ce que chacun cherche</div></div>›</div>
       <div class="item" onclick="location.hash='#/mur'"><div class="grow"><div class="name">💬 Le mur de la gang</div><div class="meta">Trash talk et réactions sur les transactions</div></div>›</div>
@@ -2656,7 +2660,7 @@ async function pollNotifications(){
 }
 function startNotifications(){ if (!notifTimer) notifTimer = setInterval(pollNotifications, 30000); pollNotifications(); }
 
-const hornReset = run(async () => { await api('/api/admin/horn', { data: '' }); hornBuffer = null; await loadState(); toast('Klaxon synthétique rétabli'); vNotifications(); });
+const hornReset = run(async () => { await api('/api/admin/horn', { data: '' }); hornBuffer = null; await loadState(); toast('Son de la ligue retiré'); vSettings(); });
 const vNotifications = run(async () => {
   const N = await api('/api/notifications');
   const top = N.notifications[0]?.id || 0;
@@ -2664,33 +2668,98 @@ const vNotifications = run(async () => {
   const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   const iOS = /iPhone|iPad/.test(navigator.userAgent);
   $('#view').innerHTML = `<h2 class="title">Notifications</h2>
-    <div class="card" id="pushCard"><h3>Sur ce téléphone</h3>
-      ${!pushOk ? `<p class="muted">${iOS && !standalone ? 'Sur iPhone, ajoute d\'abord l\'application à ton écran d\'accueil (Partager ⬆︎ → Sur l\'écran d\'accueil), puis ouvre-la depuis l\'icône pour activer les notifications.' : 'Ce navigateur ne permet pas les notifications.'}</p>`
-        : '<div id="pushBody" class="muted">Chargement…</div>'}
-      <label class="pick"><input type="checkbox" id="soundTog" ${localStorageGet('pav_sound') === 'off' ? '' : 'checked'}> 🚨 Sirène de but dans l'application lors d'une transaction</label>
-      <label class="f" style="margin-top:8px">Ma sirène</label>
-      ${[...Object.entries(HORNS), ...(S.config.hornVersion ? [['perso', { label: '🎵 Son de la ligue (téléversé par le commissaire)' }]] : [])].map(([k, h]) => `<div class="pick" style="justify-content:space-between">
-        <label style="display:flex;gap:8px;align-items:center;flex:1"><input type="radio" name="horn" value="${k}" ${hornChoice() === k ? 'checked' : ''} onchange="localStorageSet('pav_horn','${k}');goalHorn('${k}')"> ${esc(h.label)}</label>
-        <button class="btn small ghost" onclick="goalHorn('${k}')">▶</button></div>`).join('')}
-    </div>
-    ${S.me.isAdmin ? `<div class="card"><h3>Son de la sirène (commissaire)</h3>
-      <p class="muted">${S.config.hornVersion ? '✅ Un son personnalisé est en place.' : 'Klaxon d\'aréna synthétique.'} Téléverse un fichier MP3 (1 Mo maximum, quelques secondes) que tu as le droit d'utiliser : il s'ajoute aux choix de sirène de chaque pooler.</p>
-      <label class="btn small" style="display:inline-block">📁 Choisir un fichier<input type="file" id="hornFile" accept="audio/*" hidden></label>
-      ${S.config.hornVersion ? '<button class="btn small ghost" onclick="hornReset()">Revenir au klaxon synthétique</button>' : ''}</div>` : ''}
+    <a class="card" href="#/reglages" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)"><span style="font-size:22px">⚙️</span>
+      <span class="grow"><b>Notifications sur ce téléphone et sons</b><div class="muted" style="font-size:12px">Activer, choisir les catégories, la sirène…</div></span>›</a>
     <div class="card"><div class="list">${N.notifications.map(n => `<div class="notif ${n.id > N.seen ? 'new' : ''}" onclick="${n.link ? `location.hash='${n.link}'` : ''}">
       <div class="ico">${NOTIF_ICON[n.kind] || '🔔'}</div><div class="grow"><div class="name" style="white-space:normal">${esc(n.title)}</div>
       ${n.body ? `<div class="meta">${esc(n.body)}</div>` : ''}<div class="meta">${ago(n.at)}</div></div></div>`).join('') || '<div class="empty">Aucune notification pour l\'instant.</div>'}</div></div>`;
+  if (top) { api('/api/notifications/seen', { id: top }).catch(() => {}); S.unreadNotifications = 0; renderChrome(); }
+});
+// ---------- Réglages ----------
+let setTeamId = null;
+const HOME_TABS = [['classement', '🏆 Classement'], ['mon-equipe', '🛡️ Mon équipe'], ['direct', '📈 En direct'], ['echanges', '⇄ Échanges'], ['repechage', '🎲 Repêchage']];
+const vSettings = run(async () => {
+  const N = await api('/api/notifications');
+  const pushOk = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const iOS = /iPhone|iPad/.test(navigator.userAgent);
+  const sorted = S.teams.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  if (!neutral()) setTeamId = S.me.teamId; else if (!team(setTeamId)) setTeamId = sorted[0] && sorted[0].id;
+  const t = team(setTeamId), me = myTeam();
+  const version = (await caches.keys().catch(() => [])).find(k => k.startsWith('pav-')) || '—';
+  $('#view').innerHTML = `<h2 class="title">⚙️ Réglages</h2>
+    <div class="card setp">${me ? teamAv(me, 64) : '<span style="font-size:44px">🔑</span>'}
+      <div class="grow"><div class="nm">${me ? esc(me.name) : 'Commissaire'}${me && me.ownerName ? `<span class="owner">${esc(me.ownerName)}</span>` : ''}</div>
+        <div class="sb">${me ? `${me.rank}${me.rank === 1 ? 're' : 'e'} sur ${S.teams.length} · ${me.points} pts` : 'Compte neutre, sans équipe'}${S.me.isAdmin && me ? ' · commissaire' : ''}</div></div></div>
+
+    ${t ? `<div class="sechd">🏒 ${neutral() ? 'Équipes' : 'Mon équipe'}</div>
+    <div class="card">
+      ${neutral() ? `<label class="f">Équipe à modifier (commissaire)</label><select style="margin-bottom:12px" onchange="setTeamId=Number(this.value);vSettings()">${sorted.map(x => `<option value="${x.id}" ${x.id === t.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>` : ''}
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">${teamAv(t, 56)}<div class="grow"><b>Logo</b><div class="muted" style="font-size:12px">Chandail, bâton, patins, casque, rondelle ou bière, à tes couleurs</div></div>
+        <button class="btn small" onclick="openAvatarEditor(${t.id})">🎨 Modifier</button></div>
+      <label class="f">Nom de l'équipe</label><input id="stName" maxlength="30" value="${esc(t.name)}" style="margin-bottom:10px">
+      <label class="f">Prénom du pooler (affiché à côté du nom de l'équipe)</label><input id="stOwner" maxlength="20" value="${esc(t.ownerName || '')}" placeholder="ex. Andy" style="margin-bottom:12px">
+      <button class="btn small" onclick="saveProfile(${t.id})">Enregistrer</button>
+      <p class="muted" style="font-size:12px;margin:8px 0 0">Un changement de nom est annoncé sur le mur de la gang. L'historique garde les anciens noms.</p></div>` : ''}
+
+    <div class="sechd">🎨 Apparence</div>
+    <div class="card">
+      <div class="seg" style="margin:0 0 6px">${[['auto', '📱 Auto'], ['light', '☀️ Clair'], ['dark', '🌙 Sombre']].map(([v, l]) => `<button class="${themePref() === v ? 'on' : ''}" onclick="setTheme('${v}');vSettings()">${l}</button>`).join('')}</div>
+      <p class="muted" style="font-size:12px;margin:0 0 12px">Auto suit le mode clair ou sombre de ton téléphone.</p>
+      <label class="f">Page d'ouverture de l'application</label>
+      <select onchange="localStorageSet('pav_home', this.value);toast('Page d’ouverture enregistrée')">${HOME_TABS.map(([k, l]) => `<option value="${k}" ${(localStorageGet('pav_home') || 'classement') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+
+    <div class="sechd">🔔 Notifications</div>
+    <div class="card" id="pushCard"><h3>Sur ce téléphone</h3>
+      ${!pushOk ? `<p class="muted">${iOS && !standalone ? 'Sur iPhone, ajoute d\'abord l\'application à ton écran d\'accueil (Partager ⬆︎ → Sur l\'écran d\'accueil), puis ouvre-la depuis l\'icône pour activer les notifications.' : 'Ce navigateur ne permet pas les notifications.'}</p>`
+        : '<div id="pushBody" class="muted">Chargement…</div>'}</div>
+
+    <div class="sechd">🔊 Sons</div>
+    <div class="card">
+      <label class="pick"><input type="checkbox" id="soundTog" ${localStorageGet('pav_sound') === 'off' ? '' : 'checked'}> 🚨 Sirène lors d'une transaction</label>
+      <label class="pick"><input type="checkbox" id="draftSndTog" ${localStorageGet('pav_draft_sound') === 'off' ? '' : 'checked'}> 🎲 Sons du repêchage (tic-tac, fanfare, carillon)</label>
+      <label class="f" style="margin-top:10px">Ma sirène</label>
+      ${[...Object.entries(HORNS), ...(S.config.hornVersion ? [['perso', { label: '🎵 Son de la ligue (téléversé par le commissaire)' }]] : [])].map(([k, h]) => `<div class="pick" style="justify-content:space-between">
+        <label style="display:flex;gap:8px;align-items:center;flex:1"><input type="radio" name="horn" value="${k}" ${hornChoice() === k ? 'checked' : ''} onchange="localStorageSet('pav_horn','${k}');goalHorn('${k}')"> ${esc(h.label)}</label>
+        <button class="btn small ghost" onclick="goalHorn('${k}')">▶</button></div>`).join('')}
+      ${S.me.isAdmin ? `<div style="margin-top:12px"><b style="font-size:13px">Son de la ligue (commissaire)</b>
+        <p class="muted">${S.config.hornVersion ? '✅ Un son personnalisé est en place.' : 'Aucun son téléversé.'} Fichier MP3 de quelques secondes (1 Mo maximum) que tu as le droit d'utiliser.</p>
+        <label class="btn small" style="display:inline-block">📁 Choisir un fichier<input type="file" id="hornFile" accept="audio/*" hidden></label>
+        ${S.config.hornVersion ? '<button class="btn small ghost" onclick="hornReset()">Retirer le son de la ligue</button>' : ''}</div>` : ''}</div>
+
+    <div class="sechd">👤 Compte</div>
+    <div class="card">
+      <p class="muted" style="margin-top:0">Connecté comme <b style="color:var(--text)">${me ? esc(me.name) : '🔑 Commissaire'}</b> sur cet appareil.
+        ${me ? 'Ton code d\'accès t\'est remis par le commissaire ; pour en changer, demande-lui un nouveau code (tes autres appareils seront déconnectés).' : 'Le code commissaire se change dans Render (COMMISSAIRE_CODE).'}</p>
+      <div class="row" style="margin:0"><button class="btn ghost" onclick="logout()">Changer de compte</button><button class="btn danger" onclick="logout()">Se déconnecter</button></div>
+      ${S.me.isAdmin ? `<a class="link" href="#/commissaire" style="display:block;margin-top:12px">🔑 Outils du commissaire ›</a>` : ''}</div>
+
+    <div class="sechd">📱 Application</div>
+    <div class="card">
+      ${standalone ? '<p class="muted" style="margin-top:0">✅ Installée sur l\'écran d\'accueil.</p>' : `<p class="muted" style="margin-top:0"><b>iPhone (Safari)</b> : Partager <b>⬆︎</b> → « Sur l'écran d'accueil ». <b>Android (Chrome)</b> : menu <b>⋮</b> → « Installer l'application ».</p>`}
+      <p class="muted">Version : ${esc(version)}. Si l'application semble figée ou affiche une ancienne version :</p>
+      <button class="btn small ghost" onclick="reloadApp()">🔄 Recharger l'application</button></div>`;
   const hf = $('#hornFile');
   if (hf) hf.onchange = run(async e => {
     const f = e.target.files[0]; if (!f) return;
     if (f.size > 1024 * 1024) return toast('Fichier trop gros (maximum 1 Mo)');
     const data = await new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = ko; r.readAsDataURL(f); });
-    await api('/api/admin/horn', { data }); await loadState(); await loadHorn(); toast('Nouveau son en place'); goalHorn('perso'); vNotifications();
+    await api('/api/admin/horn', { data }); await loadState(); await loadHorn(); toast('Nouveau son en place'); goalHorn('perso'); vSettings();
   });
   $('#soundTog').onchange = e => { localStorageSet('pav_sound', e.target.checked ? 'on' : 'off'); if (e.target.checked) goalHorn(); };
-  if (top) { api('/api/notifications/seen', { id: top }).catch(() => {}); S.unreadNotifications = 0; renderChrome(); }
+  $('#draftSndTog').onchange = e => { localStorageSet('pav_draft_sound', e.target.checked ? 'on' : 'off'); if (e.target.checked) draftSound('next'); };
   if (pushOk) renderPush(N);
 });
+const saveProfile = run(async teamId => {
+  await api('/api/team/profile', { teamId, name: $('#stName').value, owner: $('#stOwner').value });
+  toast('Équipe enregistrée'); await refresh();
+});
+// Vide le cache de l'application et recharge la dernière version.
+async function reloadApp(){
+  try { for (const k of await caches.keys()) await caches.delete(k); const r = await navigator.serviceWorker.getRegistration(); if (r) await r.update(); } catch {}
+  location.reload();
+}
+
 function urlB64(b64){ const p = '='.repeat((4 - b64.length % 4) % 4); const raw = atob((b64 + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...raw].map(c => c.charCodeAt(0))); }
 async function renderPush(N){
   const reg = await navigator.serviceWorker.ready;

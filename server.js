@@ -126,6 +126,7 @@ async function initDb() {
     );
   `);
   await pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS avatar JSONB`);
+  await pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS owner_name TEXT`);
   await live.initTables();
   await trades.initTables();
   await waivers.initTables();
@@ -392,6 +393,30 @@ app.post('/api/team/avatar', h(async (req, res) => {
   res.json({ ok: true, avatar });
 }));
 
+// Profil de l'équipe (réglages) : nom de l'équipe et prénom du pooler. Le commissaire peut modifier n'importe quelle équipe.
+app.post('/api/team/profile', h(async (req, res) => {
+  if (!req.me) return res.status(401).json({ error: 'Connexion requise' });
+  const teamId = req.me.isAdmin && req.body.teamId ? Number(req.body.teamId) : req.me.teamId;
+  if (!teamId) return res.status(400).json({ error: 'Choisis une équipe' });
+  const { rows: cur } = await pool.query(`SELECT name FROM teams WHERE id=$1`, [teamId]);
+  if (!cur[0]) return res.status(404).json({ error: 'Équipe introuvable' });
+  if (req.body.name !== undefined) {
+    const name = String(req.body.name).replace(/\s+/g, ' ').trim();
+    if (name.length < 2 || name.length > 30) return res.status(400).json({ error: 'Nom d\'équipe : 2 à 30 caractères' });
+    const { rows: dup } = await pool.query(`SELECT 1 FROM teams WHERE LOWER(name)=LOWER($1) AND id<>$2`, [name, teamId]);
+    if (dup.length) return res.status(400).json({ error: 'Ce nom est déjà pris' });
+    if (name !== cur[0].name) {
+      await pool.query(`UPDATE teams SET name=$2 WHERE id=$1`, [teamId, name]);
+      notify({ kind: 'wall', title: `🏷️ ${cur[0].name} s'appelle maintenant ${name}`, link: '#/classement', dedupe: `rename:${teamId}:${name}` });
+    }
+  }
+  if (req.body.owner !== undefined) {
+    const owner = String(req.body.owner).replace(/\s+/g, ' ').trim().slice(0, 20) || null;
+    await pool.query(`UPDATE teams SET owner_name=$2 WHERE id=$1`, [teamId, owner]);
+  }
+  res.json({ ok: true });
+}));
+
 const loginAttempts = new Map();
 app.get('/api/login/teams', h(async (req, res) => {
   const { rows } = await pool.query(`SELECT id, name FROM teams WHERE code_hash IS NOT NULL ORDER BY LOWER(name)`);
@@ -461,7 +486,7 @@ function clean(p) {
 
 async function buildLeague() {
   const config = await leagueConfig();
-  const { rows: teams } = await pool.query(`SELECT id, name, is_admin, avatar, code_hash IS NOT NULL AS has_code FROM teams ORDER BY LOWER(name)`);
+  const { rows: teams } = await pool.query(`SELECT id, name, is_admin, avatar, owner_name, code_hash IS NOT NULL AS has_code FROM teams ORDER BY LOWER(name)`);
   const { rows: owned } = await pool.query(`SELECT ${PLAYER_COLS}, pk.team_id FROM picks pk JOIN players p ON p.id = pk.player_id`);
   // Retenues salariales de la saison (art. 5.3) : le joueur coûte moins à son équipe actuelle,
   // et l'équipe qui retient garde ce montant dans sa masse.
@@ -501,7 +526,7 @@ async function buildLeague() {
   for (const list of byTeam.values()) for (const p of list) p.trend = trendOf(games.get(p.nhl_id) || [], p.pos);
   const summaries = teams.map(t => {
     const list = byTeam.get(t.id), ages = list.map(p => p.age).filter(a => a);
-    return { id: t.id, name: t.name, hasCode: t.has_code, avatar: t.avatar,
+    return { id: t.id, name: t.name, hasCode: t.has_code, avatar: t.avatar, ownerName: t.owner_name || null,
       avgAge: ages.length ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length * 10) / 10 : null,
       rookies: list.filter(p => p.cats.includes('R')).length,
       ...rules.teamSummary(list, { ...config, retained: retByTeam.get(t.id) || 0 }) };
