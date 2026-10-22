@@ -201,6 +201,9 @@ et « → équipe » quand le choix a été échangé.
   qui grimpent ou glissent au classement, pooler de la soirée, victoires écrasantes (4 buts d'écart)
   et toujours le résultat du CH. Le récap est aussi publié sur le mur de la gang.
 
+- **Apparence** (Plus → Apparence) : Auto (suit le mode clair ou sombre du téléphone), Clair ou Sombre.
+  Nouveau look : cartes arrondies, gros titres, onglets en pilule, photo officielle de chaque joueur dans
+  les listes (pastille de position), en-tête de l'équipe aux couleurs du pool.
 - **Fiche du joueur** (toucher un joueur) : en-tête aux couleurs de son équipe avec sa photo, son numéro,
   son rang à sa position et ses points de pool ; boutons ronds (offre, marché, libérer, réclamer, ma liste) ;
   onglets Aperçu (rapport de blessure, dernières nouvelles et analyse, stats de la saison, 5 derniers
