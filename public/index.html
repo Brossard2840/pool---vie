@@ -316,8 +316,8 @@ function renderChrome(){
   const b = $('#tradeBadge'); b.hidden = !S.pendingTrades; b.textContent = S.pendingTrades || '';
   $('#plusBadge').hidden = !S.pendingProtection;
   const bb = $('#bellBadge'); bb.hidden = !S.unreadNotifications; bb.textContent = S.unreadNotifications > 99 ? '99+' : (S.unreadNotifications || '');
-  // Pendant la préparation ou le déroulement d'un repêchage, l'onglet Repêchage remplace En direct.
-  const drafting = S.draft && ['setup', 'live'].includes(S.draft.status);
+  // Pendant le repêchage (en cours), l'onglet Repêchage remplace En direct ; sinon il reste dans Plus.
+  const drafting = S.draft && S.draft.status === 'live';
   document.querySelector('.tabbar a[data-r="repechage"]').hidden = !drafting;
   document.querySelector('.tabbar a[data-r="direct"]').hidden = !!drafting;
 }
