@@ -285,6 +285,8 @@ async function apiDelete(path){
 function run(fn){ return async (...a) => { try { await fn(...a); } catch(e){ toast(e.message); } }; }
 const team = id => S.teams.find(t => t.id === Number(id));
 const myTeam = () => S && team(S.me.teamId);
+// Compte commissaire : neutre, sans équipe.
+const neutral = () => S && S.me.isAdmin && !S.me.teamId;
 
 // ---------- connexion ----------
 async function showLogin(){
@@ -338,7 +340,9 @@ function renderChrome(){
   $('#top').hidden = false; $('#tabbar').hidden = false;
   const lastStats = [S.config.lastUpdate, S.config.lastLive].filter(Boolean).sort().pop();
   $('#updated').textContent = `Stats LNH : ${ago(lastStats)}`;
-  $('#meLabel').innerHTML = `<b>${esc(S.me.name)}</b>${S.me.isAdmin ? '<br>commissaire' : ''}`;
+  $('#meLabel').innerHTML = neutral() ? '<b>🔑 Commissaire</b><br>compte neutre' : `<b>${esc(S.me.name)}</b>`;
+  const mt = document.querySelector('.tabbar a[data-r="mon-equipe"]');
+  if (mt && mt.lastChild && mt.lastChild.nodeType === 3) mt.lastChild.textContent = neutral() ? 'Équipes' : 'Mon équipe';
   const b = $('#tradeBadge'); b.hidden = !S.pendingTrades; b.textContent = S.pendingTrades || '';
   $('#plusBadge').hidden = !S.pendingProtection;
   const bb = $('#bellBadge'); bb.hidden = !S.unreadNotifications; bb.textContent = S.unreadNotifications > 99 ? '99+' : (S.unreadNotifications || '');
@@ -365,7 +369,7 @@ function route(){
     (['offre','choix','echange','bloc','marche'].includes(r) && a.dataset.r === 'echanges')));
   clearInterval(liveTimer); liveTimer = null; clearInterval(draftTimer); draftTimer = null;
   window.scrollTo(0, 0);
-  const views = { classement: vStandings, 'mon-equipe': () => vTeam(S.me.teamId), equipe: () => vTeam(arg), equipes: vTeams, direct: () => vLive(arg),
+  const views = { classement: vStandings, 'mon-equipe': () => neutral() ? vTeams() : vTeam(S.me.teamId), equipe: () => vTeam(arg), equipes: vTeams, direct: () => vLive(arg),
                   repechage: () => vDraft(arg), protection: () => vProtection(arg), echanges: vTrades, echange: () => vTradeOne(arg), mur: vWall, marche: vBlock, bloc: vBlock, trophees: vAwards, temple: vHall, projections: vProjections, projection: () => vProjection(arg), notifications: vNotifications, offre: () => vOffer(arg), choix: () => vPicks(arg),
                   joueurs: vPlayers, plus: vMore, liste: vWatchlist, historique: vMoves, commissaire: vAdmin };
   (views[r] || vStandings)();
@@ -447,7 +451,7 @@ function vTeam(id){
                       : '<div class="okbox">✓ Alignement conforme (positions, plafond et plancher)</div>'}
     ${sections}
     <div class="card"><h3><span>Choix de repêchage</span><a class="link" href="#/choix/${t.id}">historique ›</a></h3><div id="teamPicks" class="muted">Chargement…</div></div>
-    ${t.id !== S.me.teamId ? `<button class="btn" style="width:100%;margin-bottom:12px" onclick="location.hash='#/offre/${t.id}'">⇄ Proposer un échange à ${esc(t.name)}</button>` : ''}
+    ${t.id !== S.me.teamId && !neutral() ? `<button class="btn" style="width:100%;margin-bottom:12px" onclick="location.hash='#/offre/${t.id}'">⇄ Proposer un échange à ${esc(t.name)}</button>` : ''}
     <p class="muted"><span class="tag pts">PTS</span> compte pour les points · <span class="tag cap">$</span> compte dans la masse salariale (art. 3.1)</p>`;
   api('/api/picks').then(P => { const el = $('#teamPicks'); if (el) el.innerHTML = picksChips(P.picks.filter(p => p.owner_team_id === t.id)); }).catch(() => {});
 }
@@ -581,13 +585,14 @@ function renderSheet(){
     ${p.waiver ? `<div class="issues" style="background:#2b2512;border-color:#5a4a1e;color:var(--gold)">⏳ Au ballottage jusqu'au ${fmtDate(p.waiver.ends_at)}${p.waiver.mine ? ' · <b>tu l\'as réclamé</b>' : ''}</div>
         ${p.waiver.mine ? `<button class="btn danger" style="width:100%;margin-bottom:8px" onclick="unclaimWaiver(${p.waiver.id})">Retirer ma réclamation</button>`
           : `<button class="btn" style="width:100%;margin-bottom:8px" onclick="openWaiverClaim(${p.waiver.id})">Réclamer au ballottage</button>`}`
+      : neutral() ? ''
       : owner ? (owner.id === S.me.teamId
           ? ((S.block || []).includes(p.id) ? `<button class="btn ghost" style="width:100%;margin-bottom:8px" onclick="blockRemove(${p.id})">📣 Retirer du marché des transactions</button>`
               : `<button class="btn ghost" style="width:100%;margin-bottom:8px" onclick="blockAddSheet(${p.id})">📣 Mettre sur le marché des transactions</button>`)
             + `<button class="btn danger" style="width:100%;margin-bottom:8px" onclick="releaseMine(${p.id})">Libérer (passe au ballottage)</button>`
           : `<button class="btn" style="width:100%;margin-bottom:8px" onclick="closeSheet();location.hash='#/offre/${owner.id}-0-p${p.id}'">⇄ Faire une offre pour ${esc(p.name)}</button>`)
       : `<button class="btn" style="width:100%;margin-bottom:8px" onclick="openClaim(${p.id})">Réclamer (agent libre) — coûte un choix de 1re ronde</button>`}
-    <button class="btn ghost" style="width:100%" onclick="addWatch(${p.id})">☆ Ajouter à ma liste</button>
+    ${neutral() ? '' : `<button class="btn ghost" style="width:100%" onclick="addWatch(${p.id})">☆ Ajouter à ma liste</button>`}
     ${admin}`;
   const mq = $('#spMergeQ');
   if (mq) { let h; mq.oninput = () => { clearTimeout(h); h = setTimeout(searchMerge, 250); }; mq.value = p.name; searchMerge(); }
@@ -808,7 +813,7 @@ const vTrades = run(async () => {
   const sec = (title, arr, empty) => `<h3 class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px">${title}${arr.length ? ' · ' + arr.length : ''}</h3>
     ${arr.length ? arr.map(tradeCard).join('') : `<p class="muted">${empty}</p>`}`;
   $('#view').innerHTML = `<h2 class="title">Échanges</h2>
-    <button class="btn" style="width:100%" onclick="location.hash='#/offre'">⇄ Proposer un échange</button>
+    ${neutral() ? '<p class="muted">🔑 Compte commissaire : tu approuves les échanges. Pour proposer un échange avec ton équipe, connecte-toi avec le code de ton équipe.</p>' : `<button class="btn" style="width:100%" onclick="location.hash='#/offre'">⇄ Proposer un échange</button>`}
     <div class="row" style="margin-top:8px"><a class="btn ghost small" style="text-align:center;text-decoration:none" href="#/marche">📣 Marché des transactions${S.block.length ? ' · ' + S.block.length : ''}</a><a class="btn ghost small" style="text-align:center;text-decoration:none" href="#/choix">🎟️ Choix de repêchage</a></div>
     ${T.deadline ? `<p class="muted">Date limite des transactions : <b>${esc(T.deadline)} à 21 h</b>${T.deadlinePassed ? ' — <span style="color:var(--red)">passée</span>' : ''} (art. 5.1).</p>` : ''}
     <p class="muted">${T.approvalRequired ? 'Une fois acceptée par l\'autre pooler, l\'offre est approuvée par le commissaire.' : 'Une offre acceptée est complétée immédiatement.'}</p>
@@ -836,7 +841,7 @@ function waiverSection(W){
     <div class="muted" style="font-size:13px">${esc(w.nhl_team || '')} · ${w.pts} pts · <span class="aav">${money(w.aav)}</span> · libéré par ${esc(w.from_team || '—')}
       ${w.status === 'open' ? ` · ${w.claims} réclamation${w.claims > 1 ? 's' : ''}` : ''}${w.note ? ' · ' + esc(w.note) : ''}</div>
     ${w.status === 'open' ? `<div class="actions">${w.mine ? `<button class="btn small danger" onclick="unclaimWaiver(${w.id})">Retirer ma réclamation</button>`
-        : w.from_team === S.me.name ? '' : `<button class="btn small" onclick="openWaiverClaim(${w.id})">Réclamer</button>`}
+        : w.from_team === S.me.name || neutral() ? '' : `<button class="btn small" onclick="openWaiverClaim(${w.id})">Réclamer</button>`}
       ${S.me.isAdmin ? `<button class="btn small ghost" onclick="waiverAdmin(${w.id},'end')">Terminer</button><button class="btn small ghost" onclick="waiverAdmin(${w.id},'cancel')">Annuler</button>` : ''}</div>` : ''}
   </div>`;
   return `<h3 class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px">Ballottage${open.length ? ' · ' + open.length : ''}</h3>
@@ -850,6 +855,7 @@ function waiverSection(W){
 // Montage d'une offre : deux plateaux, comme l'écran d'échange du jeu NHL.
 let OF = null;
 const vOffer = run(async (arg) => {
+  if (neutral()) { toast('Le compte commissaire est neutre : connecte-toi avec ton équipe pour proposer un échange.'); location.hash = '#/echanges'; return; }
   const [partnerArg, counterArg, wantArg] = String(arg || '').split('-');
   const P = await api('/api/picks');
   let counter = null;
@@ -967,12 +973,12 @@ const savePick = run(async id => {
 const vWall = run(async () => {
   const W = await api('/api/wall');
   const post = p => `<div class="post ${p.kind === 'auto' ? 'auto' : ''}">
-    <div><span class="who">${p.kind === 'auto' ? '📣 Pool à vie' : esc(p.team || '?')}</span><span class="when">${ago(p.at)}</span>
+    <div><span class="who">${p.kind === 'auto' ? '📣 Pool à vie' : p.team ? esc(p.team) : '🔑 Commissaire'}</span><span class="when">${ago(p.at)}</span>
       ${(p.team_id === S.me.teamId || S.me.isAdmin) && p.kind !== 'auto' ? `<a class="link" style="float:right;font-size:12px" onclick="wallDelete(${p.id})">supprimer</a>` : ''}</div>
     <div class="txt">${esc(p.body)}</div>
     ${p.link ? `<a class="link" style="font-size:13px" href="${esc(p.link)}">Voir ›</a>` : ''}
     <div class="rx" style="margin-top:6px">${W.reactions.map(e => { const r = p.reactions.find(x => x.emoji === e);
-      return `<button class="${r && r.mine ? 'on' : ''}" title="${r ? esc(r.who) : ''}" onclick="wallReact(${p.id},'${e}')">${e}${r ? `<b>${r.n}</b>` : ''}</button>`; }).join('')}</div></div>`;
+      return `<button class="${r && r.mine ? 'on' : ''}" title="${r ? esc(r.who) : ''}" onclick="wallReact(${p.id},'${e}')" ${neutral() ? 'disabled' : ''}>${e}${r ? `<b>${r.n}</b>` : ''}</button>`; }).join('')}</div></div>`;
   $('#view').innerHTML = `<h2 class="title">💬 Le mur de la gang</h2>
     <div class="card"><textarea id="wallMsg" placeholder="Dis-leur ta façon de penser… 🍺" style="min-height:70px;font-family:inherit;font-size:15px"></textarea>
       <div style="height:8px"></div><button class="btn small" onclick="wallSend()">Publier</button></div>
@@ -987,7 +993,7 @@ let BL = null;
 const vBlock = run(async () => {
   BL = await api('/api/block');
   const mine = BL.entries.filter(e => e.team_id === S.me.teamId), others = BL.entries.filter(e => e.team_id !== S.me.teamId);
-  const myNeed = BL.needs.find(n => n.team_id === S.me.teamId);
+  const myNeed = BL.needs.find(n => n.team_id === S.me.teamId), N = neutral();
   const entry = e => `<div class="item" style="align-items:flex-start">
       <span class="pos pos-${e.pos}">${e.pos}</span>
       <div class="grow" onclick="openPlayer(${e.id})"><div class="name">${esc(e.name)}</div>
@@ -997,18 +1003,19 @@ const vBlock = run(async () => {
         <div class="row" style="margin-top:8px;gap:6px">${e.team_id === S.me.teamId
           ? `<span class="muted" style="font-size:13px">👀 ${e.interest ? e.interest + ' intéressé' + (e.interest > 1 ? 's' : '') : 'personne encore'}</span>
              <a class="link" style="font-size:13px" onclick="event.stopPropagation();blockAddSheet(${e.id})">modifier</a><a class="link" style="font-size:13px" onclick="event.stopPropagation();blockRemove(${e.id})">retirer</a>`
+          : N ? `<a class="link" style="font-size:13px" onclick="event.stopPropagation();blockRemove(${e.id})">retirer du marché (commissaire)</a>`
           : `<button class="btn small ${e.mine ? '' : 'ghost'}" onclick="event.stopPropagation();blockInterest(${e.id})">👀 ${e.mine ? 'Intéressé ✓' : 'Intéressé'}</button>
              <button class="btn small" onclick="event.stopPropagation();location.hash='#/offre/${e.team_id}-0-p${e.id}'">⇄ Faire une offre</button>`}</div></div>
       <div class="num"><b class="aav">${money(e.aav)}</b></div></div>`;
   $('#view').innerHTML = `<h2 class="title">📣 Marché des transactions</h2>
     <p class="muted">Les joueurs que chacun est prêt à échanger. « Intéressé » avise le propriétaire sans dire qui tu es : ça part les rumeurs.</p>
-    <div class="card"><h3>🔎 Ce que je cherche</h3>
+    ${N ? '' : `<div class="card"><h3>🔎 Ce que je cherche</h3>
       <div class="row"><input id="needNote" maxlength="200" placeholder="ex. un défenseur payant, un gardien partant…" value="${esc(myNeed ? myNeed.note : '')}"></div>
       <button class="btn small" onclick="saveNeed()">Enregistrer</button></div>
     <div class="card"><h3><span>Mes joueurs sur le marché</span><span class="muted">${mine.length}</span></h3>
       <div class="list">${mine.map(entry).join('') || '<div class="empty">Aucun pour l\'instant</div>'}</div>
-      <button class="btn small" style="margin-top:10px" onclick="blockPick()">+ Ajouter un de mes joueurs</button></div>
-    <div class="card"><h3><span>Les autres poolers</span><span class="muted">${others.length}</span></h3>
+      <button class="btn small" style="margin-top:10px" onclick="blockPick()">+ Ajouter un de mes joueurs</button></div>`}
+    <div class="card"><h3><span>${N ? 'Joueurs sur le marché' : 'Les autres poolers'}</span><span class="muted">${others.length}</span></h3>
       <div class="list">${others.map(entry).join('') || '<div class="empty">Personne n\'a mis de joueur sur le marché.</div>'}</div></div>
     ${BL.needs.filter(n => n.team_id !== S.me.teamId).length ? `<div class="card"><h3>🔎 Ce que les autres cherchent</h3><div class="list">
       ${BL.needs.filter(n => n.team_id !== S.me.teamId).map(n => `<div class="item"><div class="grow"><div class="name">${esc(n.team)}</div><div class="meta" style="font-size:14px;color:var(--text)">${esc(n.note)}</div><div class="meta">${ago(n.updated_at)}</div></div>
@@ -1100,6 +1107,7 @@ const hallDelete = run(async id => { if (!confirm('Retirer cette entrée ?')) re
 // ---------- Projections ----------
 const seasonLbl = y => `${y}-${String(y + 1).slice(2)}`;
 const vProjections = run(async () => {
+  if (neutral()) { $('#view').innerHTML = '<h2 class="title">🔮 Projections</h2><p class="muted">Le compte commissaire n\'a pas d\'équipe. Connecte-toi avec le code de ton équipe pour faire tes projections.</p>'; return; }
   const P = await api('/api/projections');
   $('#view').innerHTML = `<h2 class="title">🔮 Projections</h2>
     <p class="muted">Bâtis ton alignement des saisons à venir. Le salaire de chaque joueur est son AAV s'il est encore sous contrat cette saison-là ; sinon, son contrat est échu (0 $) jusqu'à ce que tu inscrives un salaire estimé. Tes projections sont privées.</p>
@@ -1356,12 +1364,15 @@ const draftChoose = run(async (id) => {
 // ---------- Liste de protection ----------
 let PR = null;
 const vProtection = run(async (teamArg) => {
+  if (!teamArg && neutral()) teamArg = S.teams.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr'))[0]?.id;
   const D = await api('/api/protection' + (teamArg ? '?team=' + teamArg : ''));
   const L = D.rules, mine = D.teamId === S.me.teamId || S.me.isAdmin;
   PR = { D, prot: new Set(D.picks.filter(p => p.kind === 'P').map(p => p.player_id)), auto: new Set(D.picks.filter(p => p.kind === 'A').map(p => p.player_id)) };
   const season = `${D.season.slice(0, 4)}-${D.season.slice(6)}`;
   const statusTxt = { closed: 'Période fermée', open: `Ouverte${D.deadline ? ` jusqu'au ${D.deadline} à 21 h` : ''}`, revealed: 'Listes dévoilées', applied: 'Listes appliquées (joueurs non protégés libérés)' }[D.status];
   const adminCard = S.me.isAdmin ? `<div class="card"><h3>Commissaire</h3>
+      <label class="f">Équipe affichée</label>
+      <div class="row"><select onchange="location.hash='#/protection/' + this.value">${S.teams.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr')).map(t => `<option value="${t.id}" ${t.id === D.teamId ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></div>
       <div class="row"><div><label class="f">Date limite de remise (21 h)</label><input type="date" id="prDeadline" value="${D.deadline || ''}"></div></div>
       <div class="actions" style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn small" onclick="protAdmin('open')">${D.status === 'open' ? 'Mettre à jour la date' : 'Ouvrir la période'}</button>
@@ -1461,12 +1472,12 @@ function vMore(){
   $('#view').innerHTML = `
     <h2 class="title">Plus</h2>
     <div class="card"><div class="list">
-      <div class="item" onclick="location.hash='#/liste'"><div class="grow"><div class="name">☆ Ma liste</div><div class="meta">Mes joueurs ciblés, en ordre de préférence</div></div>›</div>
+      ${neutral() ? '' : `<div class="item" onclick="location.hash='#/liste'"><div class="grow"><div class="name">☆ Ma liste</div><div class="meta">Mes joueurs ciblés, en ordre de préférence</div></div>›</div>`}
       <div class="item" onclick="location.hash='#/marche'"><div class="grow"><div class="name">📣 Marché des transactions</div><div class="meta">Joueurs offerts, rumeurs et ce que chacun cherche</div></div>›</div>
       <div class="item" onclick="location.hash='#/mur'"><div class="grow"><div class="name">💬 Le mur de la gang</div><div class="meta">Trash talk et réactions sur les transactions</div></div>›</div>
       <div class="item" onclick="location.hash='#/trophees'"><div class="grow"><div class="name">🏅 Trophées de la semaine</div><div class="meta">Pooler et joueur de la semaine, votes de la gang</div></div>›</div>
       <div class="item" onclick="location.hash='#/temple'"><div class="grow"><div class="name">🏆 Temple de la renommée</div><div class="meta">Champions de chaque saison et records</div></div>›</div>
-      <div class="item" onclick="location.hash='#/projections'"><div class="grow"><div class="name">🔮 Projections</div><div class="meta">Tes alignements des saisons à venir, avec la masse salariale de l'année</div></div>›</div>
+      ${neutral() ? '' : `<div class="item" onclick="location.hash='#/projections'"><div class="grow"><div class="name">🔮 Projections</div><div class="meta">Tes alignements des saisons à venir, avec la masse salariale de l'année</div></div>›</div>`}
       <div class="item" onclick="location.hash='#/repechage'"><div class="grow"><div class="name">🎲 Repêchage</div><div class="meta">Loterie, ordre et tableau des choix</div></div>›</div>
       <div class="item" onclick="location.hash='#/protection'"><div class="grow"><div class="name">🛡️ Liste de protection${S.pendingProtection ? ' <span class="tag" style="border-color:var(--red);color:var(--red)">à remettre</span>' : ''}</div><div class="meta">10 joueurs protégés + 3 automatiques (art. 4.2 et 4.3)</div></div>›</div>
       <div class="item" onclick="location.hash='#/equipes'"><div class="grow"><div class="name">Équipes</div><div class="meta">Tous les alignements et leur conformité</div></div>›</div>

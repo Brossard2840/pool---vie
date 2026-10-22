@@ -142,26 +142,17 @@ async function initDb() {
   }
 
   // Le commissaire : son code vient de la variable d'environnement COMMISSAIRE_CODE.
+  // Le compte commissaire est neutre : il n'a pas d'équipe. Chaque pooler (le commissaire aussi) gère
+  // son équipe avec le code de son équipe. Plusieurs personnes peuvent être connectées en même temps.
   const adminCode = (process.env.COMMISSAIRE_CODE || '').trim();
-  const adminTeam = process.env.COMMISSAIRE_EQUIPE || 'Andybros';
   if (adminCode) {
-    const { rows } = await pool.query(
-      `INSERT INTO teams(name) VALUES($1) ON CONFLICT (name) DO UPDATE SET name=EXCLUDED.name RETURNING id, code_hash`,
-      [adminTeam]);
-    const t = rows[0];
-    // Accès commissaire distinct de l'accès de l'équipe : son propre code, sa propre version.
     const stored = await getConfig('commissaire_hash');
     if (!stored || !auth.checkCode(adminCode, stored)) {
       await setConfig('commissaire_hash', auth.hashCode(adminCode));
       await setConfig('commissaire_version', Number(await getConfig('commissaire_version', 0)) + 1);
     }
-    // Ancienne version : l'équipe utilisait le code du commissaire. Elle aura maintenant son propre code.
-    if (t.code_hash && auth.checkCode(adminCode, t.code_hash)) {
-      await pool.query(`UPDATE teams SET code_hash=NULL, code_version=code_version+1 WHERE id=$1`, [t.id]);
-      console.log(`L'équipe « ${adminTeam} » n'a plus le code du commissaire : générez-lui un code dans Commissaire.`);
-    }
-    await pool.query(`UPDATE teams SET is_admin=(id=$1)`, [t.id]);
-    console.log(`Commissaire prêt (équipe « ${adminTeam} », code de ${adminCode.length} caractère(s)).`);
+    await pool.query(`UPDATE teams SET is_admin=FALSE WHERE is_admin`);
+    console.log(`Commissaire prêt (compte neutre, code de ${adminCode.length} caractère(s)).`);
   } else {
     console.warn('ATTENTION : la variable COMMISSAIRE_CODE est vide ou absente — personne ne peut se connecter. ' +
       'Ajoutez-la dans Render → Environment, puis redéployez.');
@@ -354,9 +345,7 @@ app.use(h(async (req, res, next) => {
   req.me = null;
   const s = auth.getSession(req, SECRET);
   if (s?.admin) {
-    const { rows } = await pool.query(`SELECT id, name FROM teams WHERE is_admin LIMIT 1`);
-    const ok = rows[0] && String(s.av) === String(await getConfig('commissaire_version'));
-    if (ok) req.me = { teamId: rows[0].id, name: rows[0].name, isAdmin: true };
+    if (String(s.av) === String(await getConfig('commissaire_version'))) req.me = { teamId: null, name: 'Commissaire', isAdmin: true };
   } else if (s) {
     const { rows } = await pool.query(`SELECT id, name, code_version FROM teams WHERE id=$1`, [s.teamId]);
     const t = rows[0];
@@ -366,6 +355,14 @@ app.use(h(async (req, res, next) => {
 }));
 
 const requireLogin = (req, res, next) => req.me ? next() : res.status(401).json({ error: 'Connexion requise' });
+// Gestes réservés à un pooler (le compte commissaire est neutre, sans équipe).
+const TEAM_ONLY = [/^\/api\/watchlist\//, /^\/api\/block(\/needs|\/\d+\/interest)?$/, /^\/api\/wall\/\d+\/react$/, /^\/api\/awards\/vote$/,
+  /^\/api\/projections/, /^\/api\/trades$/, /^\/api\/claims$/, /^\/api\/waivers\/\d+\/(un)?claim$/];
+app.use((req, res, next) => {
+  if (req.me && !req.me.teamId && req.method !== 'GET' && TEAM_ONLY.some(re => re.test(req.path)))
+    return res.status(403).json({ error: 'Le compte commissaire est neutre : connecte-toi avec le code de ton équipe pour ça.' });
+  next();
+});
 const requireAdmin = (req, res, next) => req.me?.isAdmin ? next() : res.status(403).json({ error: 'Réservé au commissaire' });
 
 // Point d'entrée pour un service de « ping » externe : garde le serveur éveillé et les stats à jour.
@@ -694,7 +691,6 @@ admin.post('/teams/:id/code', h(async (req, res) => {
 
 admin.delete('/teams/:id', h(async (req, res) => {
   const { rows } = await pool.query(`SELECT is_admin FROM teams WHERE id=$1`, [req.params.id]);
-  if (rows[0]?.is_admin) return res.status(400).json({ error: 'Impossible de supprimer l\'équipe du commissaire' });
   await pool.query(`DELETE FROM teams WHERE id=$1`, [req.params.id]);
   res.json({ ok: true });
 }));

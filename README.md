@@ -67,7 +67,12 @@ Les visites régulières empêchent aussi Supabase de mettre le projet en pause 
 
 ## Étape 5 — Configurer la ligue
 
-1. Ouvrez le site, choisissez **Andybros** et entrez votre `COMMISSAIRE_CODE`.
+1. Ouvrez le site, choisissez **🔑 Commissaire** et entrez votre `COMMISSAIRE_CODE`.
+   Le compte commissaire est **neutre** : il n'a pas d'équipe. Il approuve les échanges, gère les
+   alignements, les codes, le repêchage, etc. Chaque pooler (le commissaire aussi) gère son équipe
+   avec le code de son équipe. Plusieurs personnes peuvent utiliser le code commissaire en même temps
+   (ex. un adjoint) ; leurs gestes sont notés « Commissaire ». Changer `COMMISSAIRE_CODE` dans Render
+   déconnecte tous les appareils connectés en commissaire.
 2. **Plus → Commissaire → Import des alignements** : collez la liste des joueurs
    (`ÉquipePool;Nom;Position;AAV;Âge;FinContrat`, une ligne par joueur), cochez
    « Remplacer tous les alignements », puis **Importer**. Les équipes sont créées automatiquement.
