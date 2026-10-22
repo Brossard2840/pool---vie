@@ -130,6 +130,7 @@
   .rx{display:flex;gap:6px;flex-wrap:wrap;} .rx button{background:var(--ice);border:1px solid var(--line);border-radius:20px;padding:4px 9px;font-size:14px;color:var(--text);}
   .rx button.on{border-color:var(--gold);background:#2b2512;} .rx button b{font-size:12px;margin-left:3px;}
   .medal{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #1a2938;} .medal .m{font-size:24px;width:30px;text-align:center;}
+  .tag.blk{border-color:#c9a24b;color:var(--gold);}
   .tag.rk{border-color:#7fc8a9;color:#9fe0c2;background:#13261f;} .tag.rk2{border-color:#8fb4d6;color:#b5d3ee;background:#16233a;}
   .chips{display:flex;flex-wrap:wrap;gap:6px;}
   .chip{border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:12px;background:var(--ice);font-variant-numeric:tabular-nums;}
@@ -361,11 +362,11 @@ function route(){
   document.querySelectorAll('.tabbar a').forEach(a => a.classList.toggle('on', a.dataset.r === r ||
     (r === 'equipe' && a.dataset.r === (Number(arg) === S.me.teamId ? 'mon-equipe' : 'classement')) ||
     (['liste','historique','commissaire','equipes','protection','projections','projection','mur','trophees','temple'].includes(r) && a.dataset.r === 'plus') ||
-    (['offre','choix','echange'].includes(r) && a.dataset.r === 'echanges')));
+    (['offre','choix','echange','bloc'].includes(r) && a.dataset.r === 'echanges')));
   clearInterval(liveTimer); liveTimer = null; clearInterval(draftTimer); draftTimer = null;
   window.scrollTo(0, 0);
   const views = { classement: vStandings, 'mon-equipe': () => vTeam(S.me.teamId), equipe: () => vTeam(arg), equipes: vTeams, direct: () => vLive(arg),
-                  repechage: () => vDraft(arg), protection: () => vProtection(arg), echanges: vTrades, echange: () => vTradeOne(arg), mur: vWall, trophees: vAwards, temple: vHall, projections: vProjections, projection: () => vProjection(arg), notifications: vNotifications, offre: () => vOffer(arg), choix: () => vPicks(arg),
+                  repechage: () => vDraft(arg), protection: () => vProtection(arg), echanges: vTrades, echange: () => vTradeOne(arg), mur: vWall, bloc: vBlock, trophees: vAwards, temple: vHall, projections: vProjections, projection: () => vProjection(arg), notifications: vNotifications, offre: () => vOffer(arg), choix: () => vPicks(arg),
                   joueurs: vPlayers, plus: vMore, liste: vWatchlist, historique: vMoves, commissaire: vAdmin };
   (views[r] || vStandings)();
 }
@@ -474,7 +475,7 @@ function playerItem(p, { showFlags = false, showOwner = false } = {}){
   const link = p.nhl_id ? '' : ' · <span style="color:var(--red)">sans fiche LNH</span>';
   return `<div class="item ${showFlags && !p.counts_points ? 'out' : ''}" onclick="openPlayer(${p.id})">
     <span class="pos pos-${p.pos}">${p.pos}</span>
-    <div class="grow"><div class="name">${formIcon(p)}${esc(p.name)}${flags}${p.retained ? '<span class="tag" title="Une autre équipe retient une partie du salaire">ret.</span>' : ''}</div>
+    <div class="grow"><div class="name">${formIcon(p)}${esc(p.name)}${flags}${(S.block || []).includes(p.id) ? '<span class="tag blk" title="Sur le bloc des échanges">📣</span>' : ''}${p.retained ? '<span class="tag" title="Une autre équipe retient une partie du salaire">ret.</span>' : ''}</div>
       ${rookieTags(p) ? `<div class="meta" style="margin-top:3px">${rookieTags(p).replace(/class="tag/g, 'style="margin-left:0;margin-right:4px" class="tag')}</div>` : ''}
       <div class="meta">${esc(p.nhl_team || '—')}${p.age ? ' · ' + p.age + ' ans' : ''} · ${statLine(p)}${owner}${link}</div></div>
     <div class="num"><b>${p.pts}</b><div class="meta aav">${money(p.aav)}</div></div>
@@ -580,7 +581,11 @@ function renderSheet(){
     ${p.waiver ? `<div class="issues" style="background:#2b2512;border-color:#5a4a1e;color:var(--gold)">⏳ Au ballottage jusqu'au ${fmtDate(p.waiver.ends_at)}${p.waiver.mine ? ' · <b>tu l\'as réclamé</b>' : ''}</div>
         ${p.waiver.mine ? `<button class="btn danger" style="width:100%;margin-bottom:8px" onclick="unclaimWaiver(${p.waiver.id})">Retirer ma réclamation</button>`
           : `<button class="btn" style="width:100%;margin-bottom:8px" onclick="openWaiverClaim(${p.waiver.id})">Réclamer au ballottage</button>`}`
-      : owner ? (owner.id === S.me.teamId ? `<button class="btn danger" style="width:100%;margin-bottom:8px" onclick="releaseMine(${p.id})">Libérer (passe au ballottage)</button>` : '')
+      : owner ? (owner.id === S.me.teamId
+          ? ((S.block || []).includes(p.id) ? `<button class="btn ghost" style="width:100%;margin-bottom:8px" onclick="blockRemove(${p.id})">📣 Retirer du bloc des échanges</button>`
+              : `<button class="btn ghost" style="width:100%;margin-bottom:8px" onclick="blockAddSheet(${p.id})">📣 Mettre sur le bloc des échanges</button>`)
+            + `<button class="btn danger" style="width:100%;margin-bottom:8px" onclick="releaseMine(${p.id})">Libérer (passe au ballottage)</button>`
+          : `<button class="btn" style="width:100%;margin-bottom:8px" onclick="closeSheet();location.hash='#/offre/${owner.id}-0-p${p.id}'">⇄ Faire une offre pour ${esc(p.name)}</button>`)
       : `<button class="btn" style="width:100%;margin-bottom:8px" onclick="openClaim(${p.id})">Réclamer (agent libre) — coûte un choix de 1re ronde</button>`}
     <button class="btn ghost" style="width:100%" onclick="addWatch(${p.id})">☆ Ajouter à ma liste</button>
     ${admin}`;
@@ -804,7 +809,7 @@ const vTrades = run(async () => {
     ${arr.length ? arr.map(tradeCard).join('') : `<p class="muted">${empty}</p>`}`;
   $('#view').innerHTML = `<h2 class="title">Échanges</h2>
     <button class="btn" style="width:100%" onclick="location.hash='#/offre'">⇄ Proposer un échange</button>
-    <div class="row" style="margin-top:8px"><a class="btn ghost small" style="text-align:center;text-decoration:none" href="#/choix">🎟️ Choix de repêchage</a></div>
+    <div class="row" style="margin-top:8px"><a class="btn ghost small" style="text-align:center;text-decoration:none" href="#/bloc">📣 Bloc des échanges${S.block.length ? ' · ' + S.block.length : ''}</a><a class="btn ghost small" style="text-align:center;text-decoration:none" href="#/choix">🎟️ Choix de repêchage</a></div>
     ${T.deadline ? `<p class="muted">Date limite des transactions : <b>${esc(T.deadline)} à 21 h</b>${T.deadlinePassed ? ' — <span style="color:var(--red)">passée</span>' : ''} (art. 5.1).</p>` : ''}
     <p class="muted">${T.approvalRequired ? 'Une fois acceptée par l\'autre pooler, l\'offre est approuvée par le commissaire.' : 'Une offre acceptée est complétée immédiatement.'}</p>
     ${waiverSection(W)}
@@ -845,7 +850,7 @@ function waiverSection(W){
 // Montage d'une offre : deux plateaux, comme l'écran d'échange du jeu NHL.
 let OF = null;
 const vOffer = run(async (arg) => {
-  const [partnerArg, counterArg] = String(arg || '').split('-');
+  const [partnerArg, counterArg, wantArg] = String(arg || '').split('-');
   const P = await api('/api/picks');
   let counter = null;
   if (counterArg) counter = (await api('/api/trades')).trades.find(t => t.id === Number(counterArg)) || null;
@@ -854,6 +859,7 @@ const vOffer = run(async (arg) => {
   if (counter) {   // contre-offre : on part de l'offre reçue, vue de mon côté
     for (const i of counter.items) (i.from_team_id === S.me.teamId ? OF.give : OF.get).add(`${i.kind === 'player' ? 'p' : 'k'}${i.id}`);
   }
+  if (wantArg) OF.get.add(wantArg);   // offre pour un joueur vu sur le bloc
   renderOffer();
 });
 function offerAssets(teamId){
@@ -975,6 +981,59 @@ const vWall = run(async () => {
 const wallSend = run(async () => { const body = $('#wallMsg').value.trim(); if (!body) return; await api('/api/wall', { body }); vWall(); });
 const wallReact = run(async (id, emoji) => { await api(`/api/wall/${id}/react`, { emoji }); vWall(); });
 const wallDelete = run(async id => { if (!confirm('Supprimer ce message ?')) return; await apiDelete('/api/wall/' + id); vWall(); });
+
+// ---------- Bloc des échanges ----------
+let BL = null;
+const vBlock = run(async () => {
+  BL = await api('/api/block');
+  const mine = BL.entries.filter(e => e.team_id === S.me.teamId), others = BL.entries.filter(e => e.team_id !== S.me.teamId);
+  const myNeed = BL.needs.find(n => n.team_id === S.me.teamId);
+  const entry = e => `<div class="item" style="align-items:flex-start">
+      <span class="pos pos-${e.pos}">${e.pos}</span>
+      <div class="grow" onclick="openPlayer(${e.id})"><div class="name">${esc(e.name)}</div>
+        <div class="meta">${esc(e.nhl_team || '—')}${e.age ? ' · ' + e.age + ' ans' : ''} · ${statLine(e)}${e.contract_end ? ' · fin ' + e.contract_end : ''}</div>
+        <div class="meta">${e.team_id === S.me.teamId ? '' : '<b>' + esc(e.team) + '</b> · '}depuis ${ago(e.created_at)}</div>
+        ${e.note ? `<div style="margin-top:4px;font-size:14px">💬 ${esc(e.note)}</div>` : ''}
+        <div class="row" style="margin-top:8px;gap:6px">${e.team_id === S.me.teamId
+          ? `<span class="muted" style="font-size:13px">👀 ${e.interest ? e.interest + ' intéressé' + (e.interest > 1 ? 's' : '') : 'personne encore'}</span>
+             <a class="link" style="font-size:13px" onclick="event.stopPropagation();blockAddSheet(${e.id})">modifier</a><a class="link" style="font-size:13px" onclick="event.stopPropagation();blockRemove(${e.id})">retirer</a>`
+          : `<button class="btn small ${e.mine ? '' : 'ghost'}" onclick="event.stopPropagation();blockInterest(${e.id})">👀 ${e.mine ? 'Intéressé ✓' : 'Intéressé'}</button>
+             <button class="btn small" onclick="event.stopPropagation();location.hash='#/offre/${e.team_id}-0-p${e.id}'">⇄ Faire une offre</button>`}</div></div>
+      <div class="num"><b class="aav">${money(e.aav)}</b></div></div>`;
+  $('#view').innerHTML = `<h2 class="title">📣 Bloc des échanges</h2>
+    <p class="muted">Les joueurs que chacun est prêt à échanger. « Intéressé » avise le propriétaire sans dire qui tu es : ça part les rumeurs.</p>
+    <div class="card"><h3>🔎 Ce que je cherche</h3>
+      <div class="row"><input id="needNote" maxlength="200" placeholder="ex. un défenseur payant, un gardien partant…" value="${esc(myNeed ? myNeed.note : '')}"></div>
+      <button class="btn small" onclick="saveNeed()">Enregistrer</button></div>
+    <div class="card"><h3><span>Mes joueurs sur le bloc</span><span class="muted">${mine.length}</span></h3>
+      <div class="list">${mine.map(entry).join('') || '<div class="empty">Aucun pour l\'instant</div>'}</div>
+      <button class="btn small" style="margin-top:10px" onclick="blockPick()">+ Ajouter un de mes joueurs</button></div>
+    <div class="card"><h3><span>Les autres poolers</span><span class="muted">${others.length}</span></h3>
+      <div class="list">${others.map(entry).join('') || '<div class="empty">Personne n\'a mis de joueur sur le bloc.</div>'}</div></div>
+    ${BL.needs.filter(n => n.team_id !== S.me.teamId).length ? `<div class="card"><h3>🔎 Ce que les autres cherchent</h3><div class="list">
+      ${BL.needs.filter(n => n.team_id !== S.me.teamId).map(n => `<div class="item"><div class="grow"><div class="name">${esc(n.team)}</div><div class="meta" style="font-size:14px;color:var(--text)">${esc(n.note)}</div><div class="meta">${ago(n.updated_at)}</div></div>
+        <button class="btn small ghost" onclick="location.hash='#/offre/${n.team_id}'">⇄ Offre</button></div>`).join('')}</div></div>` : ''}`;
+});
+function blockPick(){
+  const t = team(S.me.teamId), on = new Set(S.block || []);
+  const list = ['F','D','G'].flatMap(pos => t.positions[pos].players).filter(p => !on.has(p.id));
+  $('#sheetBody').innerHTML = `<h3>Quel joueur mettre sur le bloc ?</h3><div class="list">${list.map(p => `<div class="item" onclick="blockAddSheet(${p.id})">
+    <span class="pos pos-${p.pos}">${p.pos}</span><div class="grow"><div class="name">${esc(p.name)}</div><div class="meta">${statLine(p)}</div></div>
+    <div class="num"><b class="aav">${money(p.aav)}</b></div></div>`).join('') || '<div class="empty">Tous tes joueurs sont déjà sur le bloc !</div>'}</div>`;
+  $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open');
+}
+function blockAddSheet(id){
+  const p = findPlayer(id), e = BL && BL.entries.find(x => x.id === id);
+  $('#sheetBody').innerHTML = `<h3>📣 ${esc(p ? p.name : '')} sur le bloc</h3>
+    <p class="muted">Toute la gang sera avisée. Ajoute une note si tu veux : ce que tu demandes en retour, etc.</p>
+    <div class="row"><input id="blNote" maxlength="200" placeholder="ex. je veux un choix de 1re ronde" value="${esc(e && e.note || '')}"></div>
+    <button class="btn" style="width:100%" onclick="blockAdd(${id})">${e ? 'Enregistrer' : 'Mettre sur le bloc'}</button>`;
+  $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open');
+}
+const blockAdd = run(async id => { await api('/api/block', { playerId: id, note: $('#blNote').value }); closeSheet(); await loadState(); location.hash === '#/bloc' ? vBlock() : (location.hash = '#/bloc'); });
+const blockRemove = run(async id => { await apiDelete('/api/block/' + id); closeSheet(); await loadState(); if (location.hash === '#/bloc') vBlock(); else route(); });
+const blockInterest = run(async id => { await api(`/api/block/${id}/interest`, {}); vBlock(); });
+const saveNeed = run(async () => { await api('/api/block/needs', { note: $('#needNote').value }); toast('Enregistré'); vBlock(); });
 
 // ---------- Trophées de la semaine ----------
 const vAwards = run(async () => {
@@ -1403,6 +1462,7 @@ function vMore(){
     <h2 class="title">Plus</h2>
     <div class="card"><div class="list">
       <div class="item" onclick="location.hash='#/liste'"><div class="grow"><div class="name">☆ Ma liste</div><div class="meta">Mes joueurs ciblés, en ordre de préférence</div></div>›</div>
+      <div class="item" onclick="location.hash='#/bloc'"><div class="grow"><div class="name">📣 Bloc des échanges</div><div class="meta">Joueurs offerts, rumeurs et ce que chacun cherche</div></div>›</div>
       <div class="item" onclick="location.hash='#/mur'"><div class="grow"><div class="name">💬 Le mur de la gang</div><div class="meta">Trash talk et réactions sur les transactions</div></div>›</div>
       <div class="item" onclick="location.hash='#/trophees'"><div class="grow"><div class="name">🏅 Trophées de la semaine</div><div class="meta">Pooler et joueur de la semaine, votes de la gang</div></div>›</div>
       <div class="item" onclick="location.hash='#/temple'"><div class="grow"><div class="name">🏆 Temple de la renommée</div><div class="meta">Champions de chaque saison et records</div></div>›</div>
