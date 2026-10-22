@@ -187,6 +187,10 @@
   .pl b{color:var(--text);}
   .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:4px;animation:pulse 1.4s infinite;}
   @keyframes pulse{50%{opacity:.25}}
+#wake{position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;background:var(--ice);color:var(--text,#fff)}
+#wake img{width:96px;height:96px}#wake b{font-size:18px}#wake span{opacity:.75;font-size:14px;max-width:300px}
+#wake i{width:36px;height:36px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--gold);border-radius:50%;animation:wk 1s linear infinite}
+@keyframes wk{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -239,9 +243,30 @@ function statLine(p){
   if (p.pos === 'G') return `${p.gp} PJ · ${p.wins} V · ${p.ot_losses} DP · ${p.shutouts} BL`;
   return `${p.gp} PJ · ${p.goals} B · ${p.assists} A`;
 }
+// Le serveur gratuit s'endort après un moment sans visite. Pendant son réveil, Render répond par sa
+// propre page d'attente (pas du JSON) : on affiche un écran d'attente et on réessaie tout seul.
+async function pfetch(path, opts = {}){
+  const start = Date.now();
+  for (let i = 0; ; i++) {
+    let res = null;
+    try { res = await fetch(path, opts); } catch (e) { if (opts.method && opts.method !== 'GET') throw e; }
+    if (res && res.headers.get('X-Pool-App')) { wakeScreen(false); return res; }
+    if (Date.now() - start > 120000) { wakeScreen(false); throw new Error('Le serveur ne répond pas. Réessaie dans une minute.'); }
+    if (i === 0) wakeScreen(true);
+    await new Promise(r => setTimeout(r, 2500));
+  }
+}
+function wakeScreen(on){
+  let el = document.getElementById('wake');
+  if (!on) { if (el) el.remove(); return; }
+  if (el) return;
+  el = document.createElement('div'); el.id = 'wake';
+  el.innerHTML = `<img src="/logo.svg" alt=""><b>Réveil du serveur…</b><span>Le serveur gratuit faisait la sieste. Ça prend environ 30 secondes, une seule fois.</span><i></i>`;
+  document.body.appendChild(el);
+}
 async function api(path, body){
   const opts = body === undefined ? {} : { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) };
-  const res = await fetch(path, opts);
+  const res = await pfetch(path, opts);
   if (res.status === 401 && !path.startsWith('/api/login')) {
     if (S) { S = null; showLogin(); }
     throw new Error('Connexion requise (session non conservée)');
@@ -264,7 +289,7 @@ const myTeam = () => S && team(S.me.teamId);
 async function showLogin(){
   $('#top').hidden = true; $('#tabbar').hidden = true;
   let loadError = '';
-  teamsCache = await fetch('/api/login/teams').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  teamsCache = await pfetch('/api/login/teams').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .catch(e => { loadError = e.message; return []; });
   const saved = localStorageGet('pav_team');
   $('#view').innerHTML = `

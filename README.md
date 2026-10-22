@@ -54,6 +54,10 @@ et que les stats suivent les matchs :
 1. Créez un compte sur [cron-job.org](https://cron-job.org).
 2. **Create cronjob** → URL : `https://VOTRE-SITE.onrender.com/healthz` → **Every 10 minutes** → **Create**.
 
+Si l'application affiche « Réveil du serveur… » à l'ouverture, le serveur s'était endormi : vérifiez
+dans cron-job.org que la tâche est toujours **Enabled** (le site la désactive après plusieurs échecs
+de suite) et que l'historique montre des réponses 200.
+
 Le forfait gratuit de Render inclut 750 heures par mois, assez pour un site allumé en permanence.
 Les visites régulières empêchent aussi Supabase de mettre le projet en pause (pause après 7 jours sans activité).
 

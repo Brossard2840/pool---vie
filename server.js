@@ -20,6 +20,9 @@ const { createFun } = require('./lib/fun');
 const app = express();
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '2mb' }));
+// Marque nos réponses : le service worker ne garde en cache que les vraies pages de l'app,
+// jamais l'écran d'attente de Render pendant que le serveur se réveille.
+app.use((req, res, next) => { res.set('X-Pool-App', '1'); next(); });
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: 0 }));
 
 const IS_PROD = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
