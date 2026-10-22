@@ -307,10 +307,54 @@
   .av img.ok{opacity:1;}
   .av .ini{display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;background:color-mix(in srgb,var(--tc) 70%,#333);}
   .av .pos{position:absolute;right:-5px;bottom:-4px;z-index:2;font-size:9px;padding:1px 4px;border:2px solid var(--panel);border-radius:6px;}
+  /* Logo d'équipe */
+  .tav{display:inline-block;flex:none;vertical-align:middle;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.25));}
+  .tname{display:inline-flex;align-items:center;gap:6px;min-width:0;}
+  /* Classement en cartes */
+  .scard{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;}
+  :root[data-theme="light"] .scard{border-color:transparent;}
+  .scard.me{background:color-mix(in srgb,var(--gold-fill) 16%,var(--panel));border-color:color-mix(in srgb,var(--gold) 40%,transparent);}
+  .scard .rk{font-size:26px;font-weight:900;min-width:30px;text-align:center;letter-spacing:-.02em;}
+  .scard .nm{font-size:17px;font-weight:800;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .scard .chips{margin-top:6px;gap:5px;} .scard .chip{border-radius:999px;font-size:11px;padding:3px 8px;background:var(--panel-2);border-color:var(--line-soft);color:var(--dim);}
+  .scard .pts{text-align:right;min-width:62px;} .scard .pts small{display:block;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;}
+  .scard .pts b{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;} .scard .day b{color:#e8742a;font-size:20px;}
+  .scard .day small{color:#e8742a;}
+  /* Lignes de joueurs (photo, nom, stats en colonnes) */
+  .prow{padding:12px 2px 10px;border-bottom:1px solid var(--line-soft);cursor:pointer;} .prow:last-child{border-bottom:none;}
+  .prow.out{opacity:.62;}
+  .prow .ptop{display:flex;align-items:center;gap:10px;}
+  .prow .injline{font-size:12px;margin-top:2px;}
+  .prow .nm{font-size:17px;font-weight:800;color:var(--info-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  :root:not([data-theme="light"]) .prow .nm{color:#9fc8f0;}
+  .prow .sb{font-size:12px;color:var(--dim);font-weight:700;margin-top:1px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+  .prow .own{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--dim);white-space:nowrap;max-width:42%;overflow:hidden;}
+  .prow .free{background:var(--ok-bg);color:var(--ok-ink);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:800;}
+  .prow .grid{display:grid;grid-template-columns:repeat(6,1fr);margin-top:8px;text-align:center;font-variant-numeric:tabular-nums;}
+  .prow .grid div{font-size:15px;font-weight:600;} .prow .grid small{display:block;font-size:10px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:1px;}
+  .prow .grid .hi{background:color-mix(in srgb,var(--info-line) 20%,transparent);border-radius:8px;color:#e8742a;font-weight:800;}
+  .prow .flags{margin-left:2px;}
+  /* Tableaux arrondis (choix de repêchage) */
+  .tbl{width:100%;border-collapse:collapse;font-size:15px;} .tbl th{font-size:12px;text-align:left;padding:10px 12px;color:var(--text);font-weight:800;background:var(--panel-2);}
+  .tbl td{padding:11px 12px;border-top:1px solid var(--line-soft);} .tbl td.c,.tbl th.c{text-align:center;width:54px;}
+  .tbl .acq{color:var(--ok-ink);font-weight:700;} .tbl .used td{opacity:.45;}
+  .tblw{border-radius:18px;overflow:hidden;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);margin-bottom:12px;}
+  :root[data-theme="light"] .tblw{border-color:transparent;}
+  .sechd{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800;margin:14px 2px 8px;}
+  /* Éditeur de logo */
+  .avgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0 12px;}
+  .avgrid button{background:var(--panel-2);border:2px solid transparent;border-radius:14px;padding:4px;}
+  .avgrid button.on{border-color:var(--gold);}
+  .swatches{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 12px;}
+  .swatches button{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);padding:0;}
+  .swatches button.on{outline:3px solid var(--gold);outline-offset:2px;}
   /* En-tête d'équipe */
   .thero{position:relative;overflow:hidden;border-radius:22px;padding:18px 18px 16px;margin:2px 0 12px;color:#fff;
     background:linear-gradient(120deg,#7d1424 0%,#a3263a 45%,#c9a24b 130%);box-shadow:var(--shadow);}
   .thero img{position:absolute;right:-26px;top:-22px;width:150px;height:150px;opacity:.16;}
+  .thero .big{position:absolute;z-index:1;right:14px;top:14px;}
+  .thero .edit{position:absolute;z-index:2;right:14px;bottom:12px;background:rgba(255,255,255,.2);color:#fff;border:0;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:800;}
+  .thero .tn,.thero .ts,.thero .chipz{padding-right:96px;}
   .thero .tn{font-size:28px;font-weight:900;letter-spacing:-.02em;line-height:1.1;position:relative;}
   .thero .ts{font-size:14px;font-weight:600;opacity:.9;margin-top:6px;position:relative;}
   .thero .chipz{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;position:relative;}
@@ -466,6 +510,8 @@ function renderChrome(){
   $('#meLabel').innerHTML = neutral() ? '<b>🔑 Commissaire</b><br>compte neutre' : `<b>${esc(S.me.name)}</b>`;
   const mt = document.querySelector('.tabbar a[data-r="mon-equipe"]');
   if (mt && mt.lastChild && mt.lastChild.nodeType === 3) mt.lastChild.textContent = neutral() ? 'Équipes' : 'Mon équipe';
+  // L'icône de l'onglet devient le logo de mon équipe.
+  if (mt && !neutral() && myTeam()) { const svg = mt.querySelector('svg'); if (svg) svg.outerHTML = teamAv(myTeam(), 24); }
   const b = $('#tradeBadge'); b.hidden = !S.pendingTrades; b.textContent = S.pendingTrades || '';
   $('#plusBadge').hidden = !S.pendingProtection;
   const bb = $('#bellBadge'); bb.hidden = !S.unreadNotifications; bb.textContent = S.unreadNotifications > 99 ? '99+' : (S.unreadNotifications || '');
@@ -500,6 +546,37 @@ function route(){
 }
 async function refresh(){ await loadState(); route(); }
 
+// Ligne de joueur façon fiche : photo, nom court, position-équipe, propriétaire, puis les stats en colonnes.
+function shortPlayer(n){ const w = String(n || '').split(' '); return w.length > 1 ? `${w[0][0]}. ${w.slice(1).join(' ')}` : n; }
+function playerRow(p, { showFlags = false, showOwner = false, rank = null } = {}){
+  const flags = showFlags ? `${p.counts_points ? '<span class="tag pts">PTS</span>' : ''}${p.counts_cap ? '<span class="tag cap">$</span>' : ''}` : '';
+  const owner = showOwner ? (p.team_id ? `<span class="own">${teamAvId(p.team_id, 20)}<span style="overflow:hidden;text-overflow:ellipsis">${esc(p.team)}</span></span>` : '<span class="own"><span class="free">Libre</span></span>') : '';
+  const ppgv = p.gp ? (p.pts / p.gp).toFixed(2).replace('.', ',') : '—';
+  const cells = [[rank ? 'Rang' : 'PJ', rank ?? p.gp], ['Âge', p.age ?? '—'], ['Salaire', p.aav ? money(p.aav).replace(' M$', '') : '—'], [p.pos === 'G' ? 'V' : 'B', p.pos === 'G' ? p.wins : p.goals], ['Pts', p.pts, 'hi'], ['Pts/m', ppgv]];
+  return `<div class="prow ${showFlags && !p.counts_points ? 'out' : ''}" onclick="openPlayer(${p.id})">
+    <div class="ptop">${avatar(p)}<div style="min-width:0;flex:1"><div class="nm">${formIcon(p)}${esc(shortPlayer(p.name))}${injTag(p)}</div>
+      <div class="sb"><span class="pos pos-${p.pos}">${p.pos}</span> ${esc(p.nhl_team || '—')}${(S.block || []).includes(p.id) ? ' <span class="tag blk">📣</span>' : ''}<span class="flags">${flags}</span>${rookieTags(p) ? ' ' + rookieTags(p) : ''}</div>
+      ${injLine(p)}</div>${owner}</div>
+    <div class="grid">${cells.map(([l, v, c]) => `<div class="${c || ''}"><small>${l}</small>${v}</div>`).join('')}</div></div>`;
+}
+// Choix de repêchage d'une équipe, par saison : ronde, propriétaire d'origine (avec son logo).
+let picksYear = null;
+function picksTable(all, teamId){ return `<div data-picks="${teamId}">${picksInner(all, teamId)}</div>`; }
+function picksRefresh(y){ picksYear = y; document.querySelectorAll('[data-picks]').forEach(el => { el.innerHTML = picksInner(window._picks, Number(el.dataset.picks)); }); }
+function picksInner(all, teamId){
+  const years = [...new Set(all.map(p => p.year))].sort();
+  if (!years.length) return '<p class="muted">Aucun choix.</p>';
+  if (!years.includes(picksYear)) picksYear = years[0];
+  const own = all.filter(p => p.owner_team_id === teamId && p.year === picksYear).sort((a, b) => a.round - b.round || a.id - b.id);
+  const gone = all.filter(p => p.original_team_id === teamId && p.owner_team_id !== teamId && p.year === picksYear);
+  return `${years.length > 1 ? `<div class="seg">${years.map(y => `<button class="${y === picksYear ? 'on' : ''}" onclick="picksRefresh(${y})">${y}</button>`).join('')}</div>` : ''}
+    <div class="tblw"><table class="tbl"><tr><th class="c">Ronde</th><th>Propriétaire d'origine</th><th></th></tr>
+    ${own.map(p => `<tr class="${p.used ? 'used' : ''}" ${S.me.isAdmin ? `onclick="editPick(${p.id})" style="cursor:pointer"` : ''}><td class="c"><b>${p.round}</b></td>
+      <td>${tname(team(p.original_team_id))}</td><td style="text-align:right;font-size:12px" class="${p.original_team_id !== teamId ? 'acq' : 'muted'}">${p.used ? 'utilisé' : p.original_team_id !== teamId ? 'acquis' : ''}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">Aucun choix cette année.</td></tr>'}
+    </table></div>
+    ${gone.length ? `<p class="muted" style="margin:-4px 2px 12px">Cédés : ${gone.map(p => `${roundFr(p.round)} → ${esc(p.owner_team)}`).join(' · ')}</p>` : ''}`;
+}
+
 // ---------- Classement ----------
 let standMode = 'saison';
 function standSeg(){ return `<div class="seg"><button class="${standMode === 'saison' ? 'on' : ''}" onclick="standMode='saison';vStandings()">Saison</button><button class="${standMode === 'series' ? 'on' : ''}" onclick="standMode='series';vStandings()">Séries</button></div>`; }
@@ -527,17 +604,24 @@ function vStandings(){
   if (standMode === 'series') return vPlayoffs();
   const rows = S.teams.map(t => `
     ${t.rank === 9 ? '<div class="cutline">Ligne des séries (top 8)</div>' : ''}
-    <div class="item" onclick="location.hash='#/equipe/${t.id}'">
-      <div class="rank ${t.playoffs ? 'po' : ''}">${t.rank}</div>
-      <div class="grow"><div class="name">${esc(t.name)}${t.id === S.me.teamId ? ' <span class="tag cap">moi</span>' : ''}</div>
-        <div class="meta">${t.size} joueurs · ${ppg(t)} pt/match · ${money(t.capUsed)}${t.issues.length ? ' · <span style="color:var(--red)">⚠ ' + t.issues.length + '</span>' : ''}</div></div>
-      <div class="num"><b>${t.points}</b><div class="meta">pts</div></div>
+    <div class="scard ${t.id === S.me.teamId ? 'me' : ''}" onclick="location.hash='#/equipe/${t.id}'">
+      <div class="grow" style="min-width:0"><div style="display:flex;align-items:center;gap:8px">${teamAv(t, 46)}<span class="rk">${t.rank}</span></div>
+        <div class="nm">${esc(t.name)}</div>
+        <div class="chips"><span class="chip" id="sd-${t.id}" title="Joueurs dont l'équipe joue aujourd'hui">👥 —</span><span class="chip">${money(t.capUsed)}</span>${t.issues.length ? `<span class="chip" style="color:var(--red)">⚠ ${t.issues.length}</span>` : ''}</div></div>
+      <div class="pts"><small>Saison</small><b>${t.points}</b><div class="muted" style="font-size:12px">${ppg(t)}/m</div></div>
+      <div class="pts day"><small>Jour</small><b id="dp-${t.id}">—</b></div>
     </div>`).join('');
   $('#view').innerHTML = `
     <h2 class="title">Classement</h2>${standSeg()}
-    <div class="card"><div class="list">${rows || '<div class="empty">Aucune équipe.</div>'}</div></div>
+    ${rows || '<div class="empty">Aucune équipe.</div>'}
     <p class="muted">Seuls les 9 meilleurs attaquants, 4 meilleurs défenseurs et 2 meilleurs gardiens de chaque équipe comptent (art. 2.3).
-    Égalité : points par match, puis buts (art. 6.2). Stats officielles de la LNH, mises à jour aux ${S.config.refreshMinutes} minutes.</p>`;
+    Égalité : points par match, puis buts (art. 6.2). Stats officielles de la LNH, mises à jour aux ${S.config.refreshMinutes} minutes.
+    « Jour » : points de pool aujourd'hui ; 👥 joueurs qui ont joué / dont l'équipe joue aujourd'hui.</p>`;
+  // Points du jour (en direct), ajoutés après coup pour ne pas ralentir l'affichage.
+  api('/api/live').then(L => { for (const x of L.teams) {
+    const d = $('#dp-' + x.id), c = $('#sd-' + x.id);
+    if (d) d.textContent = x.livePts; if (c) c.textContent = `👥 ${x.liveGp}/${x.scheduled}`;
+  } }).catch(() => {});
 }
 
 // ---------- Équipe ----------
@@ -547,14 +631,15 @@ function vTeam(id){
   const c = S.config, pct = Math.min(100, t.capUsed / c.cap * 100);
   const sections = ['F','D','G'].map(pos => {
     const P = t.positions[pos];
-    const items = P.players.map(p => playerItem(p, { showFlags: true })).join('');
+    const items = P.players.map(p => playerRow(p, { showFlags: true })).join('');
     return `<div class="card">
       <h3><span>${POS_LABEL[pos]} · ${P.count} <span style="font-weight:500">(min ${P.min}, max ${P.max})</span></span>
           <span title="Salaire maximal qu'on peut ajouter à cette position sans dépasser le plafond">max ${money(Math.max(0, P.maxNewSalary))}</span></h3>
       <div class="list">${items || '<div class="empty">Aucun joueur</div>'}</div></div>`;
   }).join('');
   $('#view').innerHTML = `
-    <div class="thero"><img src="/logo-mark.svg" alt="" onerror="this.remove()">
+    <div class="thero"><span class="big">${teamAv(t, 76)}</span>
+      ${t.id === S.me.teamId || S.me.isAdmin ? `<button class="edit" onclick="openAvatarEditor(${t.id})">🎨 Logo</button>` : ''}
       <div class="tn">${esc(t.name)}${t.id === S.me.teamId ? ' <span style="font-size:14px;opacity:.85">· mon équipe</span>' : ''}</div>
       <div class="ts">${t.rank}${t.rank === 1 ? 're' : 'e'} sur ${S.teams.length} · ${t.points} pts · ${ppg(t)} pt/match</div>
       <div class="chipz"><span>${t.size} joueurs</span><span>${money(t.capUsed)} / ${money(c.cap)}</span>${t.avgAge ? `<span>🎂 ${t.avgAge.toLocaleString('fr-CA')} ans</span>` : ''}</div></div>
@@ -578,10 +663,11 @@ function vTeam(id){
     ${t.issues.length ? `<div class="issues"><b>À corriger</b><br>${t.issues.map(esc).join('<br>')}</div>`
                       : '<div class="okbox">✓ Alignement conforme (positions, plafond et plancher)</div>'}
     ${sections}
-    <div class="card"><h3><span>Choix de repêchage</span><a class="link" href="#/choix/${t.id}">historique ›</a></h3><div id="teamPicks" class="muted">Chargement…</div></div>
+    <div class="sechd">${teamAv(t, 30)} <span style="flex:1">${t.id === S.me.teamId ? 'Mes choix de repêchage' : 'Choix de repêchage'}</span><a class="link" style="font-size:14px" href="#/choix/${t.id}">tout ›</a></div>
+    <div id="teamPicks" class="muted">Chargement…</div>
     ${t.id !== S.me.teamId && !neutral() ? `<button class="btn" style="width:100%;margin-bottom:12px" onclick="location.hash='#/offre/${t.id}'">⇄ Proposer un échange à ${esc(t.name)}</button>` : ''}
     <p class="muted"><span class="tag pts">PTS</span> compte pour les points · <span class="tag cap">$</span> compte dans la masse salariale (art. 3.1)</p>`;
-  api('/api/picks').then(P => { const el = $('#teamPicks'); if (el) el.innerHTML = picksChips(P.picks.filter(p => p.owner_team_id === t.id)); }).catch(() => {});
+  api('/api/picks').then(P => { window._picks = P.picks; const el = $('#teamPicks'); if (el) el.outerHTML = picksTable(P.picks, t.id); }).catch(() => {});
 }
 
 function formIcon(p){ const f = p.trend && p.trend.form; return f === 'hot' ? '<span title="En feu : 5 points ou plus à ses 5 derniers matchs">🔥 </span>' : f === 'cold' ? '<span title="Froid : aucun point à ses 5 derniers matchs">🧊 </span>' : ''; }
@@ -646,7 +732,7 @@ function vTeams(){
     <div class="seg">${[['nom','Nom'],['jeunes','Plus jeunes'],['vieux','Plus vieilles']].map(([k, l]) => `<button class="${teamsSort === k ? 'on' : ''}" onclick="teamsSort='${k}';vTeams()">${l}</button>`).join('')}</div>
     <div class="card"><div class="list">${
     S.teams.slice().sort(sorters[teamsSort]).map(t => `
-      <div class="item" onclick="location.hash='#/equipe/${t.id}'">
+      <div class="item" onclick="location.hash='#/equipe/${t.id}'">${teamAv(t, 40)}
         <div class="grow"><div class="name">${esc(t.name)}</div>
           <div class="meta">🎂 ${t.avgAge ? t.avgAge.toLocaleString('fr-CA') + ' ans de moyenne' : 'âge inconnu'}${t.rookies ? ' · 🍼 ' + t.rookies + ' recrue' + (t.rookies > 1 ? 's' : '') : ''}</div>
           <div class="meta">${t.positions.F.count} A · ${t.positions.D.count} D · ${t.positions.G.count} G · espace ${money(t.capSpace)}
@@ -673,7 +759,7 @@ const loadPlayers = run(async () => {
   const qs = new URLSearchParams(PF).toString();
   const rows = await api('/api/players?' + qs);
   const el = $('#plist'); if (!el) return;
-  el.innerHTML = rows.length ? rows.map(p => playerItem(p, { showOwner: true })).join('')
+  el.innerHTML = rows.length ? rows.map((p, i) => playerRow(p, { showOwner: true, rank: i + 1 })).join('')
     : '<div class="empty">Aucun joueur. Les joueurs LNH apparaissent après la première mise à jour des stats.</div>';
 });
 
@@ -730,6 +816,125 @@ function renderSheet(){
   if (mq) { let h; mq.oninput = () => { clearTimeout(h); h = setTimeout(searchMerge, 250); }; mq.value = p.name; searchMerge(); }
   $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open');
 }
+// Logo d'équipe en SVG : chandail, bâton, patins, casque, rondelle, bière. Couleurs c1 (principale), c2 (bandes), c3 (détails).
+const AV_PALETTE = ['#7d1424','#c8102e','#e85d1f','#f2b705','#f6e7a1','#1f7a3e','#0b6e4f','#00a3ad','#2a6ebb','#0d2a6b','#5b2a86','#1b1b1b','#5b6770','#ffffff','#b4975a','#8a4b2a'];
+let avSeq = 0;
+function shade(hex, f){ // f < 0 : plus foncé, f > 0 : plus pâle
+  const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  const t = f < 0 ? 0 : 255, p = Math.abs(f);
+  r = Math.round((t - r) * p + r); g = Math.round((t - g) * p + g); b = Math.round((t - b) * p + b);
+  return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+function defaultAvatar(name){
+  let h = 0; for (const ch of String(name || '')) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const combos = [['#7d1424','#f2b705','#ffffff'],['#0d2a6b','#ffffff','#c8102e'],['#1f7a3e','#f6e7a1','#1b1b1b'],['#2a6ebb','#ffffff','#0d2a6b'],
+    ['#f2b705','#5b2a86','#ffffff'],['#1b1b1b','#e85d1f','#ffffff'],['#c8102e','#1b1b1b','#ffffff'],['#00a3ad','#1b1b1b','#ffffff'],['#5b2a86','#f2b705','#ffffff']];
+  const [c1, c2, c3] = combos[h % combos.length];
+  return { type: ['chandail','chandail','baton','patins','casque'][h % 5], c1, c2, c3, letter: String(name || '?').trim()[0].toUpperCase() };
+}
+function teamIcon(av, size = 40, name = ''){
+  const a = av && av.type ? av : defaultAvatar(name);
+  const id = 'av' + (++avSeq), c1 = a.c1, c2 = a.c2, c3 = a.c3, dk = shade(c1, -.35), lt = shade(c1, .35);
+  const letter = (a.letter || String(name || '?').trim()[0] || '?').toUpperCase().replace(/[<>&"]/g, '');
+  const gloss = `<linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></linearGradient>`;
+  let body = '';
+  if (a.type === 'chandail') {
+    const J = 'M22 9 L27 7 Q32 12 37 7 L42 9 L57 18 L52 33 L46 30 L46 55 Q32 59 18 55 L18 30 L12 33 L7 18 Z';
+    body = `<defs>${gloss}<clipPath id="${id}c"><path d="${J}"/></clipPath></defs>
+      <path d="${J}" fill="${c1}"/>
+      <g clip-path="url(#${id}c)">
+        <rect x="0" y="22" width="18.5" height="4" fill="${c2}"/><rect x="45.5" y="22" width="20" height="4" fill="${c2}"/>
+        <rect x="0" y="27.5" width="18.5" height="2" fill="${c3}"/><rect x="45.5" y="27.5" width="20" height="2" fill="${c3}"/>
+        <rect x="0" y="45" width="64" height="4" fill="${c2}"/><rect x="0" y="50.5" width="64" height="2" fill="${c3}"/>
+        <path d="${J}" fill="url(#${id}g)"/>
+      </g>
+      <path d="M27 7 Q32 12 37 7 L35.5 7 Q32 17 28.5 7 Z" fill="${c2}"/><path d="M28.5 7 Q32 15 35.5 7" fill="none" stroke="${c3}" stroke-width="1.2"/>
+      <circle cx="32" cy="31" r="7.5" fill="${c2}" stroke="${c3}" stroke-width="1.5"/>
+      <text x="32" y="35" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="${letter.length > 1 ? 7.5 : 10}" fill="${c1}">${letter}</text>
+      <path d="${J}" fill="none" stroke="${dk}" stroke-width="1.5" stroke-linejoin="round"/>`;
+  } else if (a.type === 'baton') {
+    body = `<defs>${gloss}</defs>
+      <g transform="translate(9 -3) scale(.9) rotate(30 32 32)">
+        <rect x="29" y="2" width="6" height="46" rx="2" fill="${c1}" stroke="${dk}" stroke-width="1.2"/>
+        <rect x="29" y="2" width="6" height="8" rx="2" fill="${c3}"/><rect x="29" y="5" width="6" height="1.4" fill="${shade(c3, -.3)}"/>
+        <path d="M29 46 L35 46 L35 52 Q35 58 29 58 L12 58 Q8 58 8 54 Q8 51 12 51 L29 51 Z" fill="${c1}" stroke="${dk}" stroke-width="1.2"/>
+        <path d="M14 51.5 L28.5 51.5 L28.5 57.5 L14 57.5 Z" fill="${c2}"/>
+        <path d="M17 51.5 L17 57.5 M20.5 51.5 L20.5 57.5 M24 51.5 L24 57.5" stroke="${shade(c2, -.25)}" stroke-width=".9"/>
+        <rect x="29" y="2" width="6" height="56" fill="url(#${id}g)" opacity=".6"/>
+      </g>
+      <ellipse cx="47" cy="54" rx="8" ry="3.4" fill="#1b1b1b"/><rect x="39" y="50" width="16" height="4" fill="#2b2b2b"/><ellipse cx="47" cy="50" rx="8" ry="3.4" fill="#3a3a3a"/>`;
+  } else if (a.type === 'patins') {
+    const B = 'M14 10 L32 10 Q35 10 35 14 L35 30 Q36 34 44 36 L52 38 Q57 40 57 45 L57 47 L12 47 Q10 47 10 45 L10 14 Q10 10 14 10 Z';
+    body = `<defs>${gloss}<clipPath id="${id}c"><path d="${B}"/></clipPath></defs>
+      <path d="${B}" fill="${c1}"/>
+      <g clip-path="url(#${id}c)"><rect x="0" y="40" width="64" height="7" fill="${c2}"/><rect x="0" y="10" width="64" height="5" fill="${c3}"/><path d="${B}" fill="url(#${id}g)"/></g>
+      <path d="${B}" fill="none" stroke="${dk}" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M22 16 L30 18 M22 21 L30 23 M22 26 L31 28 M23 31 L33 33" stroke="${c3}" stroke-width="1.8" stroke-linecap="round"/>
+      <rect x="14" y="47" width="6" height="5" fill="#9aa4ae"/><rect x="44" y="47" width="6" height="5" fill="#9aa4ae"/>
+      <path d="M8 52 L58 52 Q60 52 59 55 L58 56 L9 56 Q6 56 6 54 Q6 52 8 52 Z" fill="#d7dde3" stroke="#7d8790" stroke-width="1"/>`;
+  } else if (a.type === 'casque') {
+    const H = 'M8 36 Q8 10 32 9 Q55 10 57 32 L57 40 L46 40 Q44 46 38 46 L26 46 L22 52 L14 52 Q8 50 8 42 Z';
+    body = `<defs>${gloss}<clipPath id="${id}c"><path d="${H}"/></clipPath></defs>
+      <path d="${H}" fill="${c1}"/>
+      <g clip-path="url(#${id}c)"><rect x="29" y="0" width="6" height="64" fill="${c2}"/><rect x="0" y="36" width="64" height="3" fill="${c3}"/><path d="${H}" fill="url(#${id}g)"/></g>
+      <path d="${H}" fill="none" stroke="${dk}" stroke-width="1.5" stroke-linejoin="round"/>
+      <circle cx="22" cy="38" r="4.5" fill="${dk}"/><circle cx="22" cy="38" r="2" fill="${c3}"/>
+      <path d="M40 40 L60 40 L60 54 Q54 58 44 56 L40 54 Z" fill="none" stroke="#c7cdd3" stroke-width="2"/>
+      <path d="M46 40 L46 56 M52 40 L52 57 M40 47 L60 47" stroke="#c7cdd3" stroke-width="1.6"/>`;
+  } else if (a.type === 'rondelle') {
+    body = `<defs>${gloss}</defs>
+      <ellipse cx="32" cy="42" rx="25" ry="10" fill="#111"/><rect x="7" y="30" width="50" height="12" fill="#1b1b1b"/>
+      <ellipse cx="32" cy="30" rx="25" ry="10" fill="#2e2e2e" stroke="#444" stroke-width="1"/>
+      <ellipse cx="32" cy="30" rx="15" ry="6" fill="${c1}" stroke="${c2}" stroke-width="2"/>
+      <text x="32" y="33.2" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="8" fill="${c3}">${letter}</text>
+      <path d="M8 36 L56 36" stroke="${c2}" stroke-width="1.2" opacity=".8"/>
+      <path d="M44 14 L52 6 M48 18 L58 12 M38 13 L41 4" stroke="${c2}" stroke-width="2.4" stroke-linecap="round"/>`;
+  } else { // bière
+    const G = 'M16 14 L44 14 L41 56 Q41 58 39 58 L21 58 Q19 58 19 56 Z';
+    body = `<defs>${gloss}<clipPath id="${id}c"><path d="${G}"/></clipPath></defs>
+      <path d="M44 22 Q55 22 55 33 Q55 44 42 44" fill="none" stroke="#c9d3dc" stroke-width="4"/>
+      <path d="${G}" fill="${c1}"/>
+      <g clip-path="url(#${id}c)"><rect x="0" y="34" width="64" height="6" fill="${c2}"/><circle cx="25" cy="48" r="1.6" fill="#fff" opacity=".6"/><circle cx="33" cy="44" r="1.2" fill="#fff" opacity=".6"/><circle cx="29" cy="52" r="1" fill="#fff" opacity=".6"/><path d="${G}" fill="url(#${id}g)"/></g>
+      <path d="${G}" fill="none" stroke="#c9d3dc" stroke-width="1.8"/>
+      <path d="M13 15 Q13 6 22 8 Q26 2 33 6 Q40 3 44 9 Q50 10 47 16 Q45 19 40 17 Q36 20 30 17 Q24 20 19 17 Q14 19 13 15 Z" fill="${c3}" stroke="${shade(c3, -.15)}" stroke-width="1"/>`;
+  }
+  return `<svg class="tav" width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true">${body}</svg>`;
+}
+
+// Logo d'une équipe du pool (choisi par le pooler, sinon un chandail aux couleurs tirées de son nom).
+function teamAv(t, size = 32){ return t ? teamIcon(t.avatar, size, t.name) : ''; }
+const teamAvId = (id, size) => teamAv(team(id), size);
+function tname(t, size = 22){ return t ? `<span class="tname">${teamAv(t, size)}<span>${esc(t.name)}</span></span>` : ''; }
+
+// Éditeur du logo : modèle, trois couleurs et lettre (chandail, rondelle).
+let AVE = null;
+function openAvatarEditor(teamId){
+  const t = team(teamId); if (!t) return;
+  AVE = { teamId, a: { ...(t.avatar && t.avatar.type ? t.avatar : defaultAvatar(t.name)) } };
+  renderAvatarEditor();
+  $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open');
+}
+function renderAvatarEditor(){
+  const a = AVE.a, t = team(AVE.teamId);
+  const types = [['chandail', 'Chandail'], ['baton', 'Bâton'], ['patins', 'Patins'], ['casque', 'Casque'], ['rondelle', 'Rondelle'], ['biere', 'Bière']];
+  const sw = k => `<div class="swatches">${AV_PALETTE.map(c => `<button class="${a[k] === c ? 'on' : ''}" style="background:${c}" onclick="AVE.a.${k}='${c}';renderAvatarEditor()" aria-label="${c}"></button>`).join('')}</div>`;
+  $('#sheetBody').innerHTML = `<h3>🎨 Logo de ${esc(t.name)}</h3>
+    <div style="display:flex;justify-content:center;margin:6px 0 4px">${teamIcon(a, 120, t.name)}</div>
+    <label class="f">Modèle</label>
+    <div class="avgrid">${types.map(([k, l]) => `<button class="${a.type === k ? 'on' : ''}" title="${l}" onclick="AVE.a.type='${k}';renderAvatarEditor()">${teamIcon({ ...a, type: k }, 44, t.name)}</button>`).join('')}</div>
+    <label class="f">Couleur principale</label>${sw('c1')}
+    <label class="f">Bandes</label>${sw('c2')}
+    <label class="f">Détails</label>${sw('c3')}
+    <label class="f">Lettres (chandail et rondelle, 2 max)</label>
+    <input id="aveL" maxlength="2" value="${esc(a.letter || '')}" style="text-transform:uppercase;margin-bottom:12px" oninput="AVE.a.letter=this.value.toUpperCase();">
+    <div class="row"><button class="btn ghost" onclick="AVE.a={...defaultAvatar('${esc(t.name).replace(/'/g, "\\'")}'),type:AVE.a.type};renderAvatarEditor()">Couleurs au hasard</button><button class="btn" onclick="saveAvatar()">Enregistrer</button></div>`;
+}
+const saveAvatar = run(async () => {
+  AVE.a.letter = ($('#aveL').value || '').toUpperCase();
+  await api('/api/team/avatar', { teamId: AVE.teamId, avatar: AVE.a });
+  closeSheet(); toast('Logo enregistré'); await refresh();
+});
+
 // Couleur principale de chaque équipe LNH (en-tête de la fiche du joueur).
 const TEAM_COLOR = { ANA:'#f47a38', BOS:'#c99a1c', BUF:'#003087', CGY:'#c8102e', CAR:'#ce1126', CHI:'#cf0a2c', COL:'#6f263d', CBJ:'#002654', DAL:'#006847',
   DET:'#ce1126', EDM:'#ff4c00', FLA:'#c8102e', LAK:'#5b6770', MIN:'#154734', MTL:'#af1e2d', NSH:'#c99a1c', NJD:'#ce1126', NYI:'#00539b', NYR:'#0038a8',
@@ -1161,28 +1366,40 @@ const submitOffer = run(async () => {
   toast('Offre envoyée'); location.hash = '#/echanges';
 });
 
-// Choix de repêchage : qui possède quoi, et l'historique des échanges de choix.
+// Choix de repêchage : par équipe, par ronde, choix échangés (avec l'historique).
+let picksTab = 'equipe', picksRound = 1;
 const vPicks = run(async (teamArg) => {
   const P = await api('/api/picks');
-  const years = [...new Set(P.picks.map(p => p.year))];
-  const teams = S.teams.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-  const focus = Number(teamArg) || null;
-  const cards = teams.filter(t => !focus || t.id === focus).map(t => {
-    const own = P.picks.filter(p => p.owner_team_id === t.id);
-    const gone = P.picks.filter(p => p.original_team_id === t.id && p.owner_team_id !== t.id);
-    return `<div class="card"><h3><span>${esc(t.name)} · ${own.filter(p => !p.used).length} choix</span></h3>${picksChips(own)}
-      ${gone.length ? `<p class="muted" style="margin:8px 0 0">Cédés : ${gone.map(p => `${p.year} ${roundFr(p.round)} → ${esc(p.owner_team)}`).join(' · ')}</p>` : ''}</div>`;
-  }).join('');
-  const hist = P.history.filter(m => !focus || [m.from_team, m.to_team].includes(team(focus).name));
-  $('#view').innerHTML = `<h2 class="title">Choix de repêchage</h2>
-    <p class="muted">Rondes 1 à 12 · repêchage${years.length > 1 ? 's' : ''} ${years.join(', ')}. En vert : choix obtenus d'une autre équipe (entre parenthèses, l'équipe d'origine).
-      ${S.me.isAdmin ? 'Touche un choix pour le corriger.' : ''}</p>
-    ${focus ? `<p><a class="link" href="#/choix">‹ Toutes les équipes</a></p>` : ''}
-    ${cards}
-    <div class="card"><h3>Suivi des échanges de choix</h3><div class="list">${hist.map(m => `<div class="item" style="cursor:default"><div class="grow">
-      <div class="name">${esc(m.player_name)}</div><div class="meta">${esc(m.from_team)} → <b>${m.to_team ? esc(m.to_team) : 'abandonné'}</b> · ${esc(m.kind)}${m.note ? ' · ' + esc(m.note) : ''}</div>
-      <div class="meta">${new Date(m.at).toLocaleString('fr-CA', { dateStyle:'medium', timeStyle:'short' })}</div></div></div>`).join('') || '<div class="empty">Aucun choix échangé pour l\'instant.</div>'}</div></div>`;
   window._picks = P.picks;
+  const years = [...new Set(P.picks.map(p => p.year))].sort();
+  if (!years.includes(picksYear)) picksYear = years[0];
+  const focus = Number(teamArg) || null;
+  const teams = S.teams.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  const tabs = [['equipe', 'Par équipe'], ['ronde', 'Par ronde'], ['echanges', 'Choix échangés']];
+  let body = '';
+  if (picksTab === 'equipe') {
+    body = teams.filter(t => !focus || t.id === focus).map(t => `<div class="sechd">${teamAv(t, 30)} ${esc(t.name)}</div>${picksTable(P.picks, t.id)}`).join('');
+  } else if (picksTab === 'ronde') {
+    const rounds = [...new Set(P.picks.filter(p => p.year === picksYear).map(p => p.round))].sort((a, b) => a - b);
+    const list = P.picks.filter(p => p.year === picksYear && p.round === picksRound);
+    body = `<div class="seg" style="overflow-x:auto">${rounds.map(r => `<button class="${r === picksRound ? 'on' : ''}" onclick="picksRound=${r};vPicks(${focus || ''})">R${r}</button>`).join('')}</div>
+      <div class="tblw"><table class="tbl"><tr><th>Appartient à</th><th>Propriétaire d'origine</th></tr>
+      ${list.sort((a, b) => a.original_team.localeCompare(b.original_team, 'fr')).map(p => `<tr class="${p.used ? 'used' : ''}"><td>${tname(team(p.owner_team_id))}</td><td class="${p.owner_team_id !== p.original_team_id ? 'acq' : ''}">${p.owner_team_id !== p.original_team_id ? tname(team(p.original_team_id)) : '<span class="muted">—</span>'}</td></tr>`).join('')}</table></div>`;
+  } else {
+    const traded = P.picks.filter(p => p.owner_team_id !== p.original_team_id).sort((a, b) => a.year - b.year || a.round - b.round);
+    const hist = P.history.filter(m => !focus || [m.from_team, m.to_team].includes(team(focus).name));
+    body = `<div class="tblw"><table class="tbl"><tr><th class="c">Année</th><th class="c">Ronde</th><th>D'origine</th><th>Appartient à</th></tr>
+      ${traded.map(p => `<tr class="${p.used ? 'used' : ''}"><td class="c">${p.year}</td><td class="c"><b>${p.round}</b></td><td>${tname(team(p.original_team_id), 20)}</td><td class="acq">${tname(team(p.owner_team_id), 20)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Aucun choix échangé.</td></tr>'}</table></div>
+      <div class="card"><h3>Historique des mouvements de choix</h3><div class="list">${hist.map(m => `<div class="item" style="cursor:default"><div class="grow">
+        <div class="name">${esc(m.player_name)}</div><div class="meta">${esc(m.from_team)} → <b>${m.to_team ? esc(m.to_team) : 'abandonné'}</b> · ${esc(m.kind)}${m.note ? ' · ' + esc(m.note) : ''}</div>
+        <div class="meta">${new Date(m.at).toLocaleString('fr-CA', { dateStyle: 'medium', timeStyle: 'short' })}</div></div></div>`).join('') || '<div class="empty">Aucun choix échangé pour l\'instant.</div>'}</div></div>`;
+  }
+  $('#view').innerHTML = `<h2 class="title">Choix de repêchage</h2>
+    <p class="muted" style="margin-top:-8px">Rondes 1 à 12${S.me.isAdmin ? ' · touche un choix pour le corriger' : ''}</p>
+    <div class="card"><div class="seg" style="margin-bottom:${picksTab === 'equipe' ? '0' : '10px'}">${tabs.map(([k, l]) => `<button class="${picksTab === k ? 'on' : ''}" onclick="picksTab='${k}';vPicks(${focus || ''})">${l}</button>`).join('')}</div>
+      ${picksTab === 'ronde' && years.length > 1 ? `<label class="f">Saison</label><select onchange="picksYear=Number(this.value);vPicks(${focus || ''})">${years.map(y => `<option ${y === picksYear ? 'selected' : ''}>${y}</option>`).join('')}</select>` : ''}</div>
+    ${focus ? `<p><a class="link" href="#/choix">‹ Toutes les équipes</a></p>` : ''}
+    ${body}`;
 });
 function editPick(id){
   const p = (window._picks || []).find(x => x.id === id); if (!p) { location.hash = '#/choix'; return; }
@@ -1196,14 +1413,15 @@ function editPick(id){
 }
 const savePick = run(async id => {
   await api(`/api/admin/picks/${id}`, { ownerTeamId: Number($('#pkOwner').value), used: $('#pkUsed').checked, note: $('#pkNote').value });
-  toast('Choix mis à jour'); closeSheet(); vPicks(location.hash.split('/')[2]);
+  toast('Choix mis à jour'); closeSheet();
+  if (location.hash.startsWith('#/choix')) vPicks(location.hash.split('/')[2]); else route();
 });
 
 // ---------- Mur de la gang ----------
 const vWall = run(async () => {
   const W = await api('/api/wall');
   const post = p => `<div class="post ${p.kind === 'auto' ? 'auto' : ''}">
-    <div><span class="who">${p.kind === 'auto' ? '📣 Pool à vie' : p.team ? esc(p.team) : '🔑 Commissaire'}</span><span class="when">${ago(p.at)}</span>
+    <div><span class="who">${p.kind === 'auto' ? '📣 Pool à vie' : p.team ? tname(team(p.team_id), 24) : '🔑 Commissaire'}</span><span class="when">${ago(p.at)}</span>
       ${(p.team_id === S.me.teamId || S.me.isAdmin) && p.kind !== 'auto' ? `<a class="link" style="float:right;font-size:12px" onclick="wallDelete(${p.id})">supprimer</a>` : ''}</div>
     <div class="txt">${esc(p.body)}</div>
     ${p.link ? `<a class="link" style="font-size:13px" href="${esc(p.link)}">Voir ›</a>` : ''}
@@ -1228,7 +1446,7 @@ const vBlock = run(async () => {
       ${avatar(e)}
       <div class="grow" onclick="openPlayer(${e.id})"><div class="name">${esc(e.name)}${injTag(e)}</div>${injLine(e)}
         <div class="meta">${esc(e.nhl_team || '—')}${e.age ? ' · ' + e.age + ' ans' : ''} · ${statLine(e)}${e.contract_end ? ' · fin ' + e.contract_end : ''}</div>
-        <div class="meta">${e.team_id === S.me.teamId ? '' : '<b>' + esc(e.team) + '</b> · '}depuis ${ago(e.created_at)}</div>
+        <div class="meta">${e.team_id === S.me.teamId ? '' : tname(team(e.team_id), 18) + ' · '}depuis ${ago(e.created_at)}</div>
         ${e.note ? `<div style="margin-top:4px;font-size:14px">💬 ${esc(e.note)}</div>` : ''}
         <div class="row" style="margin-top:8px;gap:6px">${e.team_id === S.me.teamId
           ? `<span class="muted" style="font-size:13px">👀 ${e.interest ? e.interest + ' intéressé' + (e.interest > 1 ? 's' : '') : 'personne encore'}</span>
@@ -1563,7 +1781,7 @@ function scrollToCurrent(){
 function shortName(n){ return n.length > 12 ? n.slice(0, 11) + '…' : n; }
 function draftBoard(D, mineId = S.me.teamId){
   const cur = D.picks.find(p => p.id === D.current);
-  const head = D.order.map((t, i) => `<th title="${esc(t.name)}">${i + 1}. ${esc(shortName(t.name))}</th>`).join('');
+  const head = D.order.map((t, i) => `<th title="${esc(t.name)}"><span class="tname">${teamAvId(t.id, 18)}<span>${i + 1}. ${esc(shortName(t.name))}</span></span></th>`).join('');
   const rows = [];
   for (let r = 1; r <= D.rounds; r++) {
     const cells = D.order.map(t => {

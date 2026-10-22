@@ -124,6 +124,7 @@ async function initDb() {
       by_team TEXT
     );
   `);
+  await pool.query(`ALTER TABLE teams ADD COLUMN IF NOT EXISTS avatar JSONB`);
   await live.initTables();
   await trades.initTables();
   await waivers.initTables();
@@ -376,6 +377,20 @@ app.get('/healthz', h(async (req, res) => {
   res.json({ ok: true, lastUpdate: await getConfig('last_stats_update'), lastLive: await getConfig('last_live_sync') });
 }));
 
+// Logo de l'équipe (chandail, bâton, patins…) et ses couleurs, choisis par le pooler (ou le commissaire).
+const AVATAR_TYPES = ['chandail', 'baton', 'patins', 'casque', 'rondelle', 'biere'];
+app.post('/api/team/avatar', h(async (req, res) => {
+  if (!req.me) return res.status(401).json({ error: 'Connexion requise' });
+  const teamId = req.me.isAdmin && req.body.teamId ? Number(req.body.teamId) : req.me.teamId;
+  if (!teamId) return res.status(400).json({ error: 'Choisis une équipe' });
+  const a = req.body.avatar || {};
+  const color = v => /^#[0-9a-f]{6}$/i.test(v || '') ? v.toLowerCase() : null;
+  if (!AVATAR_TYPES.includes(a.type) || !color(a.c1) || !color(a.c2) || !color(a.c3)) return res.status(400).json({ error: 'Logo invalide' });
+  const avatar = { type: a.type, c1: color(a.c1), c2: color(a.c2), c3: color(a.c3), letter: String(a.letter || '').trim().slice(0, 2).toUpperCase() };
+  await pool.query(`UPDATE teams SET avatar=$2 WHERE id=$1`, [teamId, avatar]);
+  res.json({ ok: true, avatar });
+}));
+
 const loginAttempts = new Map();
 app.get('/api/login/teams', h(async (req, res) => {
   const { rows } = await pool.query(`SELECT id, name FROM teams WHERE code_hash IS NOT NULL ORDER BY LOWER(name)`);
@@ -445,7 +460,7 @@ function clean(p) {
 
 async function buildLeague() {
   const config = await leagueConfig();
-  const { rows: teams } = await pool.query(`SELECT id, name, is_admin, code_hash IS NOT NULL AS has_code FROM teams ORDER BY LOWER(name)`);
+  const { rows: teams } = await pool.query(`SELECT id, name, is_admin, avatar, code_hash IS NOT NULL AS has_code FROM teams ORDER BY LOWER(name)`);
   const { rows: owned } = await pool.query(`SELECT ${PLAYER_COLS}, pk.team_id FROM picks pk JOIN players p ON p.id = pk.player_id`);
   // Retenues salariales de la saison (art. 5.3) : le joueur coûte moins à son équipe actuelle,
   // et l'équipe qui retient garde ce montant dans sa masse.
@@ -485,7 +500,7 @@ async function buildLeague() {
   for (const list of byTeam.values()) for (const p of list) p.trend = trendOf(games.get(p.nhl_id) || [], p.pos);
   const summaries = teams.map(t => {
     const list = byTeam.get(t.id), ages = list.map(p => p.age).filter(a => a);
-    return { id: t.id, name: t.name, hasCode: t.has_code,
+    return { id: t.id, name: t.name, hasCode: t.has_code, avatar: t.avatar,
       avgAge: ages.length ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length * 10) / 10 : null,
       rookies: list.filter(p => p.cats.includes('R')).length,
       ...rules.teamSummary(list, { ...config, retained: retByTeam.get(t.id) || 0 }) };

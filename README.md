@@ -205,6 +205,15 @@ et « → équipe » quand le choix a été échangé.
 - **Apparence** (Plus → Apparence) : Auto (suit le mode clair ou sombre du téléphone), Clair ou Sombre.
   Nouveau look : cartes arrondies, gros titres, onglets en pilule, photo officielle de chaque joueur dans
   les listes (pastille de position), en-tête de l'équipe aux couleurs du pool.
+- **Logo d'équipe** (bouton « 🎨 Logo » sur la page de son équipe) : chandail, bâton, patins, casque,
+  rondelle ou bière, trois couleurs au choix et deux lettres. Le commissaire peut le changer pour n'importe
+  quelle équipe. Il apparaît partout : classement, équipes, mur, marché, tableau du repêchage, choix de
+  repêchage et onglet « Mon équipe ». Sans choix, chaque équipe a un chandail aux couleurs tirées de son nom.
+- **Classement en cartes** : logo, rang, points de la saison et du jour (en direct), joueurs qui ont joué
+  ou jouent aujourd'hui. **Joueurs** et **alignements** : photo, nom, position et équipe, propriétaire, puis
+  les stats en colonnes (rang, âge, salaire, buts ou victoires, points, points par match).
+- **Choix de repêchage** : en bas de chaque équipe, tableau des choix par saison (ronde, propriétaire
+  d'origine). Page Choix de repêchage : par équipe, par ronde, choix échangés et historique.
 - **Fiche du joueur** (toucher un joueur) : en-tête aux couleurs de son équipe avec sa photo, son numéro,
   son rang à sa position et ses points de pool ; boutons ronds (offre, marché, libérer, réclamer, ma liste) ;
   onglets Aperçu (rapport de blessure, dernières nouvelles et analyse, stats de la saison, 5 derniers
