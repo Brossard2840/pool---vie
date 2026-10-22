@@ -123,6 +123,13 @@
   .pick{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #1a2938;font-size:14px;}
   .pick input{width:20px;height:20px;flex:none;}
   a.link{color:var(--gold);text-decoration:none;font-weight:600;}
+  .post{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;}
+  .post.auto{border-color:#5a2a26;background:linear-gradient(180deg,#2a1716,var(--panel));}
+  .post .who{font-weight:800;font-size:14px;} .post .when{color:var(--dim);font-size:11px;margin-left:6px;font-weight:500;}
+  .post .txt{white-space:pre-wrap;margin:6px 0 8px;font-size:15px;line-height:1.35;}
+  .rx{display:flex;gap:6px;flex-wrap:wrap;} .rx button{background:var(--ice);border:1px solid var(--line);border-radius:20px;padding:4px 9px;font-size:14px;color:var(--text);}
+  .rx button.on{border-color:var(--gold);background:#2b2512;} .rx button b{font-size:12px;margin-left:3px;}
+  .medal{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #1a2938;} .medal .m{font-size:24px;width:30px;text-align:center;}
   .tag.rk{border-color:#7fc8a9;color:#9fe0c2;background:#13261f;} .tag.rk2{border-color:#8fb4d6;color:#b5d3ee;background:#16233a;}
   .chips{display:flex;flex-wrap:wrap;gap:6px;}
   .chip{border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:12px;background:var(--ice);font-variant-numeric:tabular-nums;}
@@ -328,12 +335,12 @@ function route(){
   const [, r = 'classement', arg] = location.hash.split('/');
   document.querySelectorAll('.tabbar a').forEach(a => a.classList.toggle('on', a.dataset.r === r ||
     (r === 'equipe' && a.dataset.r === (Number(arg) === S.me.teamId ? 'mon-equipe' : 'classement')) ||
-    (['liste','historique','commissaire','equipes','protection','projections','projection'].includes(r) && a.dataset.r === 'plus') ||
+    (['liste','historique','commissaire','equipes','protection','projections','projection','mur','trophees','temple'].includes(r) && a.dataset.r === 'plus') ||
     (['offre','choix','echange'].includes(r) && a.dataset.r === 'echanges')));
   clearInterval(liveTimer); liveTimer = null; clearInterval(draftTimer); draftTimer = null;
   window.scrollTo(0, 0);
   const views = { classement: vStandings, 'mon-equipe': () => vTeam(S.me.teamId), equipe: () => vTeam(arg), equipes: vTeams, direct: () => vLive(arg),
-                  repechage: () => vDraft(arg), protection: () => vProtection(arg), echanges: vTrades, echange: () => vTradeOne(arg), projections: vProjections, projection: () => vProjection(arg), notifications: vNotifications, offre: () => vOffer(arg), choix: () => vPicks(arg),
+                  repechage: () => vDraft(arg), protection: () => vProtection(arg), echanges: vTrades, echange: () => vTradeOne(arg), mur: vWall, trophees: vAwards, temple: vHall, projections: vProjections, projection: () => vProjection(arg), notifications: vNotifications, offre: () => vOffer(arg), choix: () => vPicks(arg),
                   joueurs: vPlayers, plus: vMore, liste: vWatchlist, historique: vMoves, commissaire: vAdmin };
   (views[r] || vStandings)();
 }
@@ -419,6 +426,15 @@ function vTeam(id){
   api('/api/picks').then(P => { const el = $('#teamPicks'); if (el) el.innerHTML = picksChips(P.picks.filter(p => p.owner_team_id === t.id)); }).catch(() => {});
 }
 
+function formIcon(p){ const f = p.trend && p.trend.form; return f === 'hot' ? '<span title="En feu : 5 points ou plus à ses 5 derniers matchs">🔥 </span>' : f === 'cold' ? '<span title="Froid : aucun point à ses 5 derniers matchs">🧊 </span>' : ''; }
+// Petit graphique des 10 derniers matchs (points de pool par match).
+function formChart(games){
+  if (!games || !games.length) return '';
+  const max = Math.max(3, ...games.map(g => g.pts));
+  return `<div style="display:flex;align-items:flex-end;gap:4px;height:56px;margin:8px 0 2px">${games.map(g => `<div title="${g.date} : ${g.pts} pt(s)" style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%">
+    <div style="width:100%;border-radius:4px 4px 0 0;background:${g.pts ? 'var(--gold)' : 'var(--line)'};height:${g.pts ? Math.max(14, g.pts / max * 100) : 6}%"></div></div>`).join('')}</div>
+    <div style="display:flex;gap:4px;font-size:10px;color:var(--dim)">${games.map(g => `<div style="flex:1;text-align:center">${g.pts}</div>`).join('')}</div>`;
+}
 // Recrue (art. 4.3.1), recrue de 2e année (4.3.3) : protection automatique possible ⚡.
 function rookieTags(p){
   const c = p.cats || [];
@@ -433,7 +449,7 @@ function playerItem(p, { showFlags = false, showOwner = false } = {}){
   const link = p.nhl_id ? '' : ' · <span style="color:var(--red)">sans fiche LNH</span>';
   return `<div class="item ${showFlags && !p.counts_points ? 'out' : ''}" onclick="openPlayer(${p.id})">
     <span class="pos pos-${p.pos}">${p.pos}</span>
-    <div class="grow"><div class="name">${esc(p.name)}${flags}${p.retained ? '<span class="tag" title="Une autre équipe retient une partie du salaire">ret.</span>' : ''}</div>
+    <div class="grow"><div class="name">${formIcon(p)}${esc(p.name)}${flags}${p.retained ? '<span class="tag" title="Une autre équipe retient une partie du salaire">ret.</span>' : ''}</div>
       ${rookieTags(p) ? `<div class="meta" style="margin-top:3px">${rookieTags(p).replace(/class="tag/g, 'style="margin-left:0;margin-right:4px" class="tag')}</div>` : ''}
       <div class="meta">${esc(p.nhl_team || '—')}${p.age ? ' · ' + p.age + ' ans' : ''} · ${statLine(p)}${owner}${link}</div></div>
     <div class="num"><b>${p.pts}</b><div class="meta aav">${money(p.aav)}</div></div>
@@ -532,6 +548,9 @@ function renderSheet(){
     <div class="muted" style="margin-top:4px">${owner ? 'Équipe : <b>' + esc(owner.name) + '</b>' : '<span style="color:var(--green)">Agent libre</span>'}</div>
     <div class="kv">${kv.map(([l,v]) => `<div><div class="l">${l}</div><div class="v">${v ?? 0}</div></div>`).join('')}</div>
     <div class="muted">Points de pool : <b style="color:var(--text)">${p.pts ?? 0}</b>${goalie ? ' (B + A + 2×V + DP + BL)' : ''}</div>
+    ${p.lastGames && p.lastGames.length ? `<div class="card" style="margin-top:10px;padding:10px 12px"><h3 style="margin-bottom:0"><span>Forme · ${p.lastGames.length} derniers matchs</span>
+      <span>${p.trend.form === 'hot' ? '🔥 en feu' : p.trend.form === 'cold' ? '🧊 froid' : ''}</span></h3>${formChart(p.lastGames)}
+      <div class="muted" style="font-size:12px;margin-top:4px">${p.trend.last5} pt${p.trend.last5 > 1 ? 's' : ''} à ses ${Math.min(5, p.lastGames.length)} derniers matchs · 🔥 = 5 pts ou plus en 5 matchs · 🧊 = aucun point en 5 matchs</div></div>` : ''}
     <div style="height:12px"></div>
     ${p.waiver ? `<div class="issues" style="background:#2b2512;border-color:#5a4a1e;color:var(--gold)">⏳ Au ballottage jusqu'au ${fmtDate(p.waiver.ends_at)}${p.waiver.mine ? ' · <b>tu l\'as réclamé</b>' : ''}</div>
         ${p.waiver.mine ? `<button class="btn danger" style="width:100%;margin-bottom:8px" onclick="unclaimWaiver(${p.waiver.id})">Retirer ma réclamation</button>`
@@ -913,6 +932,87 @@ const savePick = run(async id => {
   toast('Choix mis à jour'); closeSheet(); vPicks(location.hash.split('/')[2]);
 });
 
+// ---------- Mur de la gang ----------
+const vWall = run(async () => {
+  const W = await api('/api/wall');
+  const post = p => `<div class="post ${p.kind === 'auto' ? 'auto' : ''}">
+    <div><span class="who">${p.kind === 'auto' ? '📣 Pool à vie' : esc(p.team || '?')}</span><span class="when">${ago(p.at)}</span>
+      ${(p.team_id === S.me.teamId || S.me.isAdmin) && p.kind !== 'auto' ? `<a class="link" style="float:right;font-size:12px" onclick="wallDelete(${p.id})">supprimer</a>` : ''}</div>
+    <div class="txt">${esc(p.body)}</div>
+    ${p.link ? `<a class="link" style="font-size:13px" href="${esc(p.link)}">Voir ›</a>` : ''}
+    <div class="rx" style="margin-top:6px">${W.reactions.map(e => { const r = p.reactions.find(x => x.emoji === e);
+      return `<button class="${r && r.mine ? 'on' : ''}" title="${r ? esc(r.who) : ''}" onclick="wallReact(${p.id},'${e}')">${e}${r ? `<b>${r.n}</b>` : ''}</button>`; }).join('')}</div></div>`;
+  $('#view').innerHTML = `<h2 class="title">💬 Le mur de la gang</h2>
+    <div class="card"><textarea id="wallMsg" placeholder="Dis-leur ta façon de penser… 🍺" style="min-height:70px;font-family:inherit;font-size:15px"></textarea>
+      <div style="height:8px"></div><button class="btn small" onclick="wallSend()">Publier</button></div>
+    ${W.posts.map(post).join('') || '<p class="muted">Rien encore. Lance la discussion !</p>'}`;
+});
+const wallSend = run(async () => { const body = $('#wallMsg').value.trim(); if (!body) return; await api('/api/wall', { body }); vWall(); });
+const wallReact = run(async (id, emoji) => { await api(`/api/wall/${id}/react`, { emoji }); vWall(); });
+const wallDelete = run(async id => { if (!confirm('Supprimer ce message ?')) return; await apiDelete('/api/wall/' + id); vWall(); });
+
+// ---------- Trophées de la semaine ----------
+const vAwards = run(async () => {
+  const A = await api('/api/awards');
+  const medals = ['🥇', '🥈', '🥉'];
+  const fmtD = d => new Date(d + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' });
+  const past = {};
+  A.past.filter(x => x.winner).forEach(x => (past[x.week] = past[x.week] || []).push(x));
+  const catName = { pooler: '🏅 Pooler de la semaine', joueur: '⭐ Joueur de la semaine', coup: '🍺 Coup de la semaine', pire: '🤦 Pire transaction' };
+  $('#view').innerHTML = `<h2 class="title">🏅 Trophées de la semaine</h2>
+    <p class="muted">Semaine du ${fmtD(A.week)} au ${fmtD(A.end)} · décernés automatiquement chaque lundi et publiés sur le mur.</p>
+    <div class="card"><h3>🏅 Pooler de la semaine (en cours)</h3>${A.live.teams.map((t, i) => `<div class="medal"><div class="m">${medals[i]}</div><div class="grow"><b>${esc(t.name)}</b></div><b>${t.pts} pts</b></div>`).join('') || '<p class="muted">Pas encore de match cette semaine.</p>'}
+      <p class="muted" style="font-size:12px">Tous les points des joueurs de l'alignement cette semaine.</p></div>
+    <div class="card"><h3>⭐ Joueur de la semaine (en cours)</h3>${A.live.players.map((p, i) => `<div class="medal"><div class="m">${medals[i]}</div><div class="grow"><b>${esc(p.name)}</b><div class="meta">${esc(p.team)} · ${p.gp} matchs</div></div><b>${p.pts} pts</b></div>`).join('') || '<p class="muted">Pas encore de match cette semaine.</p>'}</div>
+    ${A.polls.map(pl => `<div class="card"><h3>${pl.title} · vote</h3>${pl.choices.length ? pl.choices.map(c => `<label class="pick" onclick="awardVote('${pl.category}','${c.id}')">
+        <input type="radio" name="v-${pl.category}" ${c.mine ? 'checked' : ''}> <span class="grow">${esc(c.label)}</span> <b>${c.votes}</b></label>`).join('')
+      : '<p class="muted">Aucune transaction cette semaine… pour l\'instant.</p>'}</div>`).join('')}
+    ${Object.keys(past).length ? `<div class="card"><h3>Palmarès</h3>${Object.entries(past).map(([w, list]) => `<div style="margin-bottom:10px"><div class="muted" style="font-size:12px">Semaine du ${fmtD(w)}</div>
+      ${list.map(x => `<div class="pl"><span>${catName[x.category] || esc(x.category)}</span><span><b>${esc(x.winner)}</b> · ${esc(x.detail || '')}</span></div>`).join('')}</div>`).join('')}</div>` : ''}`;
+});
+const awardVote = run(async (category, choice) => { await api('/api/awards/vote', { category, choice }); toast('Vote enregistré'); vAwards(); });
+
+// ---------- Temple de la renommée ----------
+const vHall = run(async () => {
+  const H = await api('/api/hall');
+  const bySeason = {};
+  H.entries.forEach(e => (bySeason[e.season] = bySeason[e.season] || []).push(e));
+  const icon = { 1: '🏆', 2: '🥈', 3: '🥉' };
+  const R = H.records;
+  $('#view').innerHTML = `<h2 class="title">🏆 Temple de la renommée</h2>
+    ${Object.entries(bySeason).map(([season, list]) => `<div class="card"><h3>Saison ${esc(season)}</h3>
+      ${['saison', 'séries', 'autre'].map(cat => { const l = list.filter(e => (cat === 'autre' ? !['saison', 'séries'].includes(e.category) : e.category === cat)); return l.length ? `
+        <div class="muted" style="font-size:12px;text-transform:uppercase;margin:8px 0 2px">${cat === 'saison' ? 'Saison régulière' : cat === 'séries' ? 'Séries éliminatoires' : 'Distinctions'}</div>
+        ${l.map(e => `<div class="medal"><div class="m">${icon[e.place] || '⭐'}</div><div class="grow"><b>${esc(e.team_name)}</b>${e.category !== 'saison' && e.category !== 'séries' ? ` <span class="muted">· ${esc(e.category)}</span>` : ''}<div class="meta">${esc(e.detail || '')}</div></div>
+          ${S.me.isAdmin ? `<a class="link" onclick="hallDelete(${e.id})">✕</a>` : ''}</div>`).join('')}` : ''; }).join('')}</div>`).join('')
+      || '<p class="muted">Les champions s\'inscrivent ici à la fin de chaque saison.</p>'}
+    <div class="card"><h3>Records</h3>
+      <div class="muted" style="font-size:12px;text-transform:uppercase">Meilleur match d'un joueur du pool</div>
+      ${R.bestGame.map((g, i) => `<div class="pl"><span>${['🥇','🥈','🥉'][i]} <b>${esc(g.name)}</b> · ${String(g.game_date).slice(0, 10)}</span><span><b>${g.pts} pts</b> (${g.goals} B, ${g.assists} A)</span></div>`).join('') || '<p class="muted">—</p>'}
+      <div class="muted" style="font-size:12px;text-transform:uppercase;margin-top:10px">Plus gros échange</div>
+      ${R.bigTrade.map((t, i) => `<div class="pl"><span>${['🥇','🥈','🥉'][i]} <a class="link" href="#/echange/${t.id}">${esc(t.label)}</a></span><span><b>${t.items} éléments</b></span></div>`).join('') || '<p class="muted">—</p>'}
+      <div class="muted" style="font-size:12px;text-transform:uppercase;margin-top:10px">Le plus actif sur le marché</div>
+      ${R.busiest.map((t, i) => `<div class="pl"><span>${['🥇','🥈','🥉'][i]} <b>${esc(t.name)}</b></span><span>${t.n} échange${t.n > 1 ? 's' : ''}</span></div>`).join('') || '<p class="muted">—</p>'}
+      <div class="muted" style="font-size:12px;text-transform:uppercase;margin-top:10px">Meilleure semaine d'un pooler</div>
+      ${R.bestWeek.map((w, i) => `<div class="pl"><span>${['🥇','🥈','🥉'][i]} <b>${esc(w.winner)}</b> · semaine du ${esc(w.week)}</span><span>${esc(w.detail)}</span></div>`).join('') || '<p class="muted">—</p>'}
+    </div>
+    ${S.me.isAdmin ? `<div class="card"><h3>Commissaire</h3>
+      <button class="btn small" onclick="hallClose()">🏆 Clôturer la saison ${H.season.slice(0, 4)}-${H.season.slice(6)} (inscrire le podium)</button>
+      <p class="muted">À faire à la fin des séries : inscrit les 3 premiers de la saison et des séries, avec les bourses (art. 6.1 et 7.4).</p>
+      <hr style="border:none;border-top:1px solid var(--line);margin:12px 0">
+      <label class="f">Ajouter une entrée (ex. champions des saisons passées)</label>
+      <div class="row"><input id="hSeason" placeholder="Saison, ex. 2025-26"><select id="hCat"><option value="saison">Saison</option><option value="séries">Séries</option><option value="distinction">Distinction</option></select></div>
+      <div class="row"><input id="hPlace" inputmode="numeric" placeholder="Rang (1, 2, 3)"><input id="hTeam" placeholder="Pooler / équipe"></div>
+      <div class="row"><input id="hDetail" placeholder="Détail, ex. 287 pts · bourse 150 $"></div>
+      <button class="btn small ghost" onclick="hallAdd()">Ajouter</button></div>` : ''}`;
+});
+const hallClose = run(async () => { if (!confirm('Inscrire le podium de la saison et des séries au temple ?')) return; await api('/api/admin/hall/close', {}); toast('Saison clôturée'); vHall(); });
+const hallAdd = run(async () => {
+  await api('/api/admin/hall', { season: $('#hSeason').value.trim(), category: $('#hCat').value, place: $('#hPlace').value, team_name: $('#hTeam').value.trim(), detail: $('#hDetail').value.trim() });
+  toast('Ajouté'); vHall();
+});
+const hallDelete = run(async id => { if (!confirm('Retirer cette entrée ?')) return; await apiDelete('/api/admin/hall/' + id); vHall(); });
+
 // ---------- Projections ----------
 const seasonLbl = y => `${y}-${String(y + 1).slice(2)}`;
 const vProjections = run(async () => {
@@ -1258,6 +1358,9 @@ function vMore(){
     <h2 class="title">Plus</h2>
     <div class="card"><div class="list">
       <div class="item" onclick="location.hash='#/liste'"><div class="grow"><div class="name">☆ Ma liste</div><div class="meta">Mes joueurs ciblés, en ordre de préférence</div></div>›</div>
+      <div class="item" onclick="location.hash='#/mur'"><div class="grow"><div class="name">💬 Le mur de la gang</div><div class="meta">Trash talk et réactions sur les transactions</div></div>›</div>
+      <div class="item" onclick="location.hash='#/trophees'"><div class="grow"><div class="name">🏅 Trophées de la semaine</div><div class="meta">Pooler et joueur de la semaine, votes de la gang</div></div>›</div>
+      <div class="item" onclick="location.hash='#/temple'"><div class="grow"><div class="name">🏆 Temple de la renommée</div><div class="meta">Champions de chaque saison et records</div></div>›</div>
       <div class="item" onclick="location.hash='#/projections'"><div class="grow"><div class="name">🔮 Projections</div><div class="meta">Tes alignements des saisons à venir, avec la masse salariale de l'année</div></div>›</div>
       <div class="item" onclick="location.hash='#/repechage'"><div class="grow"><div class="name">🎲 Repêchage</div><div class="meta">Loterie, ordre et tableau des choix</div></div>›</div>
       <div class="item" onclick="location.hash='#/protection'"><div class="grow"><div class="name">🛡️ Liste de protection${S.pendingProtection ? ' <span class="tag" style="border-color:var(--red);color:var(--red)">à remettre</span>' : ''}</div><div class="meta">10 joueurs protégés + 3 automatiques (art. 4.2 et 4.3)</div></div>›</div>
@@ -1543,7 +1646,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 document.addEventListener('visibilitychange', () => { if (!document.hidden && S && !$('#sheet').classList.contains('open')) { refresh().catch(() => {}); pollNotifications(); } });
 
 // ---------- Notifications ----------
-const NOTIF_ICON = { trade: '🚨', offer: '📨', waiver: '⏳', freeagent: '🆕', draft: '🎲', protection: '🛡️', highlight: '🔥', standings: '👑', admin: '🔑', reminder: '⏰', alert: '⚠️', summary: '☀️', nhl: '🔁' };
+const NOTIF_ICON = { wall: '💬', trade: '🚨', offer: '📨', waiver: '⏳', freeagent: '🆕', draft: '🎲', protection: '🛡️', highlight: '🔥', standings: '👑', admin: '🔑', reminder: '⏰', alert: '⚠️', summary: '☀️', nhl: '🔁' };
 let notifLast = Number(localStorageGet('pav_notif_last')) || 0, notifTimer = null, audioCtx = null;
 // Le son ne peut jouer qu'après un premier toucher de l'écran (règle des navigateurs).
 document.addEventListener('pointerdown', () => {

@@ -186,6 +186,19 @@ et « → équipe » quand le choix a été échangé.
   tant qu'on n'inscrit pas un salaire estimé. Plafond de l'année (113,5 M$ en 2027-28, puis estimé,
   modifiable), conformité, âge de chaque joueur cette saison-là. On peut ajouter n'importe quel joueur.
 
+## La vie de la gang
+
+- **💬 Mur de la gang** (Plus) : messages, réactions 🍺🔥😂🤦🚨👑. Les transactions, agents libres
+  réclamés, résultats de ballottage, trophées et champions y sont publiés automatiquement.
+- **🏅 Trophées de la semaine** : pooler et joueur de la semaine (lundi au dimanche, tous les points de
+  l'alignement), plus deux votes de la gang (coup de la semaine, pire transaction). Décernés chaque
+  lundi, publiés sur le mur, gardés au palmarès.
+- **🏆 Temple de la renommée** : podium de la saison et des séries (bouton « Clôturer la saison » du
+  commissaire, avec les bourses), entrées manuelles pour les saisons passées, et records calculés
+  (meilleur match d'un joueur, plus gros échange, pooler le plus actif, meilleure semaine).
+- **🔥 / 🧊 Forme** : à côté du nom des joueurs (5 pts ou plus à ses 5 derniers matchs / aucun point),
+  et graphique des 10 derniers matchs dans la fiche du joueur.
+
 ## Développement local
 
 ```bash

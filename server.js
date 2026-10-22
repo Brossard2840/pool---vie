@@ -15,6 +15,7 @@ const { createDraft } = require('./lib/draft');
 const { createNotify } = require('./lib/notify');
 const { createReminders } = require('./lib/reminders');
 const { createProjections } = require('./lib/projections');
+const { createFun } = require('./lib/fun');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -125,6 +126,7 @@ async function initDb() {
   await draft.initTables();
   await notifier.initTables();
   await projections.initTables();
+  await fun.initTables();
   await setDefault('cap', '104000000');   // plafond LNH 2026-27
   await setDefault('floor', '76900000');  // plancher LNH 2026-27
 
@@ -193,7 +195,14 @@ async function leagueConfig() {
 // En direct : sommaires de match (voir lib/live.js). Une fois la saison rattrapée, ce sont eux
 // qui donnent les totaux ; le rapport de saison ne sert plus qu'au catalogue des joueurs.
 let notifier = null; // créé plus bas, une fois les routes protégées par la connexion
-const notify = n => notifier ? notifier.notify(n) : null;
+const notify = n => {
+  // Les transactions, réclamations et résultats de ballottage s'affichent aussi sur le mur de la gang (avec réactions).
+  if (fun && n.dedupe && (n.kind === 'trade' || n.kind === 'freeagent' || (n.kind === 'waiver' && n.dedupe.endsWith(':done') && n.title.includes('réclamé'))))
+    fun.autoPost(`${n.title}\n${n.body || ''}`, n.link, 'wall:' + n.dedupe).catch(() => {});
+  if (fun && n.kind === 'freeagent' && !n.dedupe) fun.autoPost(`${n.title}\n${n.body || ''}`, n.link, 'wall:fa:' + n.title).catch(() => {});
+  return notifier ? notifier.notify(n) : null;
+};
+let fun = null;
 const live = createLive(pool, { getConfig, setConfig, seasonId: () => seasonId(),
   onUpdated: async () => { await linkUnlinked(); await checkLeader(); }, onGame: (...a) => gameHighlights(...a) });
 
@@ -408,6 +417,14 @@ app.use('/api', (req, res, next) => { refreshIfStale().catch(() => {}); next(); 
 const PLAYER_COLS = `p.id, p.nhl_id, p.name, p.nhl_team, p.pos, p.aav, p.age, p.contract_end, p.rookie,
   p.gp, p.goals, p.assists, p.wins, p.ot_losses, p.shutouts, p.birth_date, p.auto_override`;
 
+// Forme d'un joueur à partir de ses derniers matchs (ordre chronologique).
+function trendOf(pts, pos) {
+  const last5 = pts.slice(-5), sum5 = last5.reduce((a, b) => a + b, 0);
+  const hot = last5.length >= 3 && sum5 >= (pos === 'G' ? 8 : 5);
+  const cold = last5.length === 5 && (pos === 'G' ? sum5 <= 2 : sum5 === 0);
+  return { games: pts, last5: sum5, form: hot ? 'hot' : cold ? 'cold' : null };
+}
+
 // Âge exact si on connaît la date de naissance (NHL.com), sinon l'âge saisi.
 function ageOf(p, at = new Date()) {
   if (!p.birth_date) return p.age ?? null;
@@ -452,6 +469,15 @@ async function buildLeague() {
     const known = seasonsOf.get(p.nhl_id);
     p.cats = known || p.auto_override ? categories(p, startYear, known || new Map(), p.birth_date).filter(c => protOpen || c !== 'GP') : [];
   }
+  // Forme récente : points de pool des 10 derniers matchs (🔥 5 pts ou plus en 5 matchs, 🧊 aucun point en 5 matchs).
+  const { rows: recent } = await pool.query(`
+    SELECT player_nhl_id, goals, assists, wins, ot_losses, shutouts, pos FROM (
+      SELECT l.*, ROW_NUMBER() OVER (PARTITION BY player_nhl_id ORDER BY game_date DESC) rn
+      FROM game_log l WHERE season=$1 AND game_type=2 AND player_nhl_id = ANY($2::int[])) x
+    WHERE rn <= 10 ORDER BY player_nhl_id, rn DESC`, [config.seasonId, ids]);
+  const games = new Map();
+  for (const r of recent) { if (!games.has(r.player_nhl_id)) games.set(r.player_nhl_id, []); games.get(r.player_nhl_id).push(rules.poolPoints(r)); }
+  for (const list of byTeam.values()) for (const p of list) p.trend = trendOf(games.get(p.nhl_id) || [], p.pos);
   const summaries = teams.map(t => {
     const list = byTeam.get(t.id), ages = list.map(p => p.age).filter(a => a);
     return { id: t.id, name: t.name, hasCode: t.has_code,
@@ -500,7 +526,11 @@ app.get('/api/players/:id', h(async (req, res) => {
   const { rows: w } = await pool.query(`
     SELECT w.id, w.ends_at, EXISTS (SELECT 1 FROM waiver_claims c WHERE c.waiver_id=w.id AND c.team_id=$2) AS mine
     FROM waivers w WHERE w.player_id=$1 AND w.status='open'`, [req.params.id, req.me.teamId]);
-  res.json({ ...clean(rows[0]), waiver: w[0] || null });
+  const { rows: last } = await pool.query(`
+    SELECT game_date, team, goals, assists, wins, ot_losses, shutouts, pos FROM game_log
+    WHERE player_nhl_id=$1 AND game_type IN (2,3) ORDER BY game_date DESC LIMIT 10`, [rows[0].nhl_id || -1]);
+  const lastGames = last.reverse().map(g => ({ date: g.game_date, pts: rules.poolPoints(g), goals: g.goals, assists: g.assists, wins: g.wins }));
+  res.json({ ...clean(rows[0]), waiver: w[0] || null, lastGames, trend: trendOf(lastGames.map(g => g.pts), rows[0].pos) });
 }));
 
 // Points de la journée (en direct) + classement cumulatif.
@@ -594,11 +624,13 @@ const waivers = createWaivers(app, admin, { pool, h, inTransaction, movePlayers,
 const protection = createProtection(app, admin, { pool, h, inTransaction, getConfig, setConfig, seasonId, notify,
   generatePicks: y => trades.generatePicks(y) });
 // Pool des séries (lib/playoffs.js).
-createPlayoffs(app, { pool, h, seasonId, buildLeague });
+const playoffs = createPlayoffs(app, { pool, h, seasonId, buildLeague });
 // Repêchage (lib/draft.js).
 const draft = createDraft(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, rules, buildLeague, notify });
 // Projections d'alignement (lib/projections.js).
 const projections = createProjections(app, { pool, h, inTransaction, seasonId, rules });
+// Mur de la gang, trophées de la semaine, temple de la renommée (lib/fun.js).
+fun = createFun(app, admin, { pool, h, getConfig, seasonId, buildLeague, playoffs, notify });
 
 admin.post('/config', h(async (req, res) => {
   const { cap, floor, seasonId: sid } = req.body;
@@ -845,6 +877,7 @@ initDb().then(() => {
       live.tick().catch(e => console.error('Direct :', e.message));
       waivers.processDue().catch(e => console.error('Ballottage :', e.message));
       reminders.tick().catch(e => console.error('Rappels :', e.message));
+      if (new Date().getMinutes() % 10 === 0) fun.closeWeek().catch(e => console.error('Trophées :', e.message));
       // Historique LNH (statut de recrue) : rafraîchi chaque semaine.
       getConfig('prot_history_at').then(at => {
         if (!at || Date.now() - Date.parse(at) > 7 * 864e5) protection.computeHistory().catch(e => console.error('Historique :', e.message));
