@@ -166,16 +166,17 @@ Onglet **Repêchage** (il remplace « En direct » pendant la préparation et le
 3. Repêchage en direct : même ordre à chaque ronde ; l'équipe au choix (ou le commissaire) choisit un
    joueur disponible. Une équipe à 23 joueurs a terminé (art. 4.5) : ses choix restants sont passés.
    Le commissaire peut annuler la dernière sélection, mettre en pause ou terminer.
-4. Minuteur : le commissaire choisit le temps par choix (2 min par défaut, ou sans minuteur) et
-   appuie sur « Lancer le repêchage ». Un compte à rebours reste en haut de l'écran ; la case au choix
-   est encadrée. Dans les 30 dernières secondes, il passe au rouge avec un tic-tac. Temps écoulé :
-   le choix est « passé » (orange) et c'est au suivant ; l'équipe peut le faire en retard quand elle
-   veut (ou le commissaire, en touchant la case). Sons : fanfare à chaque sélection, carillon au
-   changement de pooler (mélodie spéciale quand c'est ton tour), sirène au lancement. Le minuteur
-   tourne sur le serveur : tout le monde voit le même temps. Pause et reprise par le commissaire ;
-   pause automatique après 3 choix passés de suite (personne n'est là).
+4. Minuteur : 2 minutes par choix. Le commissaire appuie sur « Lancer le repêchage ». Un compte à rebours
+   reste en haut de l'écran ; la case au choix est encadrée. Dans les 30 dernières secondes, il passe au
+   rouge avec un tic-tac. Temps écoulé : le minuteur s'arrête à 0:00 (buzzer) et le commissaire reçoit une
+   demande de régulariser : « Passer au suivant » (le choix devient « passé », en orange, et l'équipe peut
+   le faire en retard quand elle veut) ou « Avertissement » (noté, 1 minute de plus). En attendant, le
+   pooler peut encore choisir. Sons : fanfare à chaque sélection, carillon au changement de pooler
+   (mélodie spéciale quand c'est ton tour), sirène au lancement. Le minuteur tourne sur le serveur : tout
+   le monde voit le même temps. Pause et reprise par le commissaire.
 5. 🧪 Simulation (bouton sous le tableau) : un repêchage pour pratiquer, sur ton téléphone seulement,
-   rien n'est enregistré. Tu choisis pour ton équipe ; les autres choisissent toutes seules.
+   rien n'est enregistré. Tu choisis pour ton équipe ; les autres choisissent toutes seules. Temps par
+   choix au choix (30 s par défaut) ; à 0:00, la simulation passe au suivant.
 Le tableau montre les rondes en lignes et les équipes en colonnes : le joueur repêché dans chaque case,
 et « → équipe » quand le choix a été échangé.
 

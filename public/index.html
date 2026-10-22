@@ -1486,6 +1486,8 @@ function draftClockTick(){
   const cell = document.querySelector('table.db td.cur'); if (cell) cell.classList.toggle('red', red);
   // Tic-tac chaque seconde dans la zone rouge.
   if (red && sec !== DCK.lastSec && sec > 0) draftSound(sec % 2 ? 'tick' : 'tock');
+  if (left <= 0 && !D.clock.paused && box) box.classList.add('red');
+  if (left <= 0 && !D.clock.paused && !D.sim && DCK.buzzed !== D.current) { DCK.buzzed = D.current; draftSound('buzz'); }
   if (D.sim && left <= 0 && !D.clock.paused) simAdvance(null);
   DCK.lastSec = sec;
 }
@@ -1497,7 +1499,7 @@ function clockBanner(D, mineId){
   return `<div class="dclock ${mine ? 'mine' : ''}" id="dclock">
     <div><div class="k">${mine ? '⭐ À TON TOUR' : 'Au choix'} · ronde ${cur.round} · choix #${cur.overall}</div>
       <div class="tm">${esc(cur.owner_team)}${cur.owner_team_id !== cur.original_team_id ? ` <span class="sub">(choix de ${esc(cur.original_team)})</span>` : ''}</div>
-      <div class="sub">${next ? 'Ensuite : ' + esc(next.owner_team) : 'Dernier choix'}</div></div>
+      <div class="sub">${D.overtime ? '<b style="color:var(--hot)">⏱️ Temps écoulé · en attente du commissaire</b>' : next ? 'Ensuite : ' + esc(next.owner_team) : 'Dernier choix'}${D.warnings && D.warnings[cur.owner_team_id] ? ` · ⚠️ ${D.warnings[cur.owner_team_id]} avertissement${D.warnings[cur.owner_team_id] > 1 ? 's' : ''}` : ''}</div></div>
     <div><div class="time" id="dcTime">${D.clock && D.clock.seconds ? mmss(D.clock.seconds) : '∞'}</div>
       <button class="snd" onclick="toggleDraftSound(this)">${on ? '🔊' : '🔇'}</button></div>
     ${D.clock && D.clock.seconds ? '<div class="bar"><i id="dcBar"></i></div>' : ''}</div>`;
@@ -1546,7 +1548,8 @@ function draftEvents(prev, next, mineId){
   const picked = next.picks.filter(p => p.player && !was(p.id).player);
   const passed = next.picks.filter(p => p.passed && !was(p.id).passed);
   for (const p of picked) toast(`🎯 #${p.overall} ${p.owner_team} : ${p.player.name}`);
-  if (picked.length) draftSound('pick'); else if (passed.length) { draftSound('buzz'); toast(`⏱️ Temps écoulé pour ${passed[0].owner_team}`); }
+  if (picked.length) draftSound('pick'); else if (passed.length) toast(`⏭ Choix passé pour ${passed[0].owner_team}`);
+  if (next.overtime && !prev.overtime) { const c = next.picks.find(p => p.id === next.current); if (c) toast(`⏱️ Temps écoulé pour ${c.owner_team}`); }
   if (next.current && next.current !== prev.current) {
     const cur = next.picks.find(p => p.id === next.current);
     setTimeout(() => draftSound(cur && cur.owner_team_id === mineId ? 'mine' : 'next'), picked.length || passed.length ? 1400 : 0);
@@ -1584,8 +1587,6 @@ function renderDraft(){
   const cur = D.picks.find(p => p.id === D.current);
   const statusTxt = { setup: 'en préparation', live: 'en cours', done: 'terminé' }[D.status] || '';
   const mineOnClock = cur && (cur.owner_team_id === S.me.teamId);
-  const clockSel = (id, val) => `<select id="${id}" style="width:auto">${[[0, 'Sans minuteur'], [30, '30 s'], [60, '1 min'], [90, '1 min 30'], [120, '2 min'], [180, '3 min'], [300, '5 min']]
-    .map(([v, l]) => `<option value="${v}" ${v === val ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
   // Loterie
   let lottery = '';
   if (D.status === 'setup') {
@@ -1608,17 +1609,20 @@ function renderDraft(){
         <div class="grow"><div class="name">${esc(t.name)}</div><div class="meta">${t.size} joueur(s) · ${Math.max(0, D.rosterFull - t.size)} à repêcher</div></div>
         ${A ? `<button class="btn small ghost" onclick="moveOrder(${i},-1)" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn small ghost" onclick="moveOrder(${i},1)" ${i === D.order.length - 1 ? 'disabled' : ''}>↓</button>` : ''}</div>`).join('')}</div>
       <p class="muted">Choix 1 à 5 : loterie. À partir du 6e : selon les séries puis la saison précédente, le champion repêche dernier. Même ordre à chaque ronde.</p>
-      ${A ? `<div class="row" style="align-items:center;gap:8px;margin-bottom:8px"><span class="muted">Temps par choix</span>${clockSel('dcSec', D.clock ? D.clock.seconds : 120)}</div>
+      ${A ? `<p class="muted">Chaque pooler a 2 minutes. Le décompte passe au rouge à 30 secondes de la fin. Temps écoulé : tu décides de passer au suivant ou de donner un avertissement (+1 min).</p>
         <button class="btn" style="width:100%" onclick="draftStart(false)">▶ Lancer le repêchage</button>` : ''}</div>` : '';
   const myLate = D.picks.filter(p => p.passed && p.owner_team_id === S.me.teamId);
   const paused = D.clock && D.clock.paused;
-  const clock = D.status === 'live' ? (cur ? `${clockBanner(D, S.me.teamId)}
+  const overtime = D.overtime && cur ? `<div class="issues" style="font-size:14px">⏱️ <b>Temps écoulé pour ${esc(cur.owner_team)}.</b> ${A ? 'À toi de régulariser :' : 'En attente de la décision du commissaire. Le pooler peut encore faire son choix.'}
+      ${A ? `<div class="row" style="margin:10px 0 0"><button class="btn" onclick="draftOvertime('pass')">⏭ Passer au suivant</button><button class="btn ghost" onclick="draftOvertime('warn')">⚠️ Avertissement (+1 min)</button></div>
+        <div style="font-size:12px;margin-top:6px">En attendant, ${esc(cur.owner_team)} peut encore choisir.${D.warnings[cur.owner_team_id] ? ` Déjà ${D.warnings[cur.owner_team_id]} avertissement(s).` : ''}</div>` : ''}</div>` : '';
+  const clock = D.status === 'live' ? (cur ? `${clockBanner(D, S.me.teamId)}${overtime}
       ${mineOnClock || A ? `<button class="btn" style="width:100%;margin-bottom:10px" onclick="openDraftPicker()">${mineOnClock ? '🎯 Faire mon choix' : 'Choisir pour ' + esc(cur.owner_team)}</button>` : ''}
       ${myLate.length ? `<div class="issues" style="background:var(--orange-bg);border-color:var(--orange-line);color:var(--orange-ink)">⏱️ Ton choix #${myLate.map(p => p.overall).join(', #')} est passé (temps écoulé). Tu peux le faire en retard, quand tu veux.
         <button class="btn small" style="display:block;margin-top:8px" onclick="openDraftPicker(${myLate[0].id})">Faire mon choix en retard</button></div>` : ''}
       ${A ? `<div class="card"><h3>Commissaire</h3><div class="row" style="align-items:center;gap:8px;flex-wrap:wrap">
           <button class="btn small" onclick="draftPause(${paused ? 'false' : 'true'})">${paused ? '▶ Reprendre le minuteur' : '⏸ Pause du minuteur'}</button>
-          <span class="muted">Temps par choix</span>${clockSel('dcSec', D.clock ? D.clock.seconds : 120)}</div>
+          <span class="muted">2 minutes par choix</span></div>
         <div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn small ghost" onclick="draftUndo()">↶ Annuler la dernière sélection</button><button class="btn small ghost" onclick="draftStart(true)">Retour en préparation</button></div>
         <p class="muted" style="font-size:12px">Un choix passé (orange) : touche sa case pour le faire au nom de l'équipe.</p></div>` : ''}`
       : `<div class="okbox">Toutes les équipes sont complètes (23 joueurs).${A ? ' <a class="link" onclick="draftFinish()">Terminer le repêchage</a>' : ''}</div>`) : '';
@@ -1635,11 +1639,12 @@ function renderDraft(){
     ${orderCard}`;
   document.documentElement.style.setProperty('--toph', ($('#top').offsetHeight || 64) + 'px');
   const bw2 = document.querySelector('.boardwrap'); if (bw2 && keep) [bw2.scrollLeft, bw2.scrollTop] = keep;
-  const sel = $('#dcSec'); if (sel && A) sel.onchange = () => draftSetClock(Number(sel.value));
   if (D.status === 'live') { draftClock(D); if (DCK.firstScroll !== D.current) { DCK.firstScroll = D.current; setTimeout(scrollToCurrent, 50); } }
 }
-const draftSetClock = run(async sec => {
-  await api('/api/admin/draft/settings', { year: DR.year, clockSeconds: sec }); toast(sec ? `Minuteur : ${mmss(sec)} par choix` : 'Sans minuteur'); vDraft(DR.year);
+const draftOvertime = run(async action => {
+  if (action === 'pass' && !confirm('Passer au suivant ? Le pooler pourra faire ce choix en retard.')) return;
+  await api('/api/admin/draft/overtime', { year: DR.year, action });
+  toast(action === 'pass' ? 'Choix passé : au suivant' : 'Avertissement donné : 1 minute de plus'); vDraft(DR.year);
 });
 const draftPause = run(async pause => {
   await api('/api/admin/draft/start', { year: DR.year, [pause ? 'pause' : 'resume']: true }); vDraft(DR.year);
@@ -1675,9 +1680,7 @@ const resetDraftOrder = run(async () => {
   await api('/api/admin/draft/settings', { year: DR.year, resetOrder: true }); vDraft(DR.year);
 });
 const draftStart = run(async stop => {
-  if (!confirm(stop ? 'Revenir en préparation ? Le minuteur s\'arrête et personne ne peut choisir.' : 'Lancer le repêchage ? Le minuteur du premier choix part tout de suite.')) return;
-  const sel = $('#dcSec');
-  if (!stop && sel) await api('/api/admin/draft/settings', { year: DR.year, clockSeconds: Number(sel.value) });
+  if (!confirm(stop ? 'Revenir en préparation ? Le minuteur s\'arrête et personne ne peut choisir.' : 'Lancer le repêchage ? Chaque pooler aura 2 minutes ; le minuteur du premier choix part tout de suite.')) return;
   await api('/api/admin/draft/start', { year: DR.year, stop });
   if (!stop) draftSound('start');
   await loadState(); vDraft(DR.year);
@@ -1752,7 +1755,7 @@ function simAdvance(player){
     cur.player = { id: player.id, name: player.name, pos: player.pos, nhl_team: player.nhl_team }; cur.picked_at = new Date().toISOString();
     SIM.avail = SIM.avail.filter(p => p.id !== player.id);
     draftSound('pick'); toast(`🎯 #${cur.overall} ${cur.owner_team} : ${player.name}`);
-  } else { cur.passed = true; draftSound('buzz'); toast(`⏱️ Temps écoulé pour ${cur.owner_team}`); }
+  } else { cur.passed = true; draftSound('buzz'); toast(`⏱️ Temps écoulé pour ${cur.owner_team} : le commissaire passe au suivant`); }
   D.current = null; DCK.lastSec = null;
   simNext(false);
 }
