@@ -1,0 +1,16 @@
+Sons de Pool à vie : vrais enregistrements libres de droits, coupés, mixés et accompagnés d'une
+réverbération d'aréna (script de préparation : orgue joué note par note à partir des échantillons).
+
+- Orgue à tuyaux, sifflet de l'arbitre, sirène à manivelle, cloches tubulaires, claves, mains, grosse caisse :
+  Versilian Community Sample Library (VCSL), https://github.com/sgossner/VCSL — CC0
+- « Boat Horn » par Alexander (orangefreesounds.com) — CC BY 4.0 (klaxon-but, paquebot, bateau-deux-coups)
+- « rocky_mtns_train_horn_moving » par polymorpheva (freesound.org) — CC0 (train)
+- « steam train horn 01 » par eliasheuninck (freesound.org) — CC BY 3.0 (locomotive-vapeur)
+- « Railroad Crossing Japan » par MrAuralization (freesound.org) — CC BY 3.0 (passage-a-niveau)
+- « Air Horn Sound » par Mike Koenig (soundbible.com) — CC BY 3.0 (klaxon-air)
+- « Approx 850 - Enthusiast Audience » par lonemonk (freesound.org) — CC BY 3.0 (foules)
+- « Crowd Ooohs and Ahhhs in Excitement » par noah0189 (freesound.org) — CC0 (foules)
+- « Disappointed_Crowd » par unchaz (freesound.org) — CC BY 3.0 (foule-decue)
+- « Fireworks Sound » par Stephan (soundbible.com) — domaine public (feux-artifice)
+- Versions préparées de ces enregistrements : AltSFX pour OpenTTD par ALEX11BR,
+  https://github.com/ALEX11BR/AltSFX — CC BY 3.0

@@ -1692,7 +1692,7 @@ function clockLeft(D){
   return Math.max(0, (Date.parse(c.deadline) - Date.now() - DCK.offset) / 1000);
 }
 function draftClock(D){
-  DCK.D = D;
+  DCK.D = D; preloadDraftSounds();
   DCK.offset = D.clock && D.clock.serverNow && !D.sim ? Date.parse(D.clock.serverNow) - Date.now() : 0;
   if (!DCK.timer) DCK.timer = setInterval(draftClockTick, 200);
   draftClockTick();
@@ -1734,36 +1734,15 @@ function toggleDraftSound(btn){
   if (!off) draftSound('next');
 }
 // Sons du repêchage, synthétisés (aucun fichier à télécharger).
+const DRAFT_SND = { tick: 'rep-tic', tock: 'rep-tac', next: 'rep-suivant', mine: 'rep-mon-tour', pick: 'rep-selection', buzz: 'rep-temps-ecoule', start: 'klaxon-but' };
 function draftSound(kind){
-  if (!audioCtx || localStorageGet('pav_draft_sound') === 'off') return;
-  const t0 = audioCtx.currentTime + .01, out = audioCtx.createDynamicsCompressor(); out.connect(audioCtx.destination);
-  const tone = (f, at, dur, type = 'sine', vol = .2) => {
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = type; o.frequency.value = f;
-    g.gain.setValueAtTime(0, t0 + at); g.gain.linearRampToValueAtTime(vol, t0 + at + .008); g.gain.exponentialRampToValueAtTime(.0001, t0 + at + dur);
-    o.connect(g); g.connect(out); o.start(t0 + at); o.stop(t0 + at + dur + .05);
-  };
-  const noise = (at, dur, vol, freq) => {
-    const n = audioCtx.createBufferSource(), g = audioCtx.createGain(), bp = audioCtx.createBiquadFilter();
-    n.buffer = noiseBuffer(dur + .1); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = .7;
-    g.gain.setValueAtTime(0, t0 + at); g.gain.linearRampToValueAtTime(vol, t0 + at + .25); g.gain.exponentialRampToValueAtTime(.0001, t0 + at + dur);
-    n.connect(bp); bp.connect(g); g.connect(out); n.start(t0 + at); n.stop(t0 + at + dur + .1);
-  };
-  if (kind === 'tick') { tone(2400, 0, .035, 'square', .2); tone(1200, 0, .06, 'triangle', .3); }
-  else if (kind === 'tock') { tone(1700, 0, .035, 'square', .18); tone(850, 0, .06, 'triangle', .3); }
-  else if (kind === 'next') { for (const [f, a] of [[988, 0], [784, .32]]) { tone(f, a, .9, 'sine', .22); tone(f * 2, a, .4, 'sine', .05); } }
-  else if (kind === 'mine') {
-    [659, 784, 988, 1319].forEach((f, i) => tone(f, i * .11, .35, 'triangle', .2));
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-  }
-  else if (kind === 'pick') {
-    // « Ta-da ! » : arpège de cuivres + foule qui applaudit.
-    [523, 659, 784].forEach((f, i) => { tone(f, i * .12, .25, 'sawtooth', .07); tone(f, i * .12, .25, 'triangle', .12); });
-    for (const f of [523, 659, 784, 1047]) { tone(f, .38, 1.1, 'sawtooth', .05); tone(f, .38, 1.1, 'triangle', .09); }
-    noise(.3, 1.8, .18, 1400);
-  }
-  else if (kind === 'buzz') { for (const f of [180, 182, 360]) tone(f, 0, 1.1, 'square', .07); }
-  else if (kind === 'start') playSynth(HORNS[hornChoice()] && !HORNS[hornChoice()].sweep ? HORNS[hornChoice()] : HORNS.original);
+  if (!audioCtx || localStorageGet('pav_draft_sound') === 'off' || !DRAFT_SND[kind]) return;
+  if (kind === 'mine' && navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  playFile(DRAFT_SND[kind], kind === 'tick' || kind === 'tock' ? .55 : .9);
 }
+// Le tic-tac doit partir à la seconde près : on décode les sons du repêchage d'avance.
+function preloadDraftSounds(){ if (audioCtx) Object.values(DRAFT_SND).forEach(f => sndBuffer(f).catch(() => {})); }
+document.addEventListener('pointerdown', () => { if (location.hash.startsWith('#/repechage') || location.hash.startsWith('#/simulation')) preloadDraftSounds(); }, { passive: true });
 // Compare deux états du repêchage pour jouer les sons et annoncer les sélections.
 function draftEvents(prev, next, mineId){
   if (!prev || !next || prev.year !== next.year) return;
@@ -2543,96 +2522,73 @@ async function loadHorn(){
   try { const r = await fetch('/api/horn?v=' + v); hornBuffer = r.ok ? await audioCtx.decodeAudioData(await r.arrayBuffer()) : null; } catch { hornBuffer = null; }
 }
 document.addEventListener('pointerdown', () => { loadHorn(); }, { passive: true });
-// Sirènes au choix (chaque pooler choisit la sienne). Toutes synthétisées : aucun enregistrement protégé.
-// Le klaxon de locomotive à 5 tons (type Nathan K5LA, utilisé sur les trains CN) est très proche de la sirène du Centre Bell.
-const K5 = [311.1, 370, 415.3, 493.9, 622.3];   // ré#, fa#, sol#, si, ré# : l'accord du klaxon de train
+// Sons de l'application : de vrais enregistrements libres de droits (voir « Crédits des sons » dans Réglages),
+// mixés et préparés en MP3 dans /sounds. Chaque pooler choisit sa sirène pour les transactions.
 const HORNS = {
-  original: { label: '📯 Klaxon de but (l\'original)', freqs: [155, 196, 233], blasts: [[0, 2.6]], cutoff: 1400, wave: 'sawtooth', vibrato: 3 },
-  train:    { label: '🚂 Train CN (style Centre Bell)', freqs: K5, blasts: [[0, 4.2]], cutoff: 2600, wave: 'sawtooth' },
-  passage:  { label: '🚦 Passage à niveau (long, long, court, long)', freqs: K5, blasts: [[0, 1.3], [1.5, 1.3], [3, .45], [3.65, 2.2]], cutoff: 2600, wave: 'sawtooth' },
-  foule:    { label: '🙌 But ! Klaxon et foule en délire', freqs: [155, 196, 233], blasts: [[0, 3.2]], cutoff: 1400, wave: 'sawtooth', vibrato: 3, crowd: 4.5 },
-  charge:   { label: '🎹 Orgue d\'aréna « Charge ! »', organ: [[392, .18], [523.3, .18], [659.3, .18], [784, .38], [0, .08], [659.3, .16], [784, .9]] },
-  orgue:    { label: '🎹 Orgue « Allez, on se lève ! »', organ: [[523.3, .2], [523.3, .2], [0, .1], [587.3, .2], [659.3, .2], [0, .1], [784, .25], [659.3, .25], [784, .7]] },
-  poteau:   { label: '🥅 Lancer frappé… sur le poteau ! (ding)', post: true },
-  buzzer:   { label: '⏱️ Sirène de fin de période', buzzer: 2.2 },
-  arena:    { label: '🏟️ Klaxon d\'aréna grave', freqs: [110, 138.6, 164.8, 55], blasts: [[0, 3]], cutoff: 900, wave: 'sawtooth' },
-  paquebot: { label: '🚢 Corne de brume', freqs: [65.4, 98, 130.8], blasts: [[0, 2.2], [2.6, 3]], cutoff: 500, wave: 'sawtooth' },
-  sirene:   { label: '🚨 Sirène de police', sweep: true }
+  but:       { label: '🚨 Klaxon de but et la foule', file: 'klaxon-but' },
+  charge:    { label: '🎹 Orgue d\'aréna « Charge ! »', file: 'orgue-charge' },
+  letsgo:    { label: '🎹 Orgue « Let\'s go! » (tambour et mains)', file: 'orgue-letsgo' },
+  montee:    { label: '🎹 Orgue : la montée avant la mise au jeu', file: 'orgue-montee' },
+  klaxonair: { label: '📯 Klaxon à air des partisans', file: 'klaxon-air' },
+  foule:     { label: '🙌 Foule en délire', file: 'foule' },
+  sifflet:   { label: '🏒 Sifflet de l\'arbitre', file: 'sifflet' },
+  paquebot:  { label: '🚢 Corne de paquebot', file: 'paquebot' },
+  bateau:    { label: '⛴️ Traversier : deux coups de corne', file: 'bateau-deux-coups' },
+  train:     { label: '🚂 Train de marchandises', file: 'train' },
+  vapeur:    { label: '🚂 Locomotive à vapeur', file: 'locomotive-vapeur' },
+  passage:   { label: '🚦 Passage à niveau', file: 'passage-a-niveau' },
+  manivelle: { label: '🚒 Sirène à manivelle', file: 'sirene-manivelle' },
+  feux:      { label: '🎆 Feux d\'artifice', file: 'feux-artifice' },
+  decue:     { label: '😩 Foule déçue (pour rire)', file: 'foule-decue' }
 };
-function hornChoice(){ const c = localStorageGet('pav_horn'); return c === 'perso' && S && S.config.hornVersion ? 'perso' : (HORNS[c] ? c : 'original'); }
-// Bruit blanc (foule, impact de la rondelle).
-function noiseBuffer(sec){ const b = audioCtx.createBuffer(1, audioCtx.sampleRate * sec, audioCtx.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; }
-function playSynth(h){
-  const t0 = audioCtx.currentTime, comp = audioCtx.createDynamicsCompressor(); comp.connect(audioCtx.destination);
-  if (h.sweep) {   // sirène qui monte et descend
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'square';
-    for (let i = 0; i < 4; i++) { o.frequency.setValueAtTime(650, t0 + i * 1.1); o.frequency.linearRampToValueAtTime(1350, t0 + i * 1.1 + .55); o.frequency.linearRampToValueAtTime(650, t0 + i * 1.1 + 1.1); }
-    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.12, t0 + .05); g.gain.setValueAtTime(.12, t0 + 4.3); g.gain.linearRampToValueAtTime(0, t0 + 4.4);
-    o.connect(g); g.connect(comp); o.start(t0); o.stop(t0 + 4.5); return;
-  }
-  if (h.organ) {   // orgue d'aréna : fondamentale + harmoniques, un peu de vibrato
-    let t = t0;
-    for (const [f, len] of h.organ) {
-      if (f) for (const [mult, vol] of [[1, .16], [2, .08], [3, .05], [4, .03], [.5, .06]]) {
-        const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'sine'; o.frequency.value = f * mult;
-        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .02); g.gain.setValueAtTime(vol, t + len - .04); g.gain.linearRampToValueAtTime(0, t + len);
-        o.connect(g); g.connect(comp); o.start(t); o.stop(t + len + .02);
-      }
-      t += len;
-    }
-    return;
-  }
-  if (h.post) {    // claque du bâton, puis « ding » métallique du poteau (partiels inharmoniques)
-    const n = audioCtx.createBufferSource(), ng = audioCtx.createGain(), bp = audioCtx.createBiquadFilter();
-    n.buffer = noiseBuffer(.15); bp.type = 'bandpass'; bp.frequency.value = 1800; bp.Q.value = .8;
-    ng.gain.setValueAtTime(.9, t0); ng.gain.exponentialRampToValueAtTime(.001, t0 + .12);
-    n.connect(bp); bp.connect(ng); ng.connect(comp); n.start(t0);
-    const tp = t0 + .32;
-    for (const [f, vol, dec] of [[1180, .22, 2.4], [2950, .12, 1.6], [4310, .08, 1.1], [6180, .05, .8]]) {
-      const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'sine'; o.frequency.value = f;
-      g.gain.setValueAtTime(vol, tp); g.gain.exponentialRampToValueAtTime(.0005, tp + dec);
-      o.connect(g); g.connect(comp); o.start(tp); o.stop(tp + dec);
-    }
-    return;
-  }
-  if (h.buzzer) {  // sirène électrique de fin de période
-    const g = audioCtx.createGain(), lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3000;
-    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.18, t0 + .02); g.gain.setValueAtTime(.18, t0 + h.buzzer); g.gain.linearRampToValueAtTime(0, t0 + h.buzzer + .05);
-    for (const f of [180, 182, 360]) { const o = audioCtx.createOscillator(); o.type = 'square'; o.frequency.value = f; o.connect(lp); o.start(t0); o.stop(t0 + h.buzzer + .1); }
-    lp.connect(g); g.connect(comp); return;
-  }
-  const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = h.cutoff; lp.Q.value = 2; lp.connect(comp);
-  let lfoGain = null;
-  if (h.vibrato) { const lfo = audioCtx.createOscillator(); lfoGain = audioCtx.createGain(); lfo.frequency.value = 6; lfoGain.gain.value = h.vibrato; lfo.connect(lfoGain); lfo.start(t0); lfo.stop(t0 + 6); }
-  for (const [start, len] of h.blasts) {
-    const t = t0 + start, g = audioCtx.createGain(), vol = .26 / Math.sqrt(h.freqs.length / 3);
-    // Attaque d'un klaxon à air : le son monte vite et la note se stabilise en une fraction de seconde.
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .06);
-    g.gain.setValueAtTime(vol, t + len - .15); g.gain.linearRampToValueAtTime(0, t + len);
-    g.connect(lp);
-    for (const f of h.freqs) for (const det of [-3, 3]) {
-      const o = audioCtx.createOscillator(); o.type = h.wave; o.detune.value = det;
-      o.frequency.setValueAtTime(f * .94, t); o.frequency.exponentialRampToValueAtTime(f, t + .18);
-      if (lfoGain) lfoGain.connect(o.frequency);
-      o.connect(g); o.start(t); o.stop(t + len + .05);
-    }
-  }
-  if (h.crowd) {   // la foule qui se lève : bruit filtré qui gonfle puis retombe
-    const n = audioCtx.createBufferSource(), g = audioCtx.createGain(), bp = audioCtx.createBiquadFilter();
-    n.buffer = noiseBuffer(h.crowd); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = .6;
-    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.35, t0 + .8); g.gain.setValueAtTime(.35, t0 + h.crowd - 1.5); g.gain.linearRampToValueAtTime(0, t0 + h.crowd);
-    n.connect(bp); bp.connect(g); g.connect(comp); n.start(t0);
-  }
+const SOUND_CREDITS = [
+  ['Orgue à tuyaux, sifflet, sirène à manivelle, cloches, claves, mains, grosse caisse', 'Versilian Community Sample Library (VCSL)', 'CC0'],
+  ['Corne de bateau « Boat Horn » (klaxon de but, paquebot, traversier)', 'Alexander, orangefreesounds.com', 'CC BY 4.0'],
+  ['« rocky_mtns_train_horn_moving » (train)', 'polymorpheva, freesound.org', 'CC0'],
+  ['« steam train horn 01 » (locomotive à vapeur)', 'eliasheuninck, freesound.org', 'CC BY 3.0'],
+  ['« Railroad Crossing Japan » (passage à niveau)', 'MrAuralization, freesound.org', 'CC BY 3.0'],
+  ['« Air Horn Sound » (klaxon à air)', 'Mike Koenig, soundbible.com', 'CC BY 3.0'],
+  ['« Approx 850 - Enthusiast Audience » (foule)', 'lonemonk, freesound.org', 'CC BY 3.0'],
+  ['« Crowd Ooohs and Ahhhs in Excitement » (foule)', 'noah0189, freesound.org', 'CC0'],
+  ['« Disappointed_Crowd » (foule déçue)', 'unchaz, freesound.org', 'CC BY 3.0'],
+  ['« Fireworks Sound » (feux d\'artifice)', 'Stephan, soundbible.com', 'domaine public'],
+  ['Versions préparées des sons de freesound et soundbible', 'AltSFX (OpenTTD), ALEX11BR', 'CC BY 3.0']
+];
+// Mémoire des sons décodés (un seul téléchargement par son).
+const SND = new Map();
+function sndBuffer(file){
+  if (!SND.has(file)) SND.set(file, fetch(`/sounds/${file}.mp3`).then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+    .then(b => audioCtx.decodeAudioData(b)).catch(e => { SND.delete(file); throw e; }));
+  return SND.get(file);
 }
-function goalHorn(choice){
+function playBuffer(buf, gain = .9){
+  const src = audioCtx.createBufferSource(), g = audioCtx.createGain(); g.gain.value = gain;
+  src.buffer = buf; src.connect(g); g.connect(audioCtx.destination); src.start();
+}
+async function playFile(file, gain = .9){
+  if (!audioCtx) return;
+  try { playBuffer(await sndBuffer(file), gain); } catch {}
+}
+function hornChoice(){
+  const c = localStorageGet('pav_horn');
+  if (c === 'perso' && S && S.config.hornVersion) return 'perso';
+  if (c === 'moi' && localStorageGet('pav_horn_mine')) return 'moi';
+  return HORNS[c] ? c : 'but';
+}
+// Mon son : un fichier de mon téléphone, gardé sur cet appareil seulement.
+let myHorn = null;
+async function goalHorn(choice){
   if (!audioCtx || localStorageGet('pav_sound') === 'off') return;
   if (navigator.vibrate) navigator.vibrate([300, 120, 300, 120, 600]);
   const c = choice || hornChoice();
-  if (c === 'perso' && hornBuffer) {
-    const src = audioCtx.createBufferSource(), g = audioCtx.createGain(); g.gain.value = .9;
-    src.buffer = hornBuffer; src.connect(g); g.connect(audioCtx.destination); src.start(); return;
+  if (c === 'perso' && hornBuffer) return playBuffer(hornBuffer);
+  if (c === 'moi') {
+    try {
+      if (!myHorn) myHorn = await audioCtx.decodeAudioData(await (await fetch(localStorageGet('pav_horn_mine'))).arrayBuffer());
+      return playBuffer(myHorn);
+    } catch { myHorn = null; }
   }
-  playSynth(HORNS[c] || HORNS.original);
+  playFile((HORNS[c] || HORNS.but).file);
 }
 function showBanner(n){
   const alarm = n.kind === 'trade';
@@ -2719,13 +2675,21 @@ const vSettings = run(async () => {
       <label class="pick"><input type="checkbox" id="soundTog" ${localStorageGet('pav_sound') === 'off' ? '' : 'checked'}> 🚨 Sirène lors d'une transaction</label>
       <label class="pick"><input type="checkbox" id="draftSndTog" ${localStorageGet('pav_draft_sound') === 'off' ? '' : 'checked'}> 🎲 Sons du repêchage (tic-tac, fanfare, carillon)</label>
       <label class="f" style="margin-top:10px">Ma sirène</label>
-      ${[...Object.entries(HORNS), ...(S.config.hornVersion ? [['perso', { label: '🎵 Son de la ligue (téléversé par le commissaire)' }]] : [])].map(([k, h]) => `<div class="pick" style="justify-content:space-between">
+      ${[...Object.entries(HORNS), ...(S.config.hornVersion ? [['perso', { label: '🎵 Son de la ligue (téléversé par le commissaire)' }]] : []),
+        ...(localStorageGet('pav_horn_mine') ? [['moi', { label: '📱 Mon son (fichier de mon téléphone)' }]] : [])].map(([k, h]) => `<div class="pick" style="justify-content:space-between">
         <label style="display:flex;gap:8px;align-items:center;flex:1"><input type="radio" name="horn" value="${k}" ${hornChoice() === k ? 'checked' : ''} onchange="localStorageSet('pav_horn','${k}');goalHorn('${k}')"> ${esc(h.label)}</label>
         <button class="btn small ghost" onclick="goalHorn('${k}')">▶</button></div>`).join('')}
+      <div style="margin-top:12px"><b style="font-size:13px">📱 Mon propre son</b>
+        <p class="muted" style="margin:4px 0 8px">Un fichier audio de ton téléphone (MP3 ou M4A, quelques secondes, 1 Mo maximum). Il reste sur ton appareil seulement.</p>
+        <label class="btn small ghost" style="display:inline-block">📁 Choisir un fichier<input type="file" id="myHornFile" accept="audio/*" hidden></label>
+        ${localStorageGet('pav_horn_mine') ? '<button class="btn small ghost" onclick="myHornReset()">Retirer mon son</button>' : ''}</div>
       ${S.me.isAdmin ? `<div style="margin-top:12px"><b style="font-size:13px">Son de la ligue (commissaire)</b>
         <p class="muted">${S.config.hornVersion ? '✅ Un son personnalisé est en place.' : 'Aucun son téléversé.'} Fichier MP3 de quelques secondes (1 Mo maximum) que tu as le droit d'utiliser.</p>
         <label class="btn small" style="display:inline-block">📁 Choisir un fichier<input type="file" id="hornFile" accept="audio/*" hidden></label>
-        ${S.config.hornVersion ? '<button class="btn small ghost" onclick="hornReset()">Retirer le son de la ligue</button>' : ''}</div>` : ''}</div>
+        ${S.config.hornVersion ? '<button class="btn small ghost" onclick="hornReset()">Retirer le son de la ligue</button>' : ''}</div>` : ''}
+      <details style="margin-top:12px"><summary>Crédits des sons</summary>
+        <p class="muted" style="margin:8px 0 4px">De vrais enregistrements libres de droits, coupés, mixés et accompagnés d'une réverbération d'aréna pour l'application.</p>
+        ${SOUND_CREDITS.map(([what, who, lic]) => `<div class="meta" style="margin:4px 0;font-size:12px;color:var(--dim)">${esc(what)} : ${esc(who)} · <b>${esc(lic)}</b></div>`).join('')}</details></div>
 
     <div class="sechd">👤 Compte</div>
     <div class="card">
@@ -2746,10 +2710,19 @@ const vSettings = run(async () => {
     const data = await new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = ko; r.readAsDataURL(f); });
     await api('/api/admin/horn', { data }); await loadState(); await loadHorn(); toast('Nouveau son en place'); goalHorn('perso'); vSettings();
   });
+  const mf = $('#myHornFile');
+  if (mf) mf.onchange = run(async e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (f.size > 1024 * 1024) return toast('Fichier trop gros (maximum 1 Mo)');
+    const data = await new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = ko; r.readAsDataURL(f); });
+    try { localStorage.setItem('pav_horn_mine', data); } catch { return toast('Pas assez de place sur cet appareil pour ce fichier'); }
+    myHorn = null; localStorageSet('pav_horn', 'moi'); toast('Ton son est en place'); goalHorn('moi'); vSettings();
+  });
   $('#soundTog').onchange = e => { localStorageSet('pav_sound', e.target.checked ? 'on' : 'off'); if (e.target.checked) goalHorn(); };
   $('#draftSndTog').onchange = e => { localStorageSet('pav_draft_sound', e.target.checked ? 'on' : 'off'); if (e.target.checked) draftSound('next'); };
   if (pushOk) renderPush(N);
 });
+function myHornReset(){ try { localStorage.removeItem('pav_horn_mine'); } catch {} myHorn = null; if (localStorageGet('pav_horn') === 'moi') localStorageSet('pav_horn', 'but'); vSettings(); }
 const saveProfile = run(async teamId => {
   await api('/api/team/profile', { teamId, name: $('#stName').value, owner: $('#stOwner').value });
   toast('Équipe enregistrée'); await refresh();

@@ -226,6 +226,11 @@ et « → équipe » quand le choix a été échangé.
   le commissaire sont avisés des contrats échus. La LNH ne publie pas les salaires : ils viennent de PuckPedia.
 - **Âge** : calculé chaque jour à partir de la date de naissance officielle de tous les joueurs de la LNH
   (rapports « bios » de la LNH, relus chaque semaine).
+- **🔊 Sons** (Réglages → Sons) : de vrais enregistrements libres de droits (orgue à tuyaux joué note par note,
+  klaxon de but et foule, klaxon à air, sifflet de l'arbitre, corne de paquebot, traversier, train, locomotive à
+  vapeur, passage à niveau, sirène à manivelle, feux d'artifice…), préparés en MP3 dans `public/sounds`
+  (crédits dans `public/sounds/CREDITS.txt` et dans l'application ; script : `tools/studio-sons.py`).
+  Chaque pooler choisit sa sirène, ou met son propre fichier (gardé sur son téléphone seulement).
 - **Fiche du joueur** (toucher un joueur) : en-tête aux couleurs de son équipe avec sa photo, son numéro,
   son rang à sa position et ses points de pool ; boutons ronds (offre, marché, libérer, réclamer, ma liste) ;
   onglets Aperçu (rapport de blessure, dernières nouvelles et analyse, stats de la saison, 5 derniers
