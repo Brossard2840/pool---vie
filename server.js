@@ -186,6 +186,7 @@ async function leagueConfig() {
     lastResult: JSON.parse((await getConfig('last_stats_result')) || 'null'),
     refreshMinutes: REFRESH_MINUTES,
     lastLive: await getConfig('last_live_sync'),
+    hornVersion: await getConfig('horn_version'),
     liveReady: (await getConfig('log_season')) === (await seasonId())
   };
 }
@@ -570,6 +571,14 @@ app.get('/api/live', h(async (req, res) => {
   res.json({ date, today, games, teams, lastLive: await getConfig('last_live_sync'), ready: await live.isReady() });
 }));
 
+// Son de la sirène des transactions : fichier téléversé par le commissaire (sinon, klaxon synthétique).
+app.get('/api/horn', h(async (req, res) => {
+  const data = await getConfig('horn_audio');
+  if (!data) return res.status(404).json({ error: 'Aucun son' });
+  const [, type, b64] = data.match(/^data:([^;]+);base64,(.*)$/) || [];
+  res.set('Content-Type', type || 'audio/mpeg').set('Cache-Control', 'private, max-age=31536000').send(Buffer.from(b64 || '', 'base64'));
+}));
+
 app.get('/api/moves', h(async (req, res) => {
   const { rows } = await pool.query(`SELECT * FROM moves ORDER BY at DESC, id DESC LIMIT 300`);
   res.json(rows);
@@ -847,6 +856,16 @@ admin.post('/roster/import', h(async (req, res) => {
       [`${report.assigned} joueur(s) importé(s)${replace ? ' (alignements remplacés)' : ''}`, req.me.name]);
   });
   res.json(report);
+}));
+
+admin.post('/horn', h(async (req, res) => {
+  const data = String(req.body.data || '');
+  if (!data) { await pool.query(`DELETE FROM config WHERE key IN ('horn_audio','horn_version')`); return res.json({ ok: true }); }
+  if (!/^data:audio\/[a-z0-9.+-]+;base64,/.test(data)) return res.status(400).json({ error: 'Fichier audio requis (MP3, M4A, WAV)' });
+  if (data.length > 1.5 * 1024 * 1024) return res.status(400).json({ error: 'Fichier trop gros (maximum 1 Mo)' });
+  await setConfig('horn_audio', data);
+  await setConfig('horn_version', Date.now());
+  res.json({ ok: true });
 }));
 
 admin.post('/stats/refresh', h(async (req, res) => {
