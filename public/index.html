@@ -1661,25 +1661,48 @@ async function loadHorn(){
   try { const r = await fetch('/api/horn?v=' + v); hornBuffer = r.ok ? await audioCtx.decodeAudioData(await r.arrayBuffer()) : null; } catch { hornBuffer = null; }
 }
 document.addEventListener('pointerdown', () => { loadHorn(); }, { passive: true });
-function goalHorn(){
+// Sirènes au choix (chaque pooler choisit la sienne). Toutes synthétisées : aucun enregistrement protégé.
+// Le klaxon de locomotive à 5 tons (type Nathan K5LA, utilisé sur les trains CN) est très proche de la sirène du Centre Bell.
+const K5 = [311.1, 370, 415.3, 493.9, 622.3];   // ré#, fa#, sol#, si, ré# : l'accord du klaxon de train
+const HORNS = {
+  train:    { label: '🚂 Train CN (style Centre Bell)', freqs: K5, blasts: [[0, 4.2]], cutoff: 2600, wave: 'sawtooth' },
+  passage:  { label: '🚦 Passage à niveau (long, long, court, long)', freqs: K5, blasts: [[0, 1.3], [1.5, 1.3], [3, .45], [3.65, 2.2]], cutoff: 2600, wave: 'sawtooth' },
+  arena:    { label: '🏟️ Klaxon d\'aréna grave', freqs: [110, 138.6, 164.8, 55], blasts: [[0, 3]], cutoff: 900, wave: 'sawtooth' },
+  paquebot: { label: '🚢 Corne de brume', freqs: [65.4, 98, 130.8], blasts: [[0, 2.2], [2.6, 3]], cutoff: 500, wave: 'sawtooth' },
+  sirene:   { label: '🚨 Sirène de police', sweep: true }
+};
+function hornChoice(){ const c = localStorageGet('pav_horn'); return c === 'perso' && S && S.config.hornVersion ? 'perso' : (HORNS[c] ? c : 'train'); }
+function playSynth(h){
+  const t0 = audioCtx.currentTime, comp = audioCtx.createDynamicsCompressor(); comp.connect(audioCtx.destination);
+  if (h.sweep) {   // sirène qui monte et descend
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'square';
+    for (let i = 0; i < 4; i++) { o.frequency.setValueAtTime(650, t0 + i * 1.1); o.frequency.linearRampToValueAtTime(1350, t0 + i * 1.1 + .55); o.frequency.linearRampToValueAtTime(650, t0 + i * 1.1 + 1.1); }
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.12, t0 + .05); g.gain.setValueAtTime(.12, t0 + 4.3); g.gain.linearRampToValueAtTime(0, t0 + 4.4);
+    o.connect(g); g.connect(comp); o.start(t0); o.stop(t0 + 4.5); return;
+  }
+  const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = h.cutoff; lp.Q.value = 2; lp.connect(comp);
+  for (const [start, len] of h.blasts) {
+    const t = t0 + start, g = audioCtx.createGain();
+    // Attaque d'un klaxon à air : le son monte vite et la note se stabilise en une fraction de seconde.
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.26 / Math.sqrt(h.freqs.length / 3), t + .06);
+    g.gain.setValueAtTime(.26 / Math.sqrt(h.freqs.length / 3), t + len - .15); g.gain.linearRampToValueAtTime(0, t + len);
+    g.connect(lp);
+    for (const f of h.freqs) for (const det of [-3, 3]) {
+      const o = audioCtx.createOscillator(); o.type = h.wave; o.detune.value = det;
+      o.frequency.setValueAtTime(f * .94, t); o.frequency.exponentialRampToValueAtTime(f, t + .18);
+      o.connect(g); o.start(t); o.stop(t + len + .05);
+    }
+  }
+}
+function goalHorn(choice){
   if (!audioCtx || localStorageGet('pav_sound') === 'off') return;
   if (navigator.vibrate) navigator.vibrate([300, 120, 300, 120, 600]);
-  if (hornBuffer && S.config.hornVersion) {
+  const c = choice || hornChoice();
+  if (c === 'perso' && hornBuffer) {
     const src = audioCtx.createBufferSource(), g = audioCtx.createGain(); g.gain.value = .9;
     src.buffer = hornBuffer; src.connect(g); g.connect(audioCtx.destination); src.start(); return;
   }
-  // Klaxon d'aréna : accord grave (la, do#, mi) en dents de scie, attaque franche, 3 secondes, léger vibrato.
-  const t = audioCtx.currentTime, out = audioCtx.createGain(), lp = audioCtx.createBiquadFilter(), comp = audioCtx.createDynamicsCompressor();
-  lp.type = 'lowpass'; lp.frequency.value = 900; lp.Q.value = 4;
-  out.gain.setValueAtTime(0, t); out.gain.linearRampToValueAtTime(.32, t + .05);
-  out.gain.setValueAtTime(.32, t + 2.8); out.gain.exponentialRampToValueAtTime(.001, t + 3.4);
-  lp.connect(out); out.connect(comp); comp.connect(audioCtx.destination);
-  const lfo = audioCtx.createOscillator(), lfoGain = audioCtx.createGain(); lfo.frequency.value = 4.5; lfoGain.gain.value = 1.2; lfo.connect(lfoGain);
-  for (const [f, type] of [[110, 'sawtooth'], [138.6, 'sawtooth'], [164.8, 'sawtooth'], [55, 'square']]) {
-    const o = audioCtx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f * .97, t); o.frequency.linearRampToValueAtTime(f, t + .12);
-    lfoGain.connect(o.frequency); o.connect(lp); o.start(t); o.stop(t + 3.5);
-  }
-  lfo.start(t); lfo.stop(t + 3.5);
+  playSynth(HORNS[c] || HORNS.train);
 }
 function showBanner(n){
   const alarm = n.kind === 'trade';
@@ -1719,10 +1742,13 @@ const vNotifications = run(async () => {
       ${!pushOk ? `<p class="muted">${iOS && !standalone ? 'Sur iPhone, ajoute d\'abord l\'application à ton écran d\'accueil (Partager ⬆︎ → Sur l\'écran d\'accueil), puis ouvre-la depuis l\'icône pour activer les notifications.' : 'Ce navigateur ne permet pas les notifications.'}</p>`
         : '<div id="pushBody" class="muted">Chargement…</div>'}
       <label class="pick"><input type="checkbox" id="soundTog" ${localStorageGet('pav_sound') === 'off' ? '' : 'checked'}> 🚨 Sirène de but dans l'application lors d'une transaction</label>
-      <button class="btn small ghost" onclick="goalHorn()">🔊 Écouter la sirène</button>
+      <label class="f" style="margin-top:8px">Ma sirène</label>
+      ${[...Object.entries(HORNS), ...(S.config.hornVersion ? [['perso', { label: '🎵 Son de la ligue (téléversé par le commissaire)' }]] : [])].map(([k, h]) => `<div class="pick" style="justify-content:space-between">
+        <label style="display:flex;gap:8px;align-items:center;flex:1"><input type="radio" name="horn" value="${k}" ${hornChoice() === k ? 'checked' : ''} onchange="localStorageSet('pav_horn','${k}');goalHorn('${k}')"> ${esc(h.label)}</label>
+        <button class="btn small ghost" onclick="goalHorn('${k}')">▶</button></div>`).join('')}
     </div>
     ${S.me.isAdmin ? `<div class="card"><h3>Son de la sirène (commissaire)</h3>
-      <p class="muted">${S.config.hornVersion ? '✅ Un son personnalisé est en place.' : 'Klaxon d\'aréna synthétique.'} Téléverse un fichier MP3 (1 Mo maximum, quelques secondes) que tu as le droit d'utiliser : il jouera chez tout le monde lors d'une grosse transaction.</p>
+      <p class="muted">${S.config.hornVersion ? '✅ Un son personnalisé est en place.' : 'Klaxon d\'aréna synthétique.'} Téléverse un fichier MP3 (1 Mo maximum, quelques secondes) que tu as le droit d'utiliser : il s'ajoute aux choix de sirène de chaque pooler.</p>
       <label class="btn small" style="display:inline-block">📁 Choisir un fichier<input type="file" id="hornFile" accept="audio/*" hidden></label>
       ${S.config.hornVersion ? '<button class="btn small ghost" onclick="hornReset()">Revenir au klaxon synthétique</button>' : ''}</div>` : ''}
     <div class="card"><div class="list">${N.notifications.map(n => `<div class="notif ${n.id > N.seen ? 'new' : ''}" onclick="${n.link ? `location.hash='${n.link}'` : ''}">
@@ -1733,7 +1759,7 @@ const vNotifications = run(async () => {
     const f = e.target.files[0]; if (!f) return;
     if (f.size > 1024 * 1024) return toast('Fichier trop gros (maximum 1 Mo)');
     const data = await new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = ko; r.readAsDataURL(f); });
-    await api('/api/admin/horn', { data }); await loadState(); await loadHorn(); toast('Nouveau son en place'); goalHorn(); vNotifications();
+    await api('/api/admin/horn', { data }); await loadState(); await loadHorn(); toast('Nouveau son en place'); goalHorn('perso'); vNotifications();
   });
   $('#soundTog').onchange = e => { localStorageSet('pav_sound', e.target.checked ? 'on' : 'off'); if (e.target.checked) goalHorn(); };
   if (top) { api('/api/notifications/seen', { id: top }).catch(() => {}); S.unreadNotifications = 0; renderChrome(); }
