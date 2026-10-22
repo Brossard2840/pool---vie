@@ -179,8 +179,12 @@ et « → équipe » quand le choix a été échangé.
 - Planifiées (heure de l'Est) : rappel la veille et le jour de la date limite des transactions,
   rappel aux équipes qui n'ont pas remis leur liste de protection, « dernière chance » 2 h avant la fin
   d'un ballottage, alerte quand ton alignement n'est plus conforme (plafond, plancher, positions ;
-  une fois par jour, sauf pendant l'entre-saison), résumé du matin à 9 h (tes points d'hier, ton rang,
-  tes meilleurs joueurs) et avis quand un joueur du pool change d'équipe dans la LNH.
+  une fois par jour, sauf pendant l'entre-saison), récap d'hier soir à 7 h et avis quand un joueur du pool change d'équipe dans la LNH.
+- **🗞️ Récap d'hier soir** (7 h, dès que tous les matchs de la veille sont compilés, au plus tard à 11 h) :
+  une notification par pooler avec sa soirée (points, rang, mouvement, meilleurs joueurs), puis les
+  manchettes : nouveau meneur, tours du chapeau, soirées de 4 points et plus, blanchissages, poolers
+  qui grimpent ou glissent au classement, pooler de la soirée, victoires écrasantes (4 buts d'écart)
+  et toujours le résultat du CH. Le récap est aussi publié sur le mur de la gang.
 
 ## Âge, recrues et projections
 

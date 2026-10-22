@@ -626,7 +626,8 @@ admin.use(requireAdmin);
 // Échanges et choix de repêchage (lib/trades.js). Déclaré ici : les fonctions utilitaires plus bas sont « hissées ».
 // Notifications (lib/notify.js).
 notifier = createNotify(app, { pool, h, getConfig, setConfig });
-const reminders = createReminders({ pool, getConfig, setConfig, notify, buildLeague, rules });
+const reminders = createReminders({ pool, getConfig, setConfig, notify, buildLeague, rules,
+  postWall: (...a) => fun ? fun.autoPost(...a) : null });
 const trades = registerTrades(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, seasonId, rules, notify,
   putOnWaivers: (...a) => waivers.putOnWaivers(...a) });
 // Ballottage (lib/waivers.js).
