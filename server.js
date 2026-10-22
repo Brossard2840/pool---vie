@@ -17,6 +17,7 @@ const { createReminders } = require('./lib/reminders');
 const { createProjections } = require('./lib/projections');
 const { createFun } = require('./lib/fun');
 const { createBlock } = require('./lib/block');
+const { createInjuries } = require('./lib/injuries');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -132,6 +133,7 @@ async function initDb() {
   await projections.initTables();
   await fun.initTables();
   await block.initTables();
+  await injuries.initTables();
   await setDefault('cap', '104000000');   // plafond LNH 2026-27
   await setDefault('floor', '76900000');  // plancher LNH 2026-27
 
@@ -438,7 +440,7 @@ function ageOf(p, at = new Date()) {
 }
 
 function clean(p) {
-  return { ...p, aav: p.aav === null ? null : Number(p.aav), pts: rules.poolPoints(p) };
+  return { ...p, aav: p.aav === null ? null : Number(p.aav), pts: rules.poolPoints(p), injury: injuries.of(p) };
 }
 
 async function buildLeague() {
@@ -644,7 +646,10 @@ const projections = createProjections(app, { pool, h, inTransaction, seasonId, r
 // Mur de la gang, trophées de la semaine, temple de la renommée (lib/fun.js).
 fun = createFun(app, admin, { pool, h, getConfig, seasonId, buildLeague, playoffs, notify });
 // Marché des transactions (lib/block.js).
-const block = createBlock(app, { pool, h, notify });
+// Rapport des blessés (lib/injuries.js).
+const injuries = createInjuries({ pool, getConfig, setConfig, notify });
+const block = createBlock(app, { pool, h, notify, injuryOf: p => injuries.of(p) });
+admin.post('/injuries/refresh', h(async (req, res) => res.json({ count: await injuries.refresh(true) })));
 
 admin.post('/config', h(async (req, res) => {
   const { cap, floor, seasonId: sid } = req.body;
@@ -900,6 +905,7 @@ initDb().then(() => {
       live.tick().catch(e => console.error('Direct :', e.message));
       waivers.processDue().catch(e => console.error('Ballottage :', e.message));
       reminders.tick().catch(e => console.error('Rappels :', e.message));
+      injuries.refresh().catch(e => console.warn('Blessures :', e.message));
       if (new Date().getMinutes() % 10 === 0) fun.closeWeek().catch(e => console.error('Trophées :', e.message));
       // Historique LNH (statut de recrue) : rafraîchi chaque semaine.
       getConfig('prot_history_at').then(at => {

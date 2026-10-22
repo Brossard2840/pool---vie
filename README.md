@@ -200,6 +200,12 @@ et « → équipe » quand le choix a été échangé.
   qui grimpent ou glissent au classement, pooler de la soirée, victoires écrasantes (4 buts d'écart)
   et toujours le résultat du CH. Le récap est aussi publié sur le mur de la gang.
 
+- **❌ Blessures** : rapport des blessés de la LNH (flux public d'ESPN, relu aux 2 heures ; bouton
+  « Mettre à jour les blessures » dans Commissaire). X rouge à côté du joueur (orange : au jour le jour),
+  durée en français (absence indéterminée, absent 4 semaines, pour la saison, retour prévu…), partie du
+  corps et, dans la fiche, le commentaire d'origine. Nombre de blessés sur la page de chaque équipe.
+  Le propriétaire est avisé quand un de ses joueurs se blesse, que la durée change ou qu'il revient.
+
 ## Âge, recrues et projections
 
 - **Âge moyen** de chaque équipe (date de naissance de NHL.com, sinon l'âge saisi), rang de la plus jeune,

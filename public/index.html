@@ -130,6 +130,8 @@
   .rx{display:flex;gap:6px;flex-wrap:wrap;} .rx button{background:var(--ice);border:1px solid var(--line);border-radius:20px;padding:4px 9px;font-size:14px;color:var(--text);}
   .rx button.on{border-color:var(--gold);background:#2b2512;} .rx button b{font-size:12px;margin-left:3px;}
   .medal{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #1a2938;} .medal .m{font-size:24px;width:30px;text-align:center;}
+  .inj{display:inline-block;background:#d43a2f;color:#fff;font-weight:900;font-size:10px;line-height:14px;padding:0 4px;border-radius:4px;margin-left:5px;vertical-align:1px;}
+  .inj.dtd{background:#d98a1f;} .injline{color:#ff8a80;} .injline.dtd{color:#f0a35a;}
   .tag.blk{border-color:#c9a24b;color:var(--gold);}
   .tag.rk{border-color:#7fc8a9;color:#9fe0c2;background:#13261f;} .tag.rk2{border-color:#8fb4d6;color:#b5d3ee;background:#16233a;}
   .chips{display:flex;flex-wrap:wrap;gap:6px;}
@@ -454,10 +456,11 @@ function vTeam(id){
       <div class="stat"><div class="l">Points</div><div class="v">${t.points}</div></div>
       <div class="stat"><div class="l">Pt/match</div><div class="v">${ppg(t)}</div></div>
     </div>
-    <div class="stats">
+    <div class="stats" style="grid-template-columns:repeat(4,1fr)">
       <div class="stat"><div class="l">Âge moyen</div><div class="v">${t.avgAge ? t.avgAge.toLocaleString('fr-CA') : '—'}</div></div>
       <div class="stat"><div class="l">Jeunesse</div><div class="v">${t.ageRank ? (t.ageRank === 1 ? '1re' : t.ageRank + 'e') : '—'}<span class="muted" style="font-size:12px"> plus jeune</span></div></div>
       <div class="stat"><div class="l">Recrues</div><div class="v">${t.rookies || 0}</div></div>
+      <div class="stat"><div class="l">Blessés</div><div class="v" style="${['F','D','G'].some(x => t.positions[x].players.some(p => p.injury && !p.injury.dtd)) ? 'color:#ff6b5f' : ''}">${['F','D','G'].reduce((n, x) => n + t.positions[x].players.filter(p => p.injury).length, 0)}</div></div>
     </div>
     <div class="card">
       <h3><span>Masse salariale</span><span>${money(t.capUsed)} / ${money(c.cap)}</span></h3>
@@ -491,15 +494,24 @@ function rookieTags(p){
     + (c.includes('GP') ? '<span class="tag" title="Peu de matchs : protection automatique possible (art. 4.3.2)">≤ 39 PJ ⚡</span>' : '')
     + (!c.length && p.rookie ? '<span class="tag rk">🍼 Recrue</span>' : '');
 }
+// Blessure (rapport de la LNH) : X rouge, ou orange si « au jour le jour ».
+function injTag(p){
+  const i = p.injury; if (!i) return '';
+  return `<span class="inj ${i.dtd ? 'dtd' : ''}" title="${esc(i.label + (i.injury ? ' · ' + i.injury : ''))}">✕</span>`;
+}
+function injLine(p){
+  const i = p.injury; if (!i) return '';
+  return `<div class="meta injline ${i.dtd ? 'dtd' : ''}">${i.dtd ? '⚠️' : '❌'} ${esc(i.label)}${i.injury ? ' · ' + esc(i.injury) : ''}</div>`;
+}
 function playerItem(p, { showFlags = false, showOwner = false } = {}){
   const flags = showFlags ? `${p.counts_points ? '<span class="tag pts">PTS</span>' : ''}${p.counts_cap ? '<span class="tag cap">$</span>' : ''}` : '';
   const owner = showOwner ? (p.team ? ` · <b>${esc(p.team)}</b>` : ' · <span style="color:var(--green)">disponible</span>') : '';
   const link = p.nhl_id ? '' : ' · <span style="color:var(--red)">sans fiche LNH</span>';
   return `<div class="item ${showFlags && !p.counts_points ? 'out' : ''}" onclick="openPlayer(${p.id})">
     <span class="pos pos-${p.pos}">${p.pos}</span>
-    <div class="grow"><div class="name">${formIcon(p)}${esc(p.name)}${flags}${(S.block || []).includes(p.id) ? '<span class="tag blk" title="Sur le marché des transactions">📣</span>' : ''}${p.retained ? '<span class="tag" title="Une autre équipe retient une partie du salaire">ret.</span>' : ''}</div>
+    <div class="grow"><div class="name">${formIcon(p)}${esc(p.name)}${injTag(p)}${flags}${(S.block || []).includes(p.id) ? '<span class="tag blk" title="Sur le marché des transactions">📣</span>' : ''}${p.retained ? '<span class="tag" title="Une autre équipe retient une partie du salaire">ret.</span>' : ''}</div>
       ${rookieTags(p) ? `<div class="meta" style="margin-top:3px">${rookieTags(p).replace(/class="tag/g, 'style="margin-left:0;margin-right:4px" class="tag')}</div>` : ''}
-      <div class="meta">${esc(p.nhl_team || '—')}${p.age ? ' · ' + p.age + ' ans' : ''} · ${statLine(p)}${owner}${link}</div></div>
+      <div class="meta">${esc(p.nhl_team || '—')}${p.age ? ' · ' + p.age + ' ans' : ''} · ${statLine(p)}${owner}${link}</div>${injLine(p)}</div>
     <div class="num"><b>${p.pts}</b><div class="meta aav">${money(p.aav)}</div></div>
   </div>`;
 }
@@ -594,6 +606,10 @@ function renderSheet(){
     <div class="muted">${esc(p.nhl_team || '—')} · ${p.age ? p.age + ' ans' : 'âge ?'} · AAV <span class="aav">${p.aav ? moneyFull(p.aav) : 'inconnu'}</span>
       ${p.contract_end ? ' · fin ' + p.contract_end : ''}</div>
     <div class="muted" style="margin-top:4px">${owner ? 'Équipe : <b>' + esc(owner.name) + '</b>' : '<span style="color:var(--green)">Agent libre</span>'}</div>
+    ${p.injury ? `<div class="issues" style="margin:10px 0 0;${p.injury.dtd ? 'background:#2a1d10;border-color:#6b4a1e;color:#f0a35a' : ''}">
+      <b>${p.injury.dtd ? '⚠️' : '❌'} ${esc(p.injury.label.charAt(0).toUpperCase() + p.injury.label.slice(1))}</b>${p.injury.injury ? ' · blessure : ' + esc(p.injury.injury) : ''}
+      ${p.injury.returnDate ? `<br>Retour estimé : ${new Date(String(p.injury.returnDate).slice(0, 10) + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' })}` : ''}
+      ${p.injury.comment ? `<div style="font-size:12px;opacity:.85;margin-top:4px">Rapport (en anglais) : « ${esc(p.injury.comment)} »</div>` : ''}</div>` : ''}
     <div class="kv">${kv.map(([l,v]) => `<div><div class="l">${l}</div><div class="v">${v ?? 0}</div></div>`).join('')}</div>
     <div class="muted">Points de pool : <b style="color:var(--text)">${p.pts ?? 0}</b>${goalie ? ' (B + A + 2×V + DP + BL)' : ''}</div>
     ${p.lastGames && p.lastGames.length ? `<div class="card" style="margin-top:10px;padding:10px 12px"><h3 style="margin-bottom:0"><span>Forme · ${p.lastGames.length} derniers matchs</span>
@@ -1014,7 +1030,7 @@ const vBlock = run(async () => {
   const myNeed = BL.needs.find(n => n.team_id === S.me.teamId), N = neutral();
   const entry = e => `<div class="item" style="align-items:flex-start">
       <span class="pos pos-${e.pos}">${e.pos}</span>
-      <div class="grow" onclick="openPlayer(${e.id})"><div class="name">${esc(e.name)}</div>
+      <div class="grow" onclick="openPlayer(${e.id})"><div class="name">${esc(e.name)}${injTag(e)}</div>${injLine(e)}
         <div class="meta">${esc(e.nhl_team || '—')}${e.age ? ' · ' + e.age + ' ans' : ''} · ${statLine(e)}${e.contract_end ? ' · fin ' + e.contract_end : ''}</div>
         <div class="meta">${e.team_id === S.me.teamId ? '' : '<b>' + esc(e.team) + '</b> · '}depuis ${ago(e.created_at)}</div>
         ${e.note ? `<div style="margin-top:4px;font-size:14px">💬 ${esc(e.note)}</div>` : ''}
@@ -1602,7 +1618,7 @@ const openDraftPicker = run(async (pickId) => {
 function draftRow(p){
   DP.names[p.id] = p.name;
   return `<div class="item" onclick="draftChoose(${p.id})"><span class="pos pos-${p.pos}">${p.pos}</span>
-    <div class="grow"><div class="name">${esc(p.name)}</div><div class="meta">${esc(p.nhl_team || '')} · ${p.age ? p.age + ' ans · ' : ''}${statLine(p)}</div></div>
+    <div class="grow"><div class="name">${esc(p.name)}${injTag(p)}</div><div class="meta">${esc(p.nhl_team || '')} · ${p.age ? p.age + ' ans · ' : ''}${statLine(p)}</div>${injLine(p)}</div>
     <div class="num"><b>${p.pts}</b><div class="meta aav">${money(p.aav)}</div></div></div>`;
 }
 const loadDraftList = run(async () => {
@@ -1824,6 +1840,7 @@ const vAdmin = run(async () => {
       ${lr && lr.unlinked && lr.unlinked.length ? `<div class="issues"><b>${lr.unlinked.length} joueur(s) du pool sans fiche LNH</b> (aucun match joué cette saison, ou nom différent).
         Ouvre leur fiche et utilise « Fusionner » si le nom diffère :<br>${lr.unlinked.map(esc).join('<br>')}</div>` : ''}
       <button class="btn small" onclick="refreshStats(this)">Mettre à jour maintenant</button>
+      <button class="btn small ghost" onclick="refreshInjuries(this)">❌ Mettre à jour les blessures</button>
     </div>
 
     <div class="card"><h3>Échange</h3>
@@ -1931,6 +1948,11 @@ const deleteTeam = run(async id => {
 const refreshStats = run(async btn => {
   btn.disabled = true; btn.textContent = 'Mise à jour…';
   try { const r = await api('/api/admin/stats/refresh', {}); toast(`${r.nhlPlayers} joueurs LNH mis à jour`); await refresh(); }
+  finally { btn.disabled = false; }
+});
+const refreshInjuries = run(async btn => {
+  btn.disabled = true;
+  try { const r = await api('/api/admin/injuries/refresh', {}); toast(r.count ? `Rapport des blessés : ${r.count} joueurs` : 'Rapport des blessés vide (rien de changé)'); await refresh(); }
   finally { btn.disabled = false; }
 });
 const saveWaiverSettings = run(async () => {
