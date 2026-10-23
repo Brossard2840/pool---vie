@@ -547,7 +547,7 @@ async function showLogin(){
     <div class="login">
       <img class="logo" src="/logo.png" alt="Pool à vie">
       <h2 class="title" style="text-align:center">Pool à vie</h2>
-      ${passkeyOk() && teamsCache.length ? `<button class="btn" style="width:100%;margin-bottom:12px;font-size:16px;padding:14px" id="lgBio">🙂 Entrer avec <span id="lgBioName">${bioName()}</span></button>
+      ${passkeyOk() && teamsCache.length && localStorageGet('pav_passkey') ? `<button class="btn" style="width:100%;margin-bottom:12px;font-size:16px;padding:14px" id="lgBio">🙂 Entrer avec ${bioName()}</button>
         <p id="lgBioErr" class="muted" style="color:var(--red);margin:-4px 0 12px" hidden></p>
         <div class="muted" style="text-align:center;font-size:12px;margin-bottom:10px">ou avec ton code</div>` : ''}
       <div class="card">
@@ -562,7 +562,9 @@ async function showLogin(){
         ${loadError ? `<p class="muted" style="color:var(--red)">Le serveur ne répond pas (${esc(loadError)}). Réessaie dans 30 secondes.</p>`
           : teamsCache.length ? '' : '<p class="muted">Aucune équipe n\'a encore de code. Le commissaire doit définir COMMISSAIRE_CODE dans Render.</p>'}
       </div>
-      <p class="muted" style="text-align:center">Ton code t'est remis par le commissaire.</p>
+      <p class="muted" style="text-align:center">Ton code t'est remis par le commissaire.${passkeyOk() && !localStorageGet('pav_passkey') ? `<br>
+        Pour entrer avec ${bioName()} : entre une première fois avec ton code, puis touche « Activer ».
+        <a class="link" id="lgBio" style="display:block;margin-top:8px">Déjà activé ? Entrer avec ${bioName()}</a></p><p id="lgBioErr" class="muted" style="color:var(--red);text-align:center" hidden>` : ''}</p>
     </div>`;
   // Les erreurs restent affichées sous le bouton (un message éphémère passe trop vite sur téléphone).
   const showErr = msg => { const e = $('#lgErr'); if (e) { e.textContent = msg; e.hidden = !msg; } };
@@ -616,6 +618,7 @@ async function boot(){
   try { await loadState(); } catch { showLogin(); return; }
   startNotifications();
   route();
+  setTimeout(offerPasskey, 1500);  // déjà connecté avant l'arrivée de Face ID : on le propose une fois
 }
 
 // ---------- routage ----------
