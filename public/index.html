@@ -2113,6 +2113,9 @@ const vDraftSim = run(async () => {
 const simStart = run(async () => {
   const base = SIM.base, me = Number($('#smTeam').value), seconds = Number($('#smSec').value), rounds = Number($('#smRounds').value);
   const avail = await api('/api/players?status=available&sort=pts&limit=200');
+  const wl = me === S.me.teamId ? (await api('/api/watchlist').catch(() => [])).filter(p => !p.team) : [];
+  for (const p of wl) if (!avail.some(x => x.id === p.id)) avail.push(p);  // ma liste, même hors des 200 meilleurs
+  const watch = wl.map(p => p.id);
   const name = id => (base.order.find(t => t.id === id) || {}).name || '?';
   const n = base.order.length, picks = [];
   for (let r = 1; r <= rounds; r++) base.order.forEach((t, i) => {
@@ -2121,7 +2124,7 @@ const simStart = run(async () => {
     picks.push({ id: r * 1000 + i, round: r, position: i + 1, overall: (r - 1) * n + i + 1, original_team_id: t.id, original_team: t.name,
       owner_team_id: owner, owner_team: name(owner), player: null, passed: false, used: false });
   });
-  SIM = { me, avail, D: { sim: true, year: base.year, status: 'live', order: base.order, rounds, picks, current: null, clock: { seconds } } };
+  SIM = { me, avail, watch, D: { sim: true, year: base.year, status: 'live', order: base.order, rounds, picks, current: null, clock: { seconds } } };
   draftSound('start');
   simNext(true);
 });
@@ -2149,7 +2152,7 @@ function simAdvance(player){
   const D = SIM.D, cur = D.picks.find(p => p.id === D.current);
   clearTimeout(SIM.bot); closeSheet();
   if (player) {
-    cur.player = { id: player.id, name: player.name, pos: player.pos, nhl_team: player.nhl_team }; cur.picked_at = new Date().toISOString();
+    cur.player = { ...player }; cur.picked_at = new Date().toISOString();
     SIM.avail = SIM.avail.filter(p => p.id !== player.id);
     draftSound('pick'); toast(`🎯 #${cur.overall} ${cur.owner_team} : ${player.name}`);
   } else { cur.passed = true; draftSound('buzz'); toast(`⏱️ Temps écoulé pour ${cur.owner_team} : le commissaire passe au suivant`); }
@@ -2165,6 +2168,7 @@ function renderSim(){
     <div class="simbar">Simulation : rien n'est enregistré. Tu joues <b>${esc((D.order.find(t => t.id === SIM.me) || {}).name || '')}</b>.</div>
     ${cur ? clockBanner(D, SIM.me) : '<div class="okbox">🏁 Simulation terminée !</div>'}
     ${mine ? `<button class="btn" style="width:100%;margin-bottom:10px" onclick="simPicker()">🎯 Faire mon choix</button>` : ''}
+    <button class="btn ghost" style="width:100%;margin-bottom:10px" onclick="simTeamSheet()">🛡️ Mon équipe + mes choix (${simMine().length})</button>
     <div class="row" style="margin-bottom:10px">${cur ? `<button class="btn small ghost" onclick="simPause()">${D.clock.paused ? '▶ Reprendre' : '⏸ Pause'}</button>` : ''}
       <button class="btn small ghost" onclick="vDraftSim()">↻ Recommencer</button><button class="btn small ghost" onclick="location.hash='#/repechage'">Quitter</button></div>
     ${draftBoard(D, SIM.me)}
@@ -2181,17 +2185,78 @@ function simPause(){
 }
 function simPicker(){
   const D = SIM.D, cur = D.picks.find(p => p.id === D.current); if (!cur) return;
-  const list = q => SIM.avail.filter(p => (!DP.pos || p.pos === DP.pos) && (!q || p.name.toLowerCase().includes(q.toLowerCase()))).slice(0, 40);
+  const watch = new Set(SIM.watch || []), norm = x => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const list = q => SIM.avail.filter(p => (!DP.pos || p.pos === DP.pos) && (!q || norm(p.name).includes(norm(q))))
+    .sort((a, b) => (watch.has(b.id) - watch.has(a.id))).slice(0, 40);
   $('#sheetBody').innerHTML = `<h3 style="display:flex;justify-content:space-between"><span>Choix #${cur.overall} · ${esc(cur.owner_team)}</span><b id="dcMini" style="font-variant-numeric:tabular-nums"></b></h3>
+    <a class="link" style="font-size:13px;display:block;margin:-4px 0 8px" onclick="simTeamSheet()">🛡️ Voir mon équipe avec mes choix</a>
     <input id="smQ" type="search" placeholder="Rechercher un joueur disponible…">
     <div class="seg" style="margin-top:8px">${[['','Tous'],['F','Att.'],['D','Déf.'],['G','Gard.']].map(([v, l]) => `<button class="${DP.pos === v ? 'on' : ''}" data-v="${v}">${l}</button>`).join('')}</div>
     <div class="list" id="smList"></div>`;
   const draw = () => { $('#smList').innerHTML = list($('#smQ').value).map(p => `<div class="item" onclick="simChoose(${p.id})"><span class="pos pos-${p.pos}">${p.pos}</span>
-    <div class="grow"><div class="name">${esc(p.name)}</div><div class="meta">${esc(p.nhl_team || '')} · ${p.age ? p.age + ' ans · ' : ''}${statLine(p)}</div></div>
+    <div class="grow"><div class="name">${watch.has(p.id) ? '☆ ' : ''}${esc(p.name)}</div><div class="meta">${esc(p.nhl_team || '')} · ${p.age ? p.age + ' ans · ' : ''}${statLine(p)}</div>
+      <div class="meta" style="font-size:12px;margin-top:2px">${simHint(p)}</div></div>
     <div class="num"><b>${p.pts}</b><div class="meta aav">${money(p.aav)}</div></div></div>`).join('') || '<div class="empty">Aucun joueur.</div>'; };
   $('#smQ').oninput = draw;
   document.querySelectorAll('#sheetBody .seg button').forEach(b => b.onclick = () => { DP.pos = b.dataset.v; document.querySelectorAll('#sheetBody .seg button').forEach(x => x.classList.toggle('on', x === b)); draw(); });
   draw(); draftClockTick();
+  $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open');
+}
+// Ce que mes choix (simulés) changent à mon équipe : nombre par position, points des meilleurs (9 att., 4 déf., 2 gard.)
+// et masse salariale (les 9/4/2 plus gros salaires, art. 3.1). Points de la saison en cours.
+const SIM_COUNTED = { F: 9, D: 4, G: 2 };
+function simFit(teamId, extra){
+  const t = team(teamId), c = S.config, out = { pos: {}, ptsBefore: 0, ptsAfter: 0, capBefore: 0, capAfter: 0 };
+  if (!t) return out;
+  const top = (list, n, k) => list.map(p => Number(p[k]) || 0).sort((a, b) => b - a).slice(0, n).reduce((a, b) => a + b, 0);
+  for (const pos of ['F', 'D', 'G']) {
+    const P = t.positions[pos], mine = P.players, add = extra.filter(p => p.pos === pos), all = mine.concat(add), n = SIM_COUNTED[pos];
+    const o = { before: mine.length, after: all.length, min: P.min, max: P.max, add,
+      ptsBefore: top(mine, n, 'pts'), ptsAfter: top(all, n, 'pts'), capBefore: top(mine, n, 'aav'), capAfter: top(all, n, 'aav') };
+    out.pos[pos] = o;
+    out.ptsBefore += o.ptsBefore; out.ptsAfter += o.ptsAfter; out.capBefore += o.capBefore; out.capAfter += o.capAfter;
+  }
+  out.retained = t.retained || 0; out.cap = c.cap; out.floor = c.floor;
+  out.sizeBefore = t.size; out.sizeAfter = t.size + extra.length;
+  return out;
+}
+// Petit verdict pour un joueur de la liste : points ajoutés aux meilleurs, effet sur la masse, besoin à la position.
+function simHint(p){
+  const mine = simMine();
+  const a = simFit(SIM.me, mine), b = simFit(SIM.me, mine.concat([p])), P = a.pos[p.pos];
+  const gain = b.ptsAfter - a.ptsAfter, cap = b.capAfter + b.retained;
+  const bits = [];
+  if (P && P.after < P.min) bits.push(`<span style="color:var(--gold)">il te manque ${P.min - P.after} ${p.pos === 'F' ? 'att.' : p.pos === 'D' ? 'déf.' : 'gard.'}</span>`);
+  if (P && P.after >= P.max) bits.push('<span style="color:var(--red)">position pleine</span>');
+  bits.push(gain > 0 ? `<b style="color:var(--green)">+${gain} pts</b> à ton top ${SIM_COUNTED[p.pos]}` : '<span class="muted">ne change pas tes points (réserviste)</span>');
+  if (cap > a.cap) bits.push('<span style="color:var(--red)">dépasse le plafond</span>');
+  return bits.join(' · ');
+}
+const simMine = () => SIM.D.picks.filter(x => x.player && x.owner_team_id === SIM.me).map(x => x.player);
+function simTeamSheet(){
+  const t = team(SIM.me), mine = simMine(), f = simFit(SIM.me, mine);
+  if (!t) return;
+  const capA = f.capAfter + f.retained, capB = f.capBefore + f.retained, diff = (a, b) => a === b ? '' : ` <b style="color:${a > b ? 'var(--green)' : 'var(--red)'}">(${a > b ? '+' : ''}${a - b})</b>`;
+  const sec = ['F', 'D', 'G'].map(pos => {
+    const P = f.pos[pos], ok = P.after >= P.min && P.after <= P.max;
+    const rows = t.positions[pos].players.map(p => ({ ...p, isNew: false })).concat(P.add.map(p => ({ ...p, isNew: true })))
+      .sort((a, b) => (b.pts || 0) - (a.pts || 0));
+    return `<div class="card"><h3><span>${POS_LABEL[pos]} · ${P.before}${P.after !== P.before ? ' → ' + P.after : ''} <span style="font-weight:500">(min ${P.min}, max ${P.max})</span></span><span style="color:${ok ? 'var(--green)' : 'var(--red)'}">${ok ? '✓' : '⚠'}</span></h3>
+      <div class="muted" style="font-size:12px;margin-bottom:6px">Top ${SIM_COUNTED[pos]} : ${P.ptsBefore} pts${P.ptsAfter !== P.ptsBefore ? ` → <b>${P.ptsAfter}</b>` : ''}</div>
+      <div class="list">${rows.map((p, i) => `<div class="item" style="cursor:default;${p.isNew ? 'background:var(--ok-bg)' : ''}"><span class="pos pos-${p.pos}">${p.pos}</span>
+        <div class="grow"><div class="name">${esc(p.name)}${p.isNew ? ' <span class="tag pts">NOUVEAU</span>' : ''}${i < SIM_COUNTED[pos] ? '' : ' <span class="muted" style="font-size:11px">réserve</span>'}</div>
+        <div class="meta">${esc(p.nhl_team || '')}${p.age ? ' · ' + p.age + ' ans' : ''}</div></div>
+        <div class="num"><b>${p.pts ?? 0}</b><div class="meta aav">${money(p.aav)}</div></div></div>`).join('')}</div></div>`;
+  }).join('');
+  $('#sheetBody').innerHTML = `<h3>${teamAv(t, 26)} ${esc(t.name)} + mes choix simulés</h3>
+    ${mine.length ? '' : '<p class="muted">Tu n\'as encore rien choisi. Tes sélections s\'ajouteront ici, en vert.</p>'}
+    <div class="stats">
+      <div class="stat"><div class="l">Joueurs</div><div class="v">${f.sizeAfter}${diff(f.sizeAfter, f.sizeBefore)}</div></div>
+      <div class="stat"><div class="l">Pts (top 9/4/2)</div><div class="v">${f.ptsAfter}${diff(f.ptsAfter, f.ptsBefore)}</div></div>
+      <div class="stat"><div class="l">Masse</div><div class="v" style="font-size:16px;${capA > f.cap ? 'color:var(--red)' : ''}">${money(capA)}</div></div>
+    </div>
+    <p class="muted" style="font-size:12px;margin-top:-4px">Plafond ${money(f.cap)} · plancher ${money(f.floor)} · avant tes choix : ${money(capB)}. Points de la saison en cours.</p>
+    ${sec}`;
   $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open');
 }
 function simChoose(id){ const p = SIM.avail.find(x => x.id === id); if (p && SIM.D.picks.find(x => x.id === SIM.D.current).owner_team_id === SIM.me) simAdvance(p); }
