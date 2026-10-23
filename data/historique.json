@@ -1,5 +1,5 @@
 {
- "version": 2,
+ "version": 3,
  "source": "Publications du groupe Facebook « Pool NHL » (2021 à 2026)",
  "alias": {
   "Archy": "Simon Archambault",
@@ -636,6 +636,48 @@
     "Le grand": "tour1",
     "Massif": "tour1",
     "Pac": "tour1"
+   },
+   "series_pts": {
+    "Archy": {
+     "pts": 126,
+     "detail": "63 + 36 + 27",
+     "complete": true
+    },
+    "Oli": {
+     "pts": 103,
+     "detail": "55 + 30 + 18",
+     "complete": true
+    },
+    "Roch": {
+     "pts": 60,
+     "detail": "37 + 23",
+     "complete": true
+    },
+    "Miles": {
+     "pts": 58,
+     "detail": "51 + 7",
+     "complete": true
+    },
+    "Ti-guy": {
+     "pts": 53,
+     "detail": "53",
+     "complete": true
+    },
+    "Pac": {
+     "pts": 43,
+     "detail": "43",
+     "complete": true
+    },
+    "Massif": {
+     "pts": 37,
+     "detail": "37",
+     "complete": true
+    },
+    "Le grand": {
+     "pts": 18,
+     "detail": "18",
+     "complete": true
+    }
    }
   },
   "2022-23": {
@@ -710,6 +752,48 @@
     "Ti-guy": "tour1",
     "Oli Gendron": "tour1",
     "Miles": "tour1"
+   },
+   "series_pts": {
+    "Archy": {
+     "pts": 92,
+     "detail": "92 au 1er tour (2e tour inconnu)",
+     "complete": false
+    },
+    "Jay Lab": {
+     "pts": 74,
+     "detail": "74 au 1er tour (2e tour inconnu)",
+     "complete": false
+    },
+    "Oli Gendron": {
+     "pts": 65,
+     "detail": "65",
+     "complete": true
+    },
+    "Godin": {
+     "pts": 92,
+     "detail": "60 + ? + 32 (2e tour inconnu)",
+     "complete": false
+    },
+    "Miles": {
+     "pts": 42,
+     "detail": "42",
+     "complete": true
+    },
+    "Ti-guy": {
+     "pts": 24,
+     "detail": "24",
+     "complete": true
+    },
+    "Raph": {
+     "pts": 15,
+     "detail": "15",
+     "complete": true
+    },
+    "Andy": {
+     "pts": 7,
+     "detail": "? + ? + 7 (1er et 2e tours inconnus)",
+     "complete": false
+    }
    }
   },
   "2023-24": {
@@ -860,7 +944,29 @@
     "Le grand": "qualif",
     "Ti-guy": "qualif"
    },
-   "series_partial": true
+   "series_partial": true,
+   "series_pts": {
+    "Archy": {
+     "pts": 219,
+     "detail": "71 + 80 + 68 (ronde finale inconnue)",
+     "complete": false
+    },
+    "Andy": {
+     "pts": 148,
+     "detail": "53 + 53 + 42 (ronde finale inconnue)",
+     "complete": false
+    },
+    "Miles": {
+     "pts": 107,
+     "detail": "55 + 36 + 16 (ronde finale inconnue)",
+     "complete": false
+    },
+    "Raph": {
+     "pts": 107,
+     "detail": "42 + 53 + 12 (ronde finale inconnue)",
+     "complete": false
+    }
+   }
   },
   "2025-26": {
    "standings": [
@@ -939,6 +1045,28 @@
     "Oli Archam": "tour2",
     "Miles": "tour1",
     "Jay Lab": "tour1"
+   },
+   "series_pts": {
+    "Archy": {
+     "pts": 226,
+     "detail": "66 + 38 + 38 + 84",
+     "complete": true
+    },
+    "Jo": {
+     "pts": 167.5,
+     "detail": "47 + 52,5 + 44 + 24",
+     "complete": true
+    },
+    "Cabrera": {
+     "pts": 146,
+     "detail": "57 + 50 + 30 + 9",
+     "complete": true
+    },
+    "Andy": {
+     "pts": 142.5,
+     "detail": "53 + 55,5 + 10 + 24",
+     "complete": true
+    }
    }
   }
  },
