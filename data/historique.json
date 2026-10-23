@@ -1,0 +1,626 @@
+{
+ "version": 1,
+ "source": "Publications du groupe Facebook « Pool NHL » (2021 à 2026)",
+ "alias": {
+  "Archy": "Simon Archambault",
+  "Andy": "Andybros",
+  "Miles": "Milesstemarie",
+  "Cabrera": "Cabrera",
+  "Jay Lab": "Jaylab36",
+  "Godin": "Godino_01",
+  "Raph": "RaphDaoust",
+  "Pac": "Packydou",
+  "Le farmer": "LeFarmerr",
+  "Oli Archam": "Olivierarchambault66"
+ },
+ "entries": [
+  {
+   "season": "2020-21",
+   "category": "saison",
+   "place": 1,
+   "team_name": "Simon Archambault (Archy)",
+   "detail": "Grand gagnant de la saison · bourse 100 $",
+   "who": "Archy"
+  },
+  {
+   "season": "2020-21",
+   "category": "séries",
+   "place": 1,
+   "team_name": "Archy",
+   "detail": "Champion des séries 2021 · division Le Lait du Québec · 63, 36, puis 27 pts en finale",
+   "who": "Archy"
+  },
+  {
+   "season": "2020-21",
+   "category": "séries",
+   "place": 2,
+   "team_name": "Oli",
+   "detail": "Finaliste · division Hilti · 55, 30, puis 18 pts en finale",
+   "who": "Oli"
+  },
+  {
+   "season": "2020-21",
+   "category": "distinction",
+   "place": null,
+   "team_name": "Émile Ste-Marie (Miles)",
+   "detail": "1er de sa division · bourse 25 $",
+   "who": "Miles"
+  },
+  {
+   "season": "2020-21",
+   "category": "résumé",
+   "place": null,
+   "team_name": "Séries 2021",
+   "detail": "Division Le Lait du Québec : Archy 63 c. Ti-guy 53, Roch 37 c. Le grand 18 ; 2e tour : Archy 36 c. Roch 23. Division Hilti : Miles 51 c. Massif 37, Oli 55 c. Pac 43 ; 2e tour : Oli 30 c. Miles 7. Finale : Archy 27, Oli 18.",
+   "who": null
+  },
+  {
+   "season": "2022-23",
+   "category": "saison",
+   "place": 1,
+   "team_name": "Andy (Andy Brossard, « grelot »)",
+   "detail": "Champion de la saison · bourse 130 $",
+   "who": "Andy"
+  },
+  {
+   "season": "2022-23",
+   "category": "saison",
+   "place": 2,
+   "team_name": "Jay Lab",
+   "detail": "2e · bourse 30 $",
+   "who": "Jay Lab"
+  },
+  {
+   "season": "2022-23",
+   "category": "saison",
+   "place": 3,
+   "team_name": "Oli Gendron",
+   "detail": "3e",
+   "who": "Oli Gendron"
+  },
+  {
+   "season": "2022-23",
+   "category": "séries",
+   "place": 1,
+   "team_name": "Godin",
+   "detail": "Champion des séries 2023 · 5e de la saison · finale 32 pts c. Andy 7 pts",
+   "who": "Godin"
+  },
+  {
+   "season": "2022-23",
+   "category": "séries",
+   "place": 2,
+   "team_name": "Andy",
+   "detail": "Finaliste · 1er de la saison",
+   "who": "Andy"
+  },
+  {
+   "season": "2022-23",
+   "category": "résumé",
+   "place": null,
+   "team_name": "Séries 2023",
+   "detail": "1er tour : Andy (1) c. Daoust (8, 15 pts) → Andy ; Jay Lab (2) 74 pts c. Tiguy (7) 24 pts → Jay Lab ; Archy (6) 92 pts c. Oli Gendron (3) 65 pts → Archy ; Godin (5) 60 pts c. Miles (4) 42 pts → Godin. 2e tour : Andy c. Archy → Andy ; Godin c. Jay Lab → Godin. Finale : Godin 32 pts, Andy 7 pts.",
+   "who": null
+  },
+  {
+   "season": "2022-23",
+   "category": "classement",
+   "place": 1,
+   "team_name": "Andy",
+   "detail": "",
+   "who": "Andy"
+  },
+  {
+   "season": "2022-23",
+   "category": "classement",
+   "place": 2,
+   "team_name": "Jay Lab",
+   "detail": "",
+   "who": "Jay Lab"
+  },
+  {
+   "season": "2022-23",
+   "category": "classement",
+   "place": 3,
+   "team_name": "Oli Gendron",
+   "detail": "",
+   "who": "Oli Gendron"
+  },
+  {
+   "season": "2022-23",
+   "category": "classement",
+   "place": 4,
+   "team_name": "Émile",
+   "detail": "",
+   "who": "Miles"
+  },
+  {
+   "season": "2022-23",
+   "category": "classement",
+   "place": 5,
+   "team_name": "Godin",
+   "detail": "",
+   "who": "Godin"
+  },
+  {
+   "season": "2022-23",
+   "category": "classement",
+   "place": 6,
+   "team_name": "Simon",
+   "detail": "",
+   "who": "Archy"
+  },
+  {
+   "season": "2022-23",
+   "category": "classement",
+   "place": 7,
+   "team_name": "Tiguy",
+   "detail": "",
+   "who": "Ti-guy"
+  },
+  {
+   "season": "2022-23",
+   "category": "classement",
+   "place": 8,
+   "team_name": "Daoust",
+   "detail": "",
+   "who": "Raph"
+  },
+  {
+   "season": "2022-23",
+   "category": "classement",
+   "place": 9,
+   "team_name": "Nic",
+   "detail": "",
+   "who": "Nic"
+  },
+  {
+   "season": "2022-23",
+   "category": "classement",
+   "place": 10,
+   "team_name": "Myg",
+   "detail": "",
+   "who": "Cabrera"
+  },
+  {
+   "season": "2022-23",
+   "category": "classement",
+   "place": 11,
+   "team_name": "Hugo",
+   "detail": "",
+   "who": "Hugo"
+  },
+  {
+   "season": "2022-23",
+   "category": "classement",
+   "place": 12,
+   "team_name": "PAC",
+   "detail": "",
+   "who": "Pac"
+  },
+  {
+   "season": "2023-24",
+   "category": "saison",
+   "place": 1,
+   "team_name": "Cabrera (Oli Myg)",
+   "detail": "Trophée du président · 1115 pts · bourse remise",
+   "who": "Cabrera"
+  },
+  {
+   "season": "2023-24",
+   "category": "saison",
+   "place": 2,
+   "team_name": "Le grand",
+   "detail": "1045 pts (70 pts derrière)",
+   "who": "Le grand"
+  },
+  {
+   "season": "2023-24",
+   "category": "saison",
+   "place": 3,
+   "team_name": "Ti-guy",
+   "detail": "965 pts",
+   "who": "Ti-guy"
+  },
+  {
+   "season": "2023-24",
+   "category": "classement",
+   "place": 1,
+   "team_name": "Cabrera",
+   "detail": "1115 pts · 1147 PJ · moy. 0,97",
+   "who": "Cabrera"
+  },
+  {
+   "season": "2023-24",
+   "category": "classement",
+   "place": 2,
+   "team_name": "Le grand",
+   "detail": "1045 pts · 1122 PJ · moy. 0,93",
+   "who": "Le grand"
+  },
+  {
+   "season": "2023-24",
+   "category": "classement",
+   "place": 3,
+   "team_name": "Ti-guy",
+   "detail": "965 pts · 1051 PJ · moy. 0,92",
+   "who": "Ti-guy"
+  },
+  {
+   "season": "2023-24",
+   "category": "classement",
+   "place": 4,
+   "team_name": "Le gars de Québec",
+   "detail": "953 pts · 1084 PJ · moy. 0,88",
+   "who": "Andy"
+  },
+  {
+   "season": "2023-24",
+   "category": "classement",
+   "place": 5,
+   "team_name": "Pac",
+   "detail": "904 pts · 1136 PJ · moy. 0,80",
+   "who": "Pac"
+  },
+  {
+   "season": "2023-24",
+   "category": "classement",
+   "place": 6,
+   "team_name": "Archy",
+   "detail": "877 pts · 1033 PJ · moy. 0,85",
+   "who": "Archy"
+  },
+  {
+   "season": "2023-24",
+   "category": "classement",
+   "place": 7,
+   "team_name": "Le farmer",
+   "detail": "874 pts · 1135 PJ · moy. 0,77",
+   "who": "Le farmer"
+  },
+  {
+   "season": "2023-24",
+   "category": "classement",
+   "place": 8,
+   "team_name": "Oli Gendron",
+   "detail": "856 pts · 1042 PJ · moy. 0,82",
+   "who": "Oli Gendron"
+  },
+  {
+   "season": "2023-24",
+   "category": "classement",
+   "place": 9,
+   "team_name": "Miles",
+   "detail": "789 pts · 997 PJ · moy. 0,79",
+   "who": "Miles"
+  },
+  {
+   "season": "2023-24",
+   "category": "classement",
+   "place": 10,
+   "team_name": "Phil",
+   "detail": "756 pts · 953 PJ · moy. 0,79",
+   "who": "Phil"
+  },
+  {
+   "season": "2023-24",
+   "category": "classement",
+   "place": 11,
+   "team_name": "Raph",
+   "detail": "755 pts · 1050 PJ · moy. 0,72",
+   "who": "Raph"
+  },
+  {
+   "season": "2023-24",
+   "category": "classement",
+   "place": 12,
+   "team_name": "Jaylab",
+   "detail": "699 pts · 811 PJ · moy. 0,86",
+   "who": "Jay Lab"
+  },
+  {
+   "season": "2023-24",
+   "category": "classement",
+   "place": 13,
+   "team_name": "Godzzz",
+   "detail": "563 pts · 892 PJ · moy. 0,63",
+   "who": "Godin"
+  },
+  {
+   "season": "2024-25",
+   "category": "saison",
+   "place": 1,
+   "team_name": "Le gars de Québec (Andy)",
+   "detail": "Champion de la saison · 1026 pts",
+   "who": "Andy"
+  },
+  {
+   "season": "2024-25",
+   "category": "saison",
+   "place": 2,
+   "team_name": "Miles",
+   "detail": "956 pts",
+   "who": "Miles"
+  },
+  {
+   "season": "2024-25",
+   "category": "saison",
+   "place": 3,
+   "team_name": "Cabrera",
+   "detail": "921 pts",
+   "who": "Cabrera"
+  },
+  {
+   "season": "2024-25",
+   "category": "classement",
+   "place": 1,
+   "team_name": "Le gars de Québec",
+   "detail": "1026 pts · 1096 PJ",
+   "who": "Andy"
+  },
+  {
+   "season": "2024-25",
+   "category": "classement",
+   "place": 2,
+   "team_name": "Miles",
+   "detail": "956 pts · 1094 PJ",
+   "who": "Miles"
+  },
+  {
+   "season": "2024-25",
+   "category": "classement",
+   "place": 3,
+   "team_name": "Cabrera",
+   "detail": "921 pts · 1099 PJ",
+   "who": "Cabrera"
+  },
+  {
+   "season": "2024-25",
+   "category": "classement",
+   "place": 4,
+   "team_name": "Pac",
+   "detail": "918 pts · 1124 PJ",
+   "who": "Pac"
+  },
+  {
+   "season": "2024-25",
+   "category": "classement",
+   "place": 5,
+   "team_name": "Archy",
+   "detail": "901 pts · 1111 PJ",
+   "who": "Archy"
+  },
+  {
+   "season": "2024-25",
+   "category": "classement",
+   "place": 6,
+   "team_name": "Le grand",
+   "detail": "897 pts · 1105 PJ",
+   "who": "Le grand"
+  },
+  {
+   "season": "2024-25",
+   "category": "classement",
+   "place": 7,
+   "team_name": "Raph",
+   "detail": "896 pts · 1111 PJ",
+   "who": "Raph"
+  },
+  {
+   "season": "2024-25",
+   "category": "classement",
+   "place": 8,
+   "team_name": "Ti-guy",
+   "detail": "878 pts · 1083 PJ",
+   "who": "Ti-guy"
+  },
+  {
+   "season": "2024-25",
+   "category": "classement",
+   "place": 9,
+   "team_name": "Oli Gendron",
+   "detail": "868 pts · 1090 PJ",
+   "who": "Oli Gendron"
+  },
+  {
+   "season": "2024-25",
+   "category": "classement",
+   "place": 10,
+   "team_name": "Jaylab",
+   "detail": "814 pts · 1047 PJ",
+   "who": "Jay Lab"
+  },
+  {
+   "season": "2024-25",
+   "category": "classement",
+   "place": 11,
+   "team_name": "Oli Archam",
+   "detail": "699 pts · 856 PJ",
+   "who": "Oli Archam"
+  },
+  {
+   "season": "2024-25",
+   "category": "classement",
+   "place": 12,
+   "team_name": "Godzzz",
+   "detail": "698 pts · 1031 PJ",
+   "who": "Godin"
+  },
+  {
+   "season": "2024-25",
+   "category": "classement",
+   "place": 13,
+   "team_name": "Le farmer",
+   "detail": "650 pts · 1009 PJ",
+   "who": "Le farmer"
+  },
+  {
+   "season": "2024-25",
+   "category": "résumé",
+   "place": null,
+   "team_name": "Séries 2025",
+   "detail": "3e tour (points ×2) : Archy 219 pts (71 + 80 + 68), Andy 148 pts (53 + 53 + 42), Miles 107 pts (55 + 36 + 16), Raph 107 pts (42 + 53 + 12). Résultat de la ronde finale à compléter.",
+   "who": null
+  },
+  {
+   "season": "2025-26",
+   "category": "saison",
+   "place": 1,
+   "team_name": "Miles (Émile Ste-Marie)",
+   "detail": "Champion de la saison · 1012 pts",
+   "who": "Miles"
+  },
+  {
+   "season": "2025-26",
+   "category": "saison",
+   "place": 2,
+   "team_name": "Le gars de Québec (Andy)",
+   "detail": "1006 pts",
+   "who": "Andy"
+  },
+  {
+   "season": "2025-26",
+   "category": "saison",
+   "place": 3,
+   "team_name": "Cabrera",
+   "detail": "1005 pts",
+   "who": "Cabrera"
+  },
+  {
+   "season": "2025-26",
+   "category": "classement",
+   "place": 1,
+   "team_name": "Miles",
+   "detail": "1012 pts · 1087 PJ",
+   "who": "Miles"
+  },
+  {
+   "season": "2025-26",
+   "category": "classement",
+   "place": 2,
+   "team_name": "Le gars de Québec",
+   "detail": "1006 pts · 1105 PJ",
+   "who": "Andy"
+  },
+  {
+   "season": "2025-26",
+   "category": "classement",
+   "place": 3,
+   "team_name": "Cabrera",
+   "detail": "1005 pts · 1112 PJ",
+   "who": "Cabrera"
+  },
+  {
+   "season": "2025-26",
+   "category": "classement",
+   "place": 4,
+   "team_name": "Archy",
+   "detail": "956 pts · 1073 PJ",
+   "who": "Archy"
+  },
+  {
+   "season": "2025-26",
+   "category": "classement",
+   "place": 5,
+   "team_name": "Jo Meloche",
+   "detail": "899 pts · 1084 PJ",
+   "who": "Jo"
+  },
+  {
+   "season": "2025-26",
+   "category": "classement",
+   "place": 6,
+   "team_name": "Ti-guy",
+   "detail": "841 pts · 1029 PJ",
+   "who": "Ti-guy"
+  },
+  {
+   "season": "2025-26",
+   "category": "classement",
+   "place": 7,
+   "team_name": "Oli Archam",
+   "detail": "831 pts · 1068 PJ",
+   "who": "Oli Archam"
+  },
+  {
+   "season": "2025-26",
+   "category": "classement",
+   "place": 8,
+   "team_name": "Jaylab",
+   "detail": "822 pts · 984 PJ",
+   "who": "Jay Lab"
+  },
+  {
+   "season": "2025-26",
+   "category": "classement",
+   "place": 9,
+   "team_name": "Le grand",
+   "detail": "800 pts · 1027 PJ",
+   "who": "Le grand"
+  },
+  {
+   "season": "2025-26",
+   "category": "classement",
+   "place": 10,
+   "team_name": "Godzzz",
+   "detail": "776 pts · 1078 PJ",
+   "who": "Godin"
+  },
+  {
+   "season": "2025-26",
+   "category": "classement",
+   "place": 11,
+   "team_name": "Pac",
+   "detail": "769 pts · 933 PJ",
+   "who": "Pac"
+  },
+  {
+   "season": "2025-26",
+   "category": "classement",
+   "place": 12,
+   "team_name": "Le farmer",
+   "detail": "734 pts · 944 PJ",
+   "who": "Le farmer"
+  },
+  {
+   "season": "2025-26",
+   "category": "classement",
+   "place": 13,
+   "team_name": "Raph",
+   "detail": "591 pts · 977 PJ",
+   "who": "Raph"
+  },
+  {
+   "season": "2025-26",
+   "category": "séries",
+   "place": 1,
+   "team_name": "Archy",
+   "detail": "Grand gagnant des séries 2026 · 226 pts (66 + 38 + 38 + 84), ronde finale ×3",
+   "who": "Archy"
+  },
+  {
+   "season": "2025-26",
+   "category": "séries",
+   "place": 2,
+   "team_name": "Jo",
+   "detail": "167,5 pts (47 + 52,5 + 44 + 24)",
+   "who": "Jo"
+  },
+  {
+   "season": "2025-26",
+   "category": "séries",
+   "place": 3,
+   "team_name": "Myg (Cabrera)",
+   "detail": "146 pts (57 + 50 + 30 + 9)",
+   "who": "Cabrera"
+  },
+  {
+   "season": "2025-26",
+   "category": "séries",
+   "place": 4,
+   "team_name": "Andy",
+   "detail": "142,5 pts (53 + 55,5 + 10 + 24)",
+   "who": "Andy"
+  }
+ ]
+}

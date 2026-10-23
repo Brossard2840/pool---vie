@@ -276,6 +276,10 @@ et « → équipe » quand le choix a été échangé.
 - **🏅 Trophées de la semaine** : pooler et joueur de la semaine (lundi au dimanche, tous les points de
   l'alignement), plus deux votes de la gang (coup de la semaine, pire transaction). Décernés chaque
   lundi, publiés sur le mur, gardés au palmarès.
+- **🏆 Temple de la renommée — historique** (`data/historique.json`) : saisons et séries depuis 2020-21,
+  compilées des publications du groupe Facebook (podiums, bourses, classements complets, résumés des
+  séries) et palmarès par pooler (un même pooler sous ses surnoms : Archy = Simon Archambault, etc.).
+  Modifier le fichier et augmenter « version » pour recharger l'historique.
 - **🏆 Temple de la renommée** : podium de la saison et des séries (bouton « Clôturer la saison » du
   commissaire, avec les bourses), entrées manuelles pour les saisons passées, et records calculés
   (meilleur match d'un joueur, plus gros échange, pooler le plus actif, meilleure semaine).

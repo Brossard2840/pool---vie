@@ -1524,13 +1524,45 @@ const vHall = run(async () => {
   H.entries.forEach(e => (bySeason[e.season] = bySeason[e.season] || []).push(e));
   const icon = { 1: '🏆', 2: '🥈', 3: '🥉' };
   const R = H.records;
+  // Une même personne sous plusieurs surnoms (Archy, Simon…) : « who » regroupe ; l'alias donne l'équipe d'aujourd'hui.
+  const reverse = Object.fromEntries(Object.entries(H.alias || {}).map(([k, v]) => [v, k]));
+  const person = e => e.who || reverse[e.team_name] || e.team_name;
+  const today = who => H.alias && H.alias[who] ? team(S.teams.find(t => t.name === H.alias[who])?.id) : null;
+  const yearOf = (season, cat) => cat === 'séries' ? '20' + season.slice(-2) : season;
+  const P = {};
+  for (const e of H.entries) {
+    if (!['saison', 'séries'].includes(e.category) || !e.place || e.place > 3) continue;
+    const k = person(e); P[k] = P[k] || { saison: [], séries: [], podiums: 0 };
+    if (e.place === 1) P[k][e.category].push(yearOf(e.season, e.category)); P[k].podiums++;
+  }
+  const palmares = Object.entries(P).sort((a, b) => (b[1].saison.length + b[1].séries.length) - (a[1].saison.length + a[1].séries.length) || b[1].podiums - a[1].podiums);
+  const pal = palmares.length ? `<div class="card"><h3>Palmarès depuis 2020-21</h3>${palmares.map(([who, x]) => { const t = today(who); return `<div class="medal">
+      <div class="m">${x.saison.length + x.séries.length ? '🏆' : '🏅'}</div>
+      <div class="grow"><b>${esc(who)}</b>${t ? ` <span class="muted" style="font-size:12px">· ${tname(t, 16)}</span>` : ''}
+        <div class="meta" style="font-size:12px;color:var(--dim);margin-top:2px">${x.saison.length ? `🏆 Saison ${x.saison.sort().map(esc).join(', ')}` : ''}${x.saison.length && x.séries.length ? ' · ' : ''}${x.séries.length ? `🏆 Séries ${x.séries.sort().map(esc).join(', ')}` : ''}${!x.saison.length && !x.séries.length ? 'Sur le podium' : ''}</div></div>
+      <div style="text-align:right;white-space:nowrap;flex:none">${x.saison.length + x.séries.length ? `<b style="font-size:20px">${x.saison.length + x.séries.length}</b><div style="font-size:11px;color:var(--dim)">titre${x.saison.length + x.séries.length > 1 ? 's' : ''}</div>` : ''}<div style="font-size:11px;color:var(--dim)">${x.podiums} podium${x.podiums > 1 ? 's' : ''}</div></div></div>`; }).join('')}
+    <p class="muted" style="font-size:12px;margin:6px 0 0">Titres de la saison et des séries ; podiums = top 3.</p></div>` : '';
+  const seasons = Object.keys(bySeason).sort().reverse();
+  const card = season => {
+    const list = bySeason[season];
+    const sec = (cat, title) => { const l = list.filter(e => e.category === cat).sort((a, b) => (a.place || 99) - (b.place || 99)); return l.length ? `
+      <div class="muted" style="font-size:12px;text-transform:uppercase;margin:10px 0 2px">${title}</div>
+      ${l.map(e => `<div class="medal"><div class="m">${icon[e.place] || (e.place ? `<b style="font-size:16px">${e.place}e</b>` : '⭐')}</div><div class="grow"><b>${esc(e.team_name)}</b>${cat === 'autre' ? ` <span class="muted">· ${esc(e.category)}</span>` : ''}<div class="meta">${esc(e.detail || '')}</div></div>
+        ${S.me.isAdmin && e.source !== 'historique' ? `<a class="link" onclick="hallDelete(${e.id})">✕</a>` : ''}</div>`).join('')}` : ''; };
+    const resume = list.filter(e => e.category === 'résumé');
+    const full = list.filter(e => e.category === 'classement').sort((a, b) => a.place - b.place);
+    const others = list.filter(e => !['saison', 'séries', 'distinction', 'résumé', 'classement'].includes(e.category));
+    return `<div class="card"><h3>Saison ${esc(season)}</h3>
+      ${sec('saison', 'Saison régulière')}${sec('séries', 'Séries éliminatoires ' + yearOf(season, 'séries'))}${sec('distinction', 'Distinctions')}
+      ${others.length ? sec(others[0].category, 'Autres') : ''}
+      ${resume.map(e => `<div class="pc-card" style="margin:10px 0 0;font-size:13px"><b>${esc(e.team_name)}</b><br>${esc(e.detail || '')}</div>`).join('')}
+      ${full.length ? `<details style="margin-top:10px"><summary>Classement complet (${full.length} poolers)</summary>
+        <div class="tblw" style="margin:8px 0 0"><table class="tbl"><tr><th class="c">#</th><th>Pooler</th><th>Points</th></tr>
+        ${full.map(e => `<tr><td class="c"><b>${e.place}</b></td><td>${esc(e.team_name)}</td><td class="muted" style="font-size:13px">${esc(e.detail || '—')}</td></tr>`).join('')}</table></div></details>` : ''}</div>`;
+  };
   $('#view').innerHTML = `<h2 class="title">🏆 Temple de la renommée</h2>
-    ${Object.entries(bySeason).map(([season, list]) => `<div class="card"><h3>Saison ${esc(season)}</h3>
-      ${['saison', 'séries', 'autre'].map(cat => { const l = list.filter(e => (cat === 'autre' ? !['saison', 'séries'].includes(e.category) : e.category === cat)); return l.length ? `
-        <div class="muted" style="font-size:12px;text-transform:uppercase;margin:8px 0 2px">${cat === 'saison' ? 'Saison régulière' : cat === 'séries' ? 'Séries éliminatoires' : 'Distinctions'}</div>
-        ${l.map(e => `<div class="medal"><div class="m">${icon[e.place] || '⭐'}</div><div class="grow"><b>${esc(e.team_name)}</b>${e.category !== 'saison' && e.category !== 'séries' ? ` <span class="muted">· ${esc(e.category)}</span>` : ''}<div class="meta">${esc(e.detail || '')}</div></div>
-          ${S.me.isAdmin ? `<a class="link" onclick="hallDelete(${e.id})">✕</a>` : ''}</div>`).join('')}` : ''; }).join('')}</div>`).join('')
-      || '<p class="muted">Les champions s\'inscrivent ici à la fin de chaque saison.</p>'}
+    ${pal}
+    ${seasons.map(card).join('') || '<p class="muted">Les champions s\'inscrivent ici à la fin de chaque saison.</p>'}
     <div class="card"><h3>Records</h3>
       <div class="muted" style="font-size:12px;text-transform:uppercase">Meilleur match d'un joueur du pool</div>
       ${R.bestGame.map((g, i) => `<div class="pl"><span>${['🥇','🥈','🥉'][i]} <b>${esc(g.name)}</b> · ${String(g.game_date).slice(0, 10)}</span><span><b>${g.pts} pts</b> (${g.goals} B, ${g.assists} A)</span></div>`).join('') || '<p class="muted">—</p>'}
