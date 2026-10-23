@@ -135,6 +135,11 @@
   .stat .v{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px;}
   .bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin:6px 0 2px;}
   .bar i{display:block;height:100%;background:var(--green);} .bar i.over{background:var(--red);}
+  .annonce{position:relative;background:linear-gradient(135deg,var(--panel-2),var(--panel));border:1px solid var(--gold);border-left:5px solid var(--gold);border-radius:14px;padding:12px 38px 12px 14px;margin:0 0 14px;}
+  .annonce .at{font-size:11px;color:var(--gold);font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;}
+  .annonce .tt{font-weight:800;font-size:16px;margin-bottom:4px;}
+  .annonce .bd{white-space:pre-wrap;font-size:14px;line-height:1.4;}
+  .annonce .x{position:absolute;top:8px;right:8px;background:transparent;border:none;color:var(--dim);font-size:18px;padding:4px 8px;}
   .issues{background:var(--bad-bg);border:1px solid var(--bad-line);color:var(--bad-ink);border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px;}
   .okbox{background:var(--ok-bg);border:1px solid var(--ok-line);color:var(--ok-ink);border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px;}
   .muted{color:var(--dim);font-size:13px;}
@@ -612,6 +617,13 @@ const vPlayoffs = run(async () => {
     <p class="muted">Ronde 1 : les 6 meilleures passent. Ronde 2 (cumulée) : les 4 meilleures passent. Le plus haut cumulatif des 4 finalistes est champion des séries.
       Pointage des séries : buts, passes, 2 pts par victoire et 1 par blanchissage (pas de point en prolongation, art. 2.2). Égalité : points par match, puis buts (art. 7.3). Touchez une équipe pour le détail.</p>`;
 });
+// Mot du commissaire en haut du classement, jusqu'à ce que le pooler le ferme (ou l'échéance).
+function annonceHtml(){
+  const a = S.annonce;
+  if (!a || localStorageGet('pav_annonce_vu') === String(a.id)) return '';
+  return `<div class="annonce"><div class="at">📢 Mot du commissaire · ${ago(a.at)}</div><div class="tt">${esc(a.title)}</div><div class="bd">${esc(a.body)}</div>
+    <button class="x" onclick="localStorageSet('pav_annonce_vu','${a.id}');this.parentNode.remove()" aria-label="Fermer">✕</button></div>`;
+}
 function vStandings(){
   if (standMode === 'series') return vPlayoffs();
   const rows = S.teams.map(t => `
@@ -624,7 +636,7 @@ function vStandings(){
       <div class="pts day"><small>Jour</small><b id="dp-${t.id}">—</b></div>
     </div>`).join('');
   $('#view').innerHTML = `
-    <h2 class="title">Classement</h2>${standSeg()}
+    <h2 class="title">Classement</h2>${annonceHtml()}${standSeg()}
     ${rows || '<div class="empty">Aucune équipe.</div>'}
     <p class="muted">Seuls les 9 meilleurs attaquants, 4 meilleurs défenseurs et 2 meilleurs gardiens de chaque équipe comptent (art. 2.3).
     Égalité : points par match, puis buts (art. 6.2). Stats officielles de la LNH, mises à jour aux ${S.config.refreshMinutes} minutes.
@@ -2398,6 +2410,18 @@ const vMoves = run(async () => {
 });
 
 // ---------- Commissaire ----------
+const sendAnnonce = run(async (btn) => {
+  const body = $('#anBody').value.trim();
+  if (!body) { toast('Écris un message'); return; }
+  if (!confirm('Envoyer ce message à tout le monde ?')) return;
+  btn.disabled = true;
+  await api('/api/admin/annonce', { title: $('#anTitle').value, body, days: Number($('#anDays').value) });
+  toast('Message publié'); await loadState(); vAdmin();
+});
+const removeAnnonce = run(async () => {
+  await apiDelete('/api/admin/annonce');
+  toast('Bannière retirée'); await loadState(); vAdmin();
+});
 const vAdmin = run(async () => {
   if (!S.me.isAdmin) { location.hash = '#/plus'; return; }
   const teams = await api('/api/admin/teams');
@@ -2405,6 +2429,16 @@ const vAdmin = run(async () => {
   const sorted = S.teams.slice().sort((a,b) => a.name.localeCompare(b.name, 'fr'));
   $('#view').innerHTML = `
     <h2 class="title">Commissaire</h2>
+
+    <div class="card"><h3>📢 Mot du commissaire</h3>
+      <p class="muted">Message envoyé à tout le monde : notification sur chaque téléphone abonné, bannière en haut du classement et publication sur le mur.</p>
+      ${S.annonce ? `<div class="annonce" style="margin-top:6px"><div class="at">En ligne · ${ago(S.annonce.at)}${S.annonce.until ? ' · jusqu\'au ' + fmtDate(S.annonce.until) : ''}</div><div class="tt">${esc(S.annonce.title)}</div><div class="bd">${esc(S.annonce.body)}</div></div>
+        <button class="btn small ghost" style="margin-bottom:12px" onclick="removeAnnonce()">Retirer la bannière</button>` : ''}
+      <input id="anTitle" maxlength="80" placeholder="Titre (facultatif) : Mot du commissaire" style="margin-bottom:8px">
+      <textarea id="anBody" maxlength="1000" rows="4" placeholder="Bonjour la gang, …" style="margin-bottom:8px;font:inherit;width:100%"></textarea>
+      <div class="row"><select id="anDays"><option value="1">Bannière 1 jour</option><option value="3" selected>Bannière 3 jours</option><option value="7">Bannière 7 jours</option><option value="0">Jusqu'à ce que je la retire</option></select>
+        <button class="btn small" style="flex:0;white-space:nowrap" onclick="sendAnnonce(this)">Publier</button></div>
+    </div>
 
     <div class="card"><h3>Codes d'accès des poolers</h3>
       <p class="muted">Chaque équipe entre avec son code. « Nouveau code » remplace l'ancien et déconnecte ses appareils.
@@ -2689,7 +2723,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 document.addEventListener('visibilitychange', () => { if (!document.hidden && S && !$('#sheet').classList.contains('open')) { refresh().catch(() => {}); pollNotifications(); } });
 
 // ---------- Notifications ----------
-const NOTIF_ICON = { wall: '💬', trade: '🚨', offer: '📨', waiver: '⏳', freeagent: '🆕', draft: '🎲', protection: '🛡️', highlight: '🔥', standings: '👑', admin: '🔑', reminder: '⏰', alert: '⚠️', summary: '☀️', nhl: '🔁' };
+const NOTIF_ICON = { annonce: '📢', wall: '💬', trade: '🚨', offer: '📨', waiver: '⏳', freeagent: '🆕', draft: '🎲', protection: '🛡️', highlight: '🔥', standings: '👑', admin: '🔑', reminder: '⏰', alert: '⚠️', summary: '☀️', nhl: '🔁' };
 let notifLast = Number(localStorageGet('pav_notif_last')) || 0, notifTimer = null, audioCtx = null;
 // Le son ne peut jouer qu'après un premier toucher de l'écran (règle des navigateurs).
 document.addEventListener('pointerdown', () => {

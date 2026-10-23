@@ -544,7 +544,7 @@ async function buildLeague() {
 app.get('/api/state', h(async (req, res) => {
   const league = await buildLeague();
   res.json({ me: req.me, pendingTrades: await trades.pendingCount(req.me), pendingProtection: await protection.pendingFor(req.me.teamId),
-    draft: await draft.status(), unreadNotifications: await notifier.unread(req.me), block: await block.ids(), ...league });
+    draft: await draft.status(), unreadNotifications: await notifier.unread(req.me), block: await block.ids(), annonce: await currentAnnonce(), ...league });
 }));
 
 app.get('/api/players', h(async (req, res) => {
@@ -1024,6 +1024,29 @@ admin.post('/stats/refresh', h(async (req, res) => {
   if (await live.isReady()) await live.sync({ force: true });
   else live.backfill().catch(e => console.error('Rattrapage :', e.message));
   res.json(result);
+}));
+
+// Mot du commissaire : message libre envoyé à tous (notification sur chaque téléphone, même si la personne a coupé
+// les autres catégories), affiché en bannière sur le classement jusqu'à l'échéance choisie, et publié sur le mur.
+async function currentAnnonce() {
+  const a = JSON.parse((await getConfig('annonce')) || 'null');
+  return a && (!a.until || Date.parse(a.until) > Date.now()) ? a : null;
+}
+admin.post('/annonce', h(async (req, res) => {
+  const body = String(req.body.body || '').trim().slice(0, 1000);
+  const title = String(req.body.title || '').trim().slice(0, 80) || 'Mot du commissaire';
+  if (!body) return res.status(400).json({ error: 'Écris un message' });
+  const days = Number(req.body.days);
+  const until = days > 0 ? new Date(Date.now() + Math.min(days, 60) * 86400000).toISOString() : null;
+  const n = await notify({ kind: 'annonce', title: `📢 ${title}`, body, link: '#/classement' });
+  const a = { id: n ? n.id : Date.now(), title, body, at: new Date().toISOString(), until };
+  await setConfig('annonce', JSON.stringify(a));
+  if (fun) fun.autoPost(`📢 ${title}\n${body}`, '#/classement', `wall:annonce:${a.id}`).catch(() => {});
+  res.json({ ok: true, annonce: a });
+}));
+admin.delete('/annonce', h(async (req, res) => {
+  await setConfig('annonce', 'null');
+  res.json({ ok: true });
 }));
 
 app.use('/api/admin', admin);
