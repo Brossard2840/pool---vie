@@ -2,7 +2,7 @@
 <path d="M256 44 L446 98 L446 252 Q446 404 256 478 Q66 404 66 252 L66 98 Z" fill="#003da5" stroke="#ffffff" stroke-width="10"/>
 <path d="M256 66 L426 114 L426 252 Q426 386 256 454 Q86 386 86 252 L86 114 Z" fill="none" stroke="#ffffff" stroke-width="3" opacity=".8"/>
 <g transform="translate(204.0 74) scale(1.04)"><g fill="#ffffff"><path d="M50 3 C59 15 64 31 58 52 L50 52 Z M46 52 C40 36 25 26 14 32 C3 39 5 57 17 61 C25 64 31 58 29 52 C27 47 21 47 20 52 C15 46 20 38 28 40 C36 42 42 50 44 56 Z M47 65 C39 66 31 71 27 82 C36 79 43 75 48 69 Z"/><path d="M50 3 C59 15 64 31 58 52 L50 52 Z M46 52 C40 36 25 26 14 32 C3 39 5 57 17 61 C25 64 31 58 29 52 C27 47 21 47 20 52 C15 46 20 38 28 40 C36 42 42 50 44 56 Z M47 65 C39 66 31 71 27 82 C36 79 43 75 48 69 Z" transform="translate(100 0) scale(-1 1)"/><rect x="29" y="54" width="42" height="9" rx="2.5"/><path d="M50 62 C55 69 54 78 50 90 C46 78 45 69 50 62 Z"/></g></g>
-<g transform="translate(256 296) scale(0.6)"><g transform="rotate(-30) translate(0 -20)"><g><rect x="-10" y="-215" width="20" height="360" rx="6" fill="#c8915a" stroke="#4a0d12" stroke-width="4"/>
+<g transform="translate(256 284) scale(0.6)"><g transform="rotate(-30) translate(0 -20)"><g><rect x="-10" y="-215" width="20" height="360" rx="6" fill="#c8915a" stroke="#4a0d12" stroke-width="4"/>
   <rect x="-10" y="-215" width="20" height="40" rx="5" fill="#ffffff"/><rect x="-10" y="-200" width="20" height="5" fill="#4a0d12" opacity=".35"/>
   <path d="M-10 138 L-10 170 Q-10 192 12 192 L112 192 Q128 192 128 176 L128 166 Q128 152 112 152 L10 152 L10 138 Z" fill="#c8915a" stroke="#4a0d12" stroke-width="4"/>
   <rect x="30" y="154" width="74" height="36" fill="#1b1b1b" opacity=".9"/>
@@ -11,14 +11,13 @@
   <path d="M-10 138 L-10 170 Q-10 192 12 192 L112 192 Q128 192 128 176 L128 166 Q128 152 112 152 L10 152 L10 138 Z" fill="#c8915a" stroke="#4a0d12" stroke-width="4"/>
   <rect x="30" y="154" width="74" height="36" fill="#1b1b1b" opacity=".9"/>
   <path d="M42 154 L42 190 M56 154 L56 190 M70 154 L70 190 M84 154 L84 190" stroke="#fff" stroke-width="2" opacity=".25"/></g></g></g>
-<g><ellipse cx="256" cy="295.76" rx="92" ry="31.28" fill="#0d0d0d"/>
-  <rect x="164" y="270" width="184" height="25.76" fill="#1b1b1b"/>
-  <path d="M164 282.88 h184" stroke="#333" stroke-width="3.68"/>
-  <ellipse cx="256" cy="270" rx="92" ry="31.28" fill="#2b2b2b"/>
-  <ellipse cx="256" cy="270" rx="73.60000000000001" ry="25.024" fill="none" stroke="#ffffff" stroke-width="4.6000000000000005"/>
-  <text x="256" y="286.56" text-anchor="middle" font-family="Inter Display" font-weight="900" font-size="46" fill="#ffffff" letter-spacing="2">PAV</text></g>
-<path d="M70 336 L442 336 L424 368 L442 400 L70 400 L88 368 Z" fill="#ffffff" stroke="#00296e" stroke-width="5"/>
-<path d="M70 336 L40 354 L70 368 Z M442 336 L472 354 L442 368 Z" fill="#c9d6ea"/>
-<text x="256" y="383" text-anchor="middle" font-family="Inter Display" font-weight="900" font-size="44" fill="#003da5" letter-spacing="3">POOL À VIE</text>
-<g transform="translate(234.0 410) scale(0.44)"><g fill="#ffffff"><path d="M50 3 C59 15 64 31 58 52 L50 52 Z M46 52 C40 36 25 26 14 32 C3 39 5 57 17 61 C25 64 31 58 29 52 C27 47 21 47 20 52 C15 46 20 38 28 40 C36 42 42 50 44 56 Z M47 65 C39 66 31 71 27 82 C36 79 43 75 48 69 Z"/><path d="M50 3 C59 15 64 31 58 52 L50 52 Z M46 52 C40 36 25 26 14 32 C3 39 5 57 17 61 C25 64 31 58 29 52 C27 47 21 47 20 52 C15 46 20 38 28 40 C36 42 42 50 44 56 Z M47 65 C39 66 31 71 27 82 C36 79 43 75 48 69 Z" transform="translate(100 0) scale(-1 1)"/><rect x="29" y="54" width="42" height="9" rx="2.5"/><path d="M50 62 C55 69 54 78 50 90 C46 78 45 69 50 62 Z"/></g></g>
+<g><ellipse cx="256" cy="287.76" rx="92" ry="31.28" fill="#0d0d0d"/>
+  <rect x="164" y="262" width="184" height="25.76" fill="#1b1b1b"/>
+  <path d="M164 274.88 h184" stroke="#333" stroke-width="3.68"/>
+  <ellipse cx="256" cy="262" rx="92" ry="31.28" fill="#2b2b2b"/>
+  <ellipse cx="256" cy="262" rx="73.60000000000001" ry="25.024" fill="none" stroke="#ffffff" stroke-width="4.6000000000000005"/>
+  <text x="256" y="278.56" text-anchor="middle" font-family="Inter Display" font-weight="900" font-size="46" fill="#ffffff" letter-spacing="2">PAV</text></g>
+<path d="M70 398 L442 398 L426 426 L442 454 L70 454 L86 426 Z" fill="#ffffff" stroke="#00296e" stroke-width="5"/>
+<path d="M70 398 L42 414 L70 426 Z M442 398 L470 414 L442 426 Z" fill="#c9d6ea"/>
+<text x="256" y="440" text-anchor="middle" font-family="Inter Display" font-weight="900" font-size="40" fill="#003da5" letter-spacing="3">POOL À VIE</text>
 </svg>

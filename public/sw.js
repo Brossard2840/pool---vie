@@ -1,7 +1,7 @@
 // Service worker : rend l'application installable et garde la coquille en cache.
 // Les données (/api) ne sont jamais mises en cache : on veut toujours les stats à jour.
-const CACHE = 'pav-v24';
-const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icons/icon-192-v4.png', '/logo.png', '/logo-mark.png'];
+const CACHE = 'pav-v25';
+const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icons/icon-192-v5.png', '/logo.png', '/logo-mark.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(SHELL.map(u => fetch(u, { cache: 'no-store' }).then(res => {
@@ -51,7 +51,7 @@ self.addEventListener('push', e => {
   let d = {};
   try { d = e.data.json(); } catch { d = { title: 'Pool à vie', body: e.data && e.data.text() }; }
   e.waitUntil(self.registration.showNotification(d.title || 'Pool à vie', {
-    body: d.body || '', icon: '/icons/icon-192-v4.png', badge: '/icons/icon-192-v4.png', tag: d.tag, data: { url: d.url || '/' },
+    body: d.body || '', icon: '/icons/icon-192-v5.png', badge: '/icons/icon-192-v5.png', tag: d.tag, data: { url: d.url || '/' },
     vibrate: d.kind === 'trade' ? [300, 120, 300, 120, 600] : [200], requireInteraction: d.kind === 'trade'
   }));
 });
