@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" fill="#4a0d12"/>
+<path d="M256 44 L446 98 L446 252 Q446 404 256 478 Q66 404 66 252 L66 98 Z" fill="#7d1a1f" stroke="#f3e6c9" stroke-width="10"/>
+<path d="M256 66 L426 114 L426 252 Q426 386 256 454 Q86 386 86 252 L86 114 Z" fill="none" stroke="#d9a441" stroke-width="4"/>
+<polygon points="206.0,414.0 209.2,421.6 217.4,422.3 211.1,427.7 213.1,435.7 206.0,431.4 198.9,435.7 200.9,427.7 194.6,422.3 202.8,421.6" fill="#d9a441"/><polygon points="256.0,423.0 260.0,432.5 270.3,433.4 262.4,440.1 264.8,450.1 256.0,444.8 247.2,450.1 249.6,440.1 241.7,433.4 252.0,432.5" fill="#d9a441"/><polygon points="306.0,414.0 309.2,421.6 317.4,422.3 311.1,427.7 313.1,435.7 306.0,431.4 298.9,435.7 300.9,427.7 294.6,422.3 302.8,421.6" fill="#d9a441"/>
+<defs><path id="arcA" d="M128 236 A128 128 0 0 1 384 236"/></defs>
+  <text font-family="DejaVu Serif" font-weight="700" font-size="30" fill="#f3e6c9" letter-spacing="5"><textPath href="#arcA" startOffset="50%" text-anchor="middle">LA GANG DU</textPath></text>
+<g transform="translate(256 290) scale(0.6)"><g transform="rotate(-30) translate(0 -20)"><g><rect x="-10" y="-215" width="20" height="360" rx="6" fill="#c8915a" stroke="#4a0d12" stroke-width="4"/>
+  <rect x="-10" y="-215" width="20" height="40" rx="5" fill="#f3e6c9"/><rect x="-10" y="-200" width="20" height="5" fill="#4a0d12" opacity=".35"/>
+  <path d="M-10 138 L-10 170 Q-10 192 12 192 L112 192 Q128 192 128 176 L128 166 Q128 152 112 152 L10 152 L10 138 Z" fill="#c8915a" stroke="#4a0d12" stroke-width="4"/>
+  <rect x="30" y="154" width="74" height="36" fill="#1b1b1b" opacity=".9"/>
+  <path d="M42 154 L42 190 M56 154 L56 190 M70 154 L70 190 M84 154 L84 190" stroke="#fff" stroke-width="2" opacity=".25"/></g></g><g transform="rotate(30) scale(-1 1) translate(0 -20)"><g><rect x="-10" y="-215" width="20" height="360" rx="6" fill="#c8915a" stroke="#4a0d12" stroke-width="4"/>
+  <rect x="-10" y="-215" width="20" height="40" rx="5" fill="#f3e6c9"/><rect x="-10" y="-200" width="20" height="5" fill="#4a0d12" opacity=".35"/>
+  <path d="M-10 138 L-10 170 Q-10 192 12 192 L112 192 Q128 192 128 176 L128 166 Q128 152 112 152 L10 152 L10 138 Z" fill="#c8915a" stroke="#4a0d12" stroke-width="4"/>
+  <rect x="30" y="154" width="74" height="36" fill="#1b1b1b" opacity=".9"/>
+  <path d="M42 154 L42 190 M56 154 L56 190 M70 154 L70 190 M84 154 L84 190" stroke="#fff" stroke-width="2" opacity=".25"/></g></g></g>
+<g><ellipse cx="256" cy="287.76" rx="92" ry="31.28" fill="#0d0d0d"/>
+  <rect x="164" y="262" width="184" height="25.76" fill="#1b1b1b"/>
+  <path d="M164 274.88 h184" stroke="#333" stroke-width="3.68"/>
+  <ellipse cx="256" cy="262" rx="92" ry="31.28" fill="#2b2b2b"/>
+  <ellipse cx="256" cy="262" rx="73.60000000000001" ry="25.024" fill="none" stroke="#d9a441" stroke-width="4.6000000000000005"/>
+  <text x="256" y="278.56" text-anchor="middle" font-family="Inter Display" font-weight="900" font-size="46" fill="#f3e6c9" letter-spacing="2">PAV</text></g>
+<path d="M70 330 L442 330 L424 362 L442 394 L70 394 L88 362 Z" fill="#d9a441" stroke="#4a0d12" stroke-width="5"/>
+<path d="M70 330 L40 348 L70 362 Z M442 330 L472 348 L442 362 Z" fill="#a87a2c"/>
+<text x="256" y="377" text-anchor="middle" font-family="Inter Display" font-weight="900" font-size="44" fill="#4a0d12" letter-spacing="3">POOL À VIE</text>
+</svg>

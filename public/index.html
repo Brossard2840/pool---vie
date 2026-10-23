@@ -26,9 +26,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Pool à vie">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/logo.svg" type="image/svg+xml">
-<link rel="icon" href="/icons/icon-192-v2.png" sizes="192x192">
-<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-v2.png">
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="icon" href="/icons/icon-192-v3.png" sizes="192x192">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-v3.png">
 <title>Pool à vie</title>
 <style>
   /* Thèmes : sombre (par défaut) et clair. html[data-theme] est fixé au chargement (réglage ou mode du téléphone). */
@@ -369,7 +369,7 @@
 <body>
 
 <header class="top" id="top" hidden>
-  <div class="brand"><img class="logo" src="/logo-mark.svg" alt=""><div><h1>POOL À VIE</h1><div class="sub" id="updated">—</div></div></div>
+  <div class="brand"><img class="logo" src="/logo-mark.png" alt=""><div><h1>POOL À VIE</h1><div class="sub" id="updated">—</div></div></div>
   <div style="display:flex;align-items:center;gap:12px">
     <a class="bell" href="#/notifications" aria-label="Notifications">🔔<span class="badge" id="bellBadge" hidden></span></a>
     <a class="bell gear" href="#/reglages" aria-label="Réglages">⚙️</a>
@@ -435,7 +435,7 @@ function wakeScreen(on){
   if (!on) { if (el) el.remove(); return; }
   if (el) return;
   el = document.createElement('div'); el.id = 'wake';
-  el.innerHTML = `<img src="/logo.svg" alt=""><b>Réveil du serveur…</b><span>Le serveur gratuit faisait la sieste. Ça prend environ 30 secondes, une seule fois.</span><i></i>`;
+  el.innerHTML = `<img src="/logo.png" alt=""><b>Réveil du serveur…</b><span>Le serveur gratuit faisait la sieste. Ça prend environ 30 secondes, une seule fois.</span><i></i>`;
   document.body.appendChild(el);
 }
 async function api(path, body){
@@ -470,7 +470,7 @@ async function showLogin(){
   const saved = localStorageGet('pav_team');
   $('#view').innerHTML = `
     <div class="login">
-      <img class="logo" src="/logo.svg" alt="Pool à vie">
+      <img class="logo" src="/logo.png" alt="Pool à vie">
       <h2 class="title" style="text-align:center">Pool à vie</h2>
       <div class="card">
         <label class="f">Mon équipe</label>
