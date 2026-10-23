@@ -5,17 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b1622">
 <script>
-// Thème avant l'affichage (évite un éclair de la mauvaise couleur) : réglage « pav_theme » ou mode du téléphone.
+// Thème avant l'affichage (évite un éclair de la mauvaise couleur) : réglage « pav_theme ».
+// « auto » : sombre le soir et la nuit (19 h à 7 h), ou le jour si le téléphone est en mode sombre ; « phone » : mode du téléphone seulement.
 (function(){
   var t = 'auto'; try { t = localStorage.getItem('pav_theme') || 'auto'; } catch (e) {}
   var mq = window.matchMedia('(prefers-color-scheme: light)');
   function apply(){
-    var d = t === 'auto' ? (mq.matches ? 'light' : 'dark') : t;
+    var h = new Date().getHours(), night = h >= 19 || h < 7;
+    var d = t === 'auto' ? (night || !mq.matches ? 'dark' : 'light') : t === 'phone' ? (mq.matches ? 'light' : 'dark') : t;
     document.documentElement.setAttribute('data-theme', d);
     var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', d === 'light' ? '#eef2f7' : '#0b1622');
   }
   apply();
-  if (mq.addEventListener) mq.addEventListener('change', function(){ if (t === 'auto') apply(); });
+  if (mq.addEventListener) mq.addEventListener('change', function(){ if (t === 'auto' || t === 'phone') apply(); });
+  // L'heure change pendant que l'application reste ouverte (ou revient de l'arrière-plan).
+  setInterval(function(){ if (t === 'auto') apply(); }, 60000);
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden && t === 'auto') apply(); });
   window.setTheme = function(v){ t = v; try { localStorage.setItem('pav_theme', v); } catch (e) {} apply(); };
   window.themePref = function(){ return t; };
 })();
@@ -105,6 +110,7 @@
   .seg{display:flex;background:var(--ice);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin-bottom:10px;}
   .seg button{flex:1;background:transparent;border:none;color:var(--dim);padding:8px 4px;border-radius:7px;font-size:13px;font-weight:600;}
   .seg button.on{background:var(--panel-2);color:var(--text);}
+  .seg.tight button{font-size:12px;white-space:nowrap;padding:8px 2px;}
   .list{display:flex;flex-direction:column;}
   .item{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line-soft);cursor:pointer;}
   .item:last-child{border-bottom:none;}
@@ -2743,8 +2749,8 @@ const vSettings = run(async () => {
 
     <div class="sechd">🎨 Apparence</div>
     <div class="card">
-      <div class="seg" style="margin:0 0 6px">${[['auto', '📱 Auto'], ['light', '☀️ Clair'], ['dark', '🌙 Sombre']].map(([v, l]) => `<button class="${themePref() === v ? 'on' : ''}" onclick="setTheme('${v}');vSettings()">${l}</button>`).join('')}</div>
-      <p class="muted" style="font-size:12px;margin:0 0 12px">Auto suit le mode clair ou sombre de ton téléphone.</p>
+      <div class="seg tight" style="margin:0 0 6px">${[['auto', '🌗 Auto'], ['phone', '📱 Tél.'], ['light', '☀️ Clair'], ['dark', '🌙 Sombre']].map(([v, l]) => `<button class="${themePref() === v ? 'on' : ''}" onclick="setTheme('${v}');vSettings()">${l}</button>`).join('')}</div>
+      <p class="muted" style="font-size:12px;margin:0 0 12px">Auto : sombre le soir et la nuit (19 h à 7 h), clair le jour. Tél. : suit le mode clair ou sombre de ton téléphone.</p>
       <label class="f">Page d'ouverture de l'application</label>
       <select onchange="localStorageSet('pav_home', this.value);toast('Page d’ouverture enregistrée')">${HOME_TABS.map(([k, l]) => `<option value="${k}" ${(localStorageGet('pav_home') || 'classement') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
 
