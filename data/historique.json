@@ -1,5 +1,5 @@
 {
- "version": 1,
+ "version": 2,
  "source": "Publications du groupe Facebook « Pool NHL » (2021 à 2026)",
  "alias": {
   "Archy": "Simon Archambault",
@@ -622,5 +622,329 @@
    "detail": "142,5 pts (53 + 55,5 + 10 + 24)",
    "who": "Andy"
   }
+ ],
+ "seasons": {
+  "2020-21": {
+   "standings": null,
+   "champion": "Archy",
+   "series": {
+    "Archy": "champion",
+    "Oli": "finale",
+    "Roch": "tour2",
+    "Miles": "tour2",
+    "Ti-guy": "tour1",
+    "Le grand": "tour1",
+    "Massif": "tour1",
+    "Pac": "tour1"
+   }
+  },
+  "2022-23": {
+   "standings": [
+    [
+     "Andy",
+     null,
+     null
+    ],
+    [
+     "Jay Lab",
+     null,
+     null
+    ],
+    [
+     "Oli Gendron",
+     null,
+     null
+    ],
+    [
+     "Miles",
+     null,
+     null
+    ],
+    [
+     "Godin",
+     null,
+     null
+    ],
+    [
+     "Archy",
+     null,
+     null
+    ],
+    [
+     "Ti-guy",
+     null,
+     null
+    ],
+    [
+     "Raph",
+     null,
+     null
+    ],
+    [
+     "Nic",
+     null,
+     null
+    ],
+    [
+     "Cabrera",
+     null,
+     null
+    ],
+    [
+     "Hugo",
+     null,
+     null
+    ],
+    [
+     "Pac",
+     null,
+     null
+    ]
+   ],
+   "series": {
+    "Godin": "champion",
+    "Andy": "finale",
+    "Archy": "tour2",
+    "Jay Lab": "tour2",
+    "Raph": "tour1",
+    "Ti-guy": "tour1",
+    "Oli Gendron": "tour1",
+    "Miles": "tour1"
+   }
+  },
+  "2023-24": {
+   "standings": [
+    [
+     "Cabrera",
+     1115,
+     1147
+    ],
+    [
+     "Le grand",
+     1045,
+     1122
+    ],
+    [
+     "Ti-guy",
+     965,
+     1051
+    ],
+    [
+     "Andy",
+     953,
+     1084
+    ],
+    [
+     "Pac",
+     904,
+     1136
+    ],
+    [
+     "Archy",
+     877,
+     1033
+    ],
+    [
+     "Le farmer",
+     874,
+     1135
+    ],
+    [
+     "Oli Gendron",
+     856,
+     1042
+    ],
+    [
+     "Miles",
+     789,
+     997
+    ],
+    [
+     "Phil",
+     756,
+     953
+    ],
+    [
+     "Raph",
+     755,
+     1050
+    ],
+    [
+     "Jay Lab",
+     699,
+     811
+    ],
+    [
+     "Godin",
+     563,
+     892
+    ]
+   ],
+   "series": null
+  },
+  "2024-25": {
+   "standings": [
+    [
+     "Andy",
+     1026,
+     1096
+    ],
+    [
+     "Miles",
+     956,
+     1094
+    ],
+    [
+     "Cabrera",
+     921,
+     1099
+    ],
+    [
+     "Pac",
+     918,
+     1124
+    ],
+    [
+     "Archy",
+     901,
+     1111
+    ],
+    [
+     "Le grand",
+     897,
+     1105
+    ],
+    [
+     "Raph",
+     896,
+     1111
+    ],
+    [
+     "Ti-guy",
+     878,
+     1083
+    ],
+    [
+     "Oli Gendron",
+     868,
+     1090
+    ],
+    [
+     "Jay Lab",
+     814,
+     1047
+    ],
+    [
+     "Oli Archam",
+     699,
+     856
+    ],
+    [
+     "Godin",
+     698,
+     1031
+    ],
+    [
+     "Le farmer",
+     650,
+     1009
+    ]
+   ],
+   "series": {
+    "Archy": "carre",
+    "Andy": "carre",
+    "Miles": "carre",
+    "Raph": "carre",
+    "Cabrera": "qualif",
+    "Pac": "qualif",
+    "Le grand": "qualif",
+    "Ti-guy": "qualif"
+   },
+   "series_partial": true
+  },
+  "2025-26": {
+   "standings": [
+    [
+     "Miles",
+     1012,
+     1087
+    ],
+    [
+     "Andy",
+     1006,
+     1105
+    ],
+    [
+     "Cabrera",
+     1005,
+     1112
+    ],
+    [
+     "Archy",
+     956,
+     1073
+    ],
+    [
+     "Jo",
+     899,
+     1084
+    ],
+    [
+     "Ti-guy",
+     841,
+     1029
+    ],
+    [
+     "Oli Archam",
+     831,
+     1068
+    ],
+    [
+     "Jay Lab",
+     822,
+     984
+    ],
+    [
+     "Le grand",
+     800,
+     1027
+    ],
+    [
+     "Godin",
+     776,
+     1078
+    ],
+    [
+     "Pac",
+     769,
+     933
+    ],
+    [
+     "Le farmer",
+     734,
+     944
+    ],
+    [
+     "Raph",
+     591,
+     977
+    ]
+   ],
+   "series": {
+    "Archy": "champion",
+    "Jo": "finale",
+    "Cabrera": "carre3",
+    "Andy": "carre4",
+    "Ti-guy": "tour2",
+    "Oli Archam": "tour2",
+    "Miles": "tour1",
+    "Jay Lab": "tour1"
+   }
+  }
+ },
+ "notes": [
+  "2021-22 : aucune donnée.",
+  "Séries 2024 : résultats inconnus (qualifiés selon le top 8).",
+  "Séries 2025 : ronde finale inconnue ; 1er tour selon le top 8."
  ]
 }

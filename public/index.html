@@ -1518,6 +1518,42 @@ const vAwards = run(async () => {
 const awardVote = run(async (category, choice) => { await api('/api/awards/vote', { category, choice }); toast('Vote enregistré'); vAwards(); });
 
 // ---------- Temple de la renommée ----------
+let hallTab = 'pedigree';
+const fr1 = v => v === null || v === undefined ? '—' : Number(v).toLocaleString('fr-CA', { maximumFractionDigits: 1 });
+function pedigreeHtml(H, today){
+  const D = H.pedigree || [];
+  if (!D.length) return '<p class="muted">Aucune donnée.</p>';
+  const short = s => s.slice(2);  // « 2022-23 » → « 22-23 »
+  const posChip = r => `<span class="chip" style="${r.rank <= 3 ? 'border-color:var(--gold);color:var(--gold);font-weight:800' : ''}">${short(r.season)} : ${r.rank === 1 ? '🏆' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : r.rank + 'e'}</span>`;
+  const serChip = x => `<span class="chip" style="${['champion', 'finale'].includes(x.res) ? 'border-color:var(--gold);color:var(--gold);font-weight:800' : ''}">${x.year} : ${esc(x.label)}</span>`;
+  const table = `<div class="tblw" style="overflow-x:auto"><table class="tbl" style="white-space:nowrap;font-size:13px">
+    <tr><th class="c">#</th><th>Pooler</th><th class="c">Cote</th><th class="c">Saisons</th><th class="c">🏆</th><th class="c">🥈</th><th class="c">🥉</th><th class="c">Rang moy.</th><th class="c">Meilleur</th><th class="c">Pts moy.</th><th class="c">Pts/m</th><th class="c">Séries</th><th class="c">🏆 séries</th><th class="c">Finales</th></tr>
+    ${D.map((p, i) => `<tr><td class="c"><b>${i + 1}</b></td><td><b>${esc(p.who)}</b></td><td class="c"><b style="color:var(--gold)">${p.score}</b></td><td class="c">${p.seasons.length}</td>
+      <td class="c">${p.firsts || '·'}</td><td class="c">${p.seconds || '·'}</td><td class="c">${p.thirds || '·'}</td><td class="c">${fr1(p.avgRank)}</td><td class="c">${p.bestRank ? p.bestRank + (p.bestRank === 1 ? 'er' : 'e') : '—'}</td>
+      <td class="c">${p.avgPts ? Math.round(p.avgPts) : '—'}</td><td class="c">${p.avgPpg ? p.avgPpg.toFixed(2).replace('.', ',') : '—'}</td>
+      <td class="c">${p.qualRate === null ? p.series.length : `${p.qual}/${p.qualOf} · ${Math.round(p.qualRate * 100)} %`}</td><td class="c">${p.seriesTitles || '·'}</td><td class="c">${p.finals || '·'}</td></tr>`).join('')}</table></div>`;
+  const cards = D.map((p, i) => { const t = today(p.who); return `<details class="card" style="padding:12px 14px"><summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px">
+      <span class="rk" style="font-size:22px;font-weight:900;min-width:28px;text-align:center">${i + 1}</span>
+      <span class="grow"><b style="font-size:17px">${esc(p.who)}</b>${t ? ` <span class="muted" style="font-size:12px">· ${tname(t, 16)}</span>` : ''}
+        <div style="font-size:12px;color:var(--dim)">${p.seasons.length} saison${p.seasons.length > 1 ? 's' : ''} · ${p.firsts + p.seriesTitles ? `${p.firsts + p.seriesTitles} titre${p.firsts + p.seriesTitles > 1 ? 's' : ''}` : 'à la recherche d\'un titre'}</div></span>
+      <span style="text-align:right"><b style="font-size:22px;color:var(--gold)">${p.score}</b><div style="font-size:10px;color:var(--dim);text-transform:uppercase">cote</div></span></summary>
+    <div class="pc-kv" style="margin-top:12px">
+      <div><span>Positions en saison</span><b>${p.firsts ? p.firsts + '× 1er' : ''}${p.seconds ? (p.firsts ? ' · ' : '') + p.seconds + '× 2e' : ''}${p.thirds ? (p.firsts + p.seconds ? ' · ' : '') + p.thirds + '× 3e' : ''}${!p.firsts && !p.seconds && !p.thirds ? 'pas de podium' : ''}</b></div>
+      <div><span>Rang moyen (meilleur / pire)</span><b>${fr1(p.avgRank)} (${p.bestRank ?? '—'} / ${p.worstRank ?? '—'})</b></div>
+      <div><span>Points moyens par saison</span><b>${p.avgPts ? Math.round(p.avgPts) + ' pts' : '—'}</b></div>
+      <div><span>Meilleure saison</span><b>${p.bestPts ? `${p.bestPts.pts} pts (${esc(p.bestPts.season)})` : '—'}</b></div>
+      <div><span>Points par match</span><b>${p.avgPpg ? p.avgPpg.toFixed(2).replace('.', ',') : '—'}</b></div>
+      <div><span>Participation aux séries</span><b>${p.qualRate === null ? p.series.length + ' fois' : `${p.qual} sur ${p.qualOf} (${Math.round(p.qualRate * 100)} %)`}</b></div>
+      <div><span>Titres des séries</span><b>${p.seriesTitles || 0}${p.finals ? ` · ${p.finals} finale${p.finals > 1 ? 's' : ''}` : ''}</b></div>
+      <div><span>Meilleur résultat en séries</span><b>${p.bestSeries ? esc(p.bestSeries.label) + ' (' + p.bestSeries.year + ')' : 'jamais qualifié'}</b></div></div>
+    <div style="margin-top:10px;font-size:12px;color:var(--dim)">Saisons</div><div class="chips" style="margin-top:4px">${p.ranks.map(posChip).join('') || '<span class="muted">—</span>'}</div>
+    <div style="margin-top:8px;font-size:12px;color:var(--dim)">Séries</div><div class="chips" style="margin-top:4px">${p.series.map(serChip).join('') || '<span class="muted">—</span>'}</div></details>`; }).join('');
+  return `<p class="muted" style="margin-top:0">Toutes les saisons connues depuis 2020-21${(H.notes || []).length ? ' (' + H.notes.map(esc).join(' ') + ')' : ''}.</p>
+    ${table}
+    <p class="muted" style="font-size:12px">Glisse le tableau de côté. <b>Cote pedigree</b> : titre de la saison 10, 2e 6, 3e 4, qualification aux séries 1 ; en séries, champion 10, finaliste 6, dernier carré 3, 2e tour 2.
+      Qualification = top 8 de la saison (art. 7.1) quand le tableau des séries n'est pas connu. Points : saisons dont le cumulatif est connu (2023-24 à 2025-26).</p>
+    <div class="sechd">Fiche de chaque pooler</div>${cards}`;
+}
 const vHall = run(async () => {
   const H = await api('/api/hall');
   const bySeason = {};
@@ -1560,9 +1596,10 @@ const vHall = run(async () => {
         <div class="tblw" style="margin:8px 0 0"><table class="tbl"><tr><th class="c">#</th><th>Pooler</th><th>Points</th></tr>
         ${full.map(e => `<tr><td class="c"><b>${e.place}</b></td><td>${esc(e.team_name)}</td><td class="muted" style="font-size:13px">${esc(e.detail || '—')}</td></tr>`).join('')}</table></div></details>` : ''}</div>`;
   };
+  const tabs = [['pedigree', '📊 Pedigree'], ['palmares', '🏆 Palmarès'], ['saisons', '📅 Saisons']];
   $('#view').innerHTML = `<h2 class="title">🏆 Temple de la renommée</h2>
-    ${pal}
-    ${seasons.map(card).join('') || '<p class="muted">Les champions s\'inscrivent ici à la fin de chaque saison.</p>'}
+    <div class="seg">${tabs.map(([k, l]) => `<button class="${hallTab === k ? 'on' : ''}" onclick="hallTab='${k}';vHall()">${l}</button>`).join('')}</div>
+    ${hallTab === 'pedigree' ? pedigreeHtml(H, today) : hallTab === 'palmares' ? pal : (seasons.map(card).join('') || '<p class="muted">Les champions s\'inscrivent ici à la fin de chaque saison.</p>')}
     <div class="card"><h3>Records</h3>
       <div class="muted" style="font-size:12px;text-transform:uppercase">Meilleur match d'un joueur du pool</div>
       ${R.bestGame.map((g, i) => `<div class="pl"><span>${['🥇','🥈','🥉'][i]} <b>${esc(g.name)}</b> · ${String(g.game_date).slice(0, 10)}</span><span><b>${g.pts} pts</b> (${g.goals} B, ${g.assists} A)</span></div>`).join('') || '<p class="muted">—</p>'}

@@ -280,6 +280,9 @@ et « → équipe » quand le choix a été échangé.
   compilées des publications du groupe Facebook (podiums, bourses, classements complets, résumés des
   séries) et palmarès par pooler (un même pooler sous ses surnoms : Archy = Simon Archambault, etc.).
   Modifier le fichier et augmenter « version » pour recharger l'historique.
+  Onglet **📊 Pedigree** : par pooler, positions finales (1er, 2e, 3e), rang moyen, meilleur et pire, points
+  moyens par saison, points par match, participation aux séries (top 8 quand le tableau n'est pas connu),
+  titres et finales des séries, et une « cote pedigree » pour les classer.
 - **🏆 Temple de la renommée** : podium de la saison et des séries (bouton « Clôturer la saison » du
   commissaire, avec les bourses), entrées manuelles pour les saisons passées, et records calculés
   (meilleur match d'un joueur, plus gros échange, pooler le plus actif, meilleure semaine).
