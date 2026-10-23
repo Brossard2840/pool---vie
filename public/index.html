@@ -452,7 +452,7 @@ function wakeScreen(on){
 async function api(path, body){
   const opts = body === undefined ? {} : { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) };
   const res = await pfetch(path, opts);
-  if (res.status === 401 && !path.startsWith('/api/login')) {
+  if (res.status === 401 && !path.startsWith('/api/login') && !path.startsWith('/api/passkey/login')) {
     if (S) { S = null; showLogin(); }
     throw new Error('Connexion requise (session non conservée)');
   }
@@ -472,6 +472,70 @@ const myTeam = () => S && team(S.me.teamId);
 // Compte commissaire : neutre, sans équipe.
 const neutral = () => S && S.me.isAdmin && !S.me.teamId;
 
+// ---------- Face ID (clés d'accès WebAuthn) ----------
+// Le téléphone garde la clé et la débloque avec Face ID, l'empreinte ou son NIP ; aucun code à retenir.
+const b64u = {
+  enc: buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+  dec: str => Uint8Array.from(atob(str.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((str.length + 3) % 4)), c => c.charCodeAt(0))
+};
+const passkeyOk = () => !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext);
+async function passkeyPlatform(){ try { return passkeyOk() && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); } catch { return false; } }
+const bioName = () => /iPhone|iPad|Macintosh/.test(navigator.userAgent) ? 'Face ID' : 'l\'empreinte ou le visage';
+function deviceLabel(){
+  const u = navigator.userAgent;
+  return /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Macintosh/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows' : 'Appareil';
+}
+function credJSON(c){
+  const r = c.response, out = { id: c.id, rawId: b64u.enc(c.rawId), type: c.type, clientExtensionResults: c.getClientExtensionResults ? c.getClientExtensionResults() : {},
+    authenticatorAttachment: c.authenticatorAttachment || undefined, response: { clientDataJSON: b64u.enc(r.clientDataJSON) } };
+  if (r.attestationObject) { out.response.attestationObject = b64u.enc(r.attestationObject); out.response.transports = r.getTransports ? r.getTransports() : []; }
+  if (r.authenticatorData) { out.response.authenticatorData = b64u.enc(r.authenticatorData); out.response.signature = b64u.enc(r.signature); out.response.userHandle = r.userHandle ? b64u.enc(r.userHandle) : undefined; }
+  return out;
+}
+// Annulé par la personne (ou délai dépassé) : pas un vrai problème.
+const passkeyCancelled = e => e && (e.name === 'NotAllowedError' || e.name === 'AbortError');
+async function passkeyRegister(){
+  const { token, options: o } = await api('/api/passkey/register/options', {});
+  const pk = { ...o, challenge: b64u.dec(o.challenge), user: { ...o.user, id: b64u.dec(o.user.id) },
+    excludeCredentials: (o.excludeCredentials || []).map(c => ({ ...c, id: b64u.dec(c.id) })) };
+  let c;
+  try { c = await navigator.credentials.create({ publicKey: pk }); }
+  catch (e) {
+    if (e && e.name === 'InvalidStateError') throw new Error(`${bioName()} est déjà activé sur cet appareil.`);
+    if (passkeyCancelled(e)) return false;
+    throw e;
+  }
+  await api('/api/passkey/register/verify', { token, response: credJSON(c), label: deviceLabel() });
+  localStorageSet('pav_passkey', '1');
+  return true;
+}
+async function passkeyLogin(){
+  const { token, options: o } = await api('/api/passkey/login/options', {});
+  let c;
+  try { c = await navigator.credentials.get({ publicKey: { ...o, challenge: b64u.dec(o.challenge), allowCredentials: [] } }); }
+  catch (e) { if (passkeyCancelled(e)) return false; throw e; }
+  await api('/api/passkey/login/verify', { token, response: credJSON(c) });
+  localStorageSet('pav_passkey', '1');
+  return true;
+}
+// Après une connexion avec le code : proposer Face ID une fois par appareil.
+async function offerPasskey(){
+  if (localStorageGet('pav_passkey') || localStorageGet('pav_passkey_asked') || !(await passkeyPlatform())) return;
+  localStorageSet('pav_passkey_asked', '1');
+  $('#sheetBody').innerHTML = `<h3>🙂 Entrer avec ${bioName()} ?</h3>
+    <p class="muted">La prochaine fois, plus besoin du code : tu entres avec ${bioName()} sur cet appareil. Tu peux l'activer ou le retirer plus tard dans Réglages → Compte.</p>
+    <div class="row"><button class="btn ghost" onclick="closeSheet()">Plus tard</button><button class="btn" onclick="enablePasskey()">Activer</button></div>`;
+  $('#sheet').classList.add('open'); $('#sheetBg').classList.add('open');
+}
+const enablePasskey = run(async () => {
+  if (await passkeyRegister()) { closeSheet(); toast(`✅ ${bioName()} activé sur cet appareil`); if (location.hash.startsWith('#/reglages')) vSettings(); }
+});
+const removePasskey = run(async id => {
+  if (!confirm('Retirer cet appareil ? Il faudra le code pour y entrer de nouveau.')) return;
+  await apiDelete('/api/passkey/' + encodeURIComponent(id)); try { localStorage.removeItem('pav_passkey'); } catch {}
+  toast('Appareil retiré'); vSettings();
+});
+
 // ---------- connexion ----------
 async function showLogin(){
   $('#top').hidden = true; $('#tabbar').hidden = true;
@@ -483,6 +547,9 @@ async function showLogin(){
     <div class="login">
       <img class="logo" src="/logo.png" alt="Pool à vie">
       <h2 class="title" style="text-align:center">Pool à vie</h2>
+      ${passkeyOk() && teamsCache.length ? `<button class="btn" style="width:100%;margin-bottom:12px;font-size:16px;padding:14px" id="lgBio">🙂 Entrer avec <span id="lgBioName">${bioName()}</span></button>
+        <p id="lgBioErr" class="muted" style="color:var(--red);margin:-4px 0 12px" hidden></p>
+        <div class="muted" style="text-align:center;font-size:12px;margin-bottom:10px">ou avec ton code</div>` : ''}
       <div class="card">
         <label class="f">Mon équipe</label>
         <select id="lgTeam">${teamsCache.map(t => `<option value="${t.id}" ${String(t.id)===saved?'selected':''}>${esc(t.name)}</option>`).join('')}</select>
@@ -508,10 +575,18 @@ async function showLogin(){
       try { await loadState(); startNotifications(); }
       catch (e) { throw new Error(`Connecté, mais le chargement a échoué : ${e.message}. Si ça se répète, les témoins (cookies) sont peut-être bloqués dans ce navigateur.`); }
       route();
+      setTimeout(offerPasskey, 800);
     } catch (e) {
       showErr(e.message);
       $('#lgGo').disabled = false; $('#lgGo').textContent = 'Entrer';
     }
+  };
+  const bio = $('#lgBio');
+  if (bio) bio.onclick = async () => {
+    const e = $('#lgBioErr'); e.hidden = true; bio.disabled = true;
+    try { if (await passkeyLogin()) { await loadState(); startNotifications(); route(); return; } }
+    catch (x) { e.textContent = x.message; e.hidden = false; }
+    bio.disabled = false;
   };
   $('#lgGo').onclick = go;
   $('#lgCode').onkeydown = e => { if (e.key === 'Enter') go(); };
@@ -2978,6 +3053,7 @@ const vSettings = run(async () => {
     <div class="card">
       <p class="muted" style="margin-top:0">Connecté comme <b style="color:var(--text)">${me ? esc(me.name) : '🔑 Commissaire'}</b> sur cet appareil.
         ${me ? 'Ton code d\'accès t\'est remis par le commissaire ; pour en changer, demande-lui un nouveau code (tes autres appareils seront déconnectés).' : 'Le code commissaire se change dans Render (COMMISSAIRE_CODE).'}</p>
+      <div id="pkBox"></div>
       <div class="row" style="margin:0"><button class="btn ghost" onclick="logout()">Changer de compte</button><button class="btn danger" onclick="logout()">Se déconnecter</button></div>
       ${S.me.isAdmin ? `<a class="link" href="#/commissaire" style="display:block;margin-top:12px">🔑 Outils du commissaire ›</a>` : ''}</div>
 
@@ -2986,6 +3062,16 @@ const vSettings = run(async () => {
       ${standalone ? '<p class="muted" style="margin-top:0">✅ Installée sur l\'écran d\'accueil.</p>' : `<p class="muted" style="margin-top:0"><b>iPhone (Safari)</b> : Partager <b>⬆︎</b> → « Sur l'écran d'accueil ». <b>Android (Chrome)</b> : menu <b>⋮</b> → « Installer l'application ».</p>`}
       <p class="muted">Version : ${esc(version)}. Si l'application semble figée ou affiche une ancienne version :</p>
       <button class="btn small ghost" onclick="reloadApp()">🔄 Recharger l'application</button></div>`;
+  if (passkeyOk()) api('/api/passkey').then(async list => {
+    const box = $('#pkBox'); if (!box) return;
+    const can = await passkeyPlatform();
+    box.innerHTML = `<label class="f">🙂 Entrer avec ${bioName()}</label>
+      ${list.length ? `<div class="list" style="margin-bottom:8px">${list.map(k => `<div class="item" style="cursor:default"><div class="grow"><div class="name">${esc(k.label || 'Appareil')}</div>
+        <div class="meta">Activé ${ago(k.created_at)}${k.used_at ? ' · utilisé ' + ago(k.used_at) : ''}</div></div>
+        <button class="btn small ghost" onclick="removePasskey('${esc(k.id)}')">Retirer</button></div>`).join('')}</div>` : '<p class="muted" style="margin:0 0 8px">Pas encore activé : tu entres avec ton code.</p>'}
+      ${can && list.length && localStorageGet('pav_passkey') ? '<p class="muted" style="font-size:12px;margin:0 0 12px">✅ Activé sur cet appareil.</p>'
+        : can ? `<button class="btn small" style="margin-bottom:12px" onclick="enablePasskey()">Activer sur cet appareil</button>` : '<p class="muted" style="font-size:12px">Cet appareil ne permet pas la reconnaissance faciale ou l\'empreinte.</p>'}`;
+  }).catch(() => {});
   const hf = $('#hornFile');
   if (hf) hf.onchange = run(async e => {
     const f = e.target.files[0]; if (!f) return;

@@ -19,6 +19,7 @@ const { createProjections } = require('./lib/projections');
 const { createFun } = require('./lib/fun');
 const { createBlock } = require('./lib/block');
 const { createInjuries } = require('./lib/injuries');
+const { createPasskeys } = require('./lib/passkeys');
 const { createContracts } = require('./lib/contracts');
 
 const app = express();
@@ -138,6 +139,7 @@ async function initDb() {
   await fun.initTables();
   await block.initTables();
   await injuries.initTables();
+  await passkeys.initTables();
   await setDefault('cap', '104000000');   // plafond LNH 2026-27
   await setDefault('floor', '76900000');  // plancher LNH 2026-27
 
@@ -458,6 +460,9 @@ app.post('/api/login', h(async (req, res) => {
 }));
 
 app.post('/api/logout', (req, res) => { auth.clearSession(res); res.json({ ok: true }); });
+
+// Face ID : connexion par clé d'accès (voir lib/passkeys.js).
+const passkeys = createPasskeys(app, { pool, h, auth, getConfig, secret: () => SECRET, secure: IS_PROD });
 
 app.use('/api', requireLogin);
 app.use('/api', (req, res, next) => { refreshIfStale().catch(() => {}); next(); });
