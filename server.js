@@ -383,8 +383,8 @@ app.get('/healthz', h(async (req, res) => {
   res.json({ ok: true, lastUpdate: await getConfig('last_stats_update'), lastLive: await getConfig('last_live_sync') });
 }));
 
-// Logo de l'équipe (chandail, bâton, patins…) et ses couleurs, choisis par le pooler (ou le commissaire).
-const AVATAR_TYPES = ['chandail', 'baton', 'patins', 'casque', 'rondelle', 'biere'];
+// Logo de l'équipe (chandail, casque, masque de gardien, filet…) et ses couleurs, choisis par le pooler (ou le commissaire).
+const AVATAR_TYPES = ['chandail', 'casque', 'masque', 'patins', 'baton', 'gants', 'rondelle', 'filet', 'lumiere', 'coupe', 'ecusson', 'lys', 'surfaceuse', 'biere'];
 app.post('/api/team/avatar', h(async (req, res) => {
   if (!req.me) return res.status(401).json({ error: 'Connexion requise' });
   const teamId = req.me.isAdmin && req.body.teamId ? Number(req.body.teamId) : req.me.teamId;

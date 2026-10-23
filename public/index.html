@@ -842,7 +842,7 @@ function defaultAvatar(name){
   const combos = [['#7d1424','#f2b705','#ffffff'],['#0d2a6b','#ffffff','#c8102e'],['#1f7a3e','#f6e7a1','#1b1b1b'],['#2a6ebb','#ffffff','#0d2a6b'],
     ['#f2b705','#5b2a86','#ffffff'],['#1b1b1b','#e85d1f','#ffffff'],['#c8102e','#1b1b1b','#ffffff'],['#00a3ad','#1b1b1b','#ffffff'],['#5b2a86','#f2b705','#ffffff']];
   const [c1, c2, c3] = combos[h % combos.length];
-  return { type: ['chandail','chandail','baton','patins','casque'][h % 5], c1, c2, c3, letter: String(name || '?').trim()[0].toUpperCase() };
+  return { type: ['chandail','chandail','casque','masque','ecusson','baton'][h % 6], c1, c2, c3, letter: String(name || '?').trim()[0].toUpperCase() };
 }
 function teamIcon(av, size = 40, name = ''){
   const a = av && av.type ? av : defaultAvatar(name);
@@ -864,35 +864,64 @@ function teamIcon(av, size = 40, name = ''){
       <circle cx="32" cy="31" r="7.5" fill="${c2}" stroke="${c3}" stroke-width="1.5"/>
       <text x="32" y="35" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="${letter.length > 1 ? 7.5 : 10}" fill="${c1}">${letter}</text>
       <path d="${J}" fill="none" stroke="${dk}" stroke-width="1.5" stroke-linejoin="round"/>`;
-  } else if (a.type === 'baton') {
-    body = `<defs>${gloss}</defs>
-      <g transform="translate(9 -3) scale(.9) rotate(30 32 32)">
-        <rect x="29" y="2" width="6" height="46" rx="2" fill="${c1}" stroke="${dk}" stroke-width="1.2"/>
-        <rect x="29" y="2" width="6" height="8" rx="2" fill="${c3}"/><rect x="29" y="5" width="6" height="1.4" fill="${shade(c3, -.3)}"/>
-        <path d="M29 46 L35 46 L35 52 Q35 58 29 58 L12 58 Q8 58 8 54 Q8 51 12 51 L29 51 Z" fill="${c1}" stroke="${dk}" stroke-width="1.2"/>
-        <path d="M14 51.5 L28.5 51.5 L28.5 57.5 L14 57.5 Z" fill="${c2}"/>
-        <path d="M17 51.5 L17 57.5 M20.5 51.5 L20.5 57.5 M24 51.5 L24 57.5" stroke="${shade(c2, -.25)}" stroke-width=".9"/>
-        <rect x="29" y="2" width="6" height="56" fill="url(#${id}g)" opacity=".6"/>
-      </g>
-      <ellipse cx="47" cy="54" rx="8" ry="3.4" fill="#1b1b1b"/><rect x="39" y="50" width="16" height="4" fill="#2b2b2b"/><ellipse cx="47" cy="50" rx="8" ry="3.4" fill="#3a3a3a"/>`;
   } else if (a.type === 'patins') {
-    const B = 'M14 10 L32 10 Q35 10 35 14 L35 30 Q36 34 44 36 L52 38 Q57 40 57 45 L57 47 L12 47 Q10 47 10 45 L10 14 Q10 10 14 10 Z';
+    // Patin de hockey : bottine basse, protège-tendon, support et lame.
+    const B = 'M17 8 L27 8 Q30 8 30 11 L31 26 Q33 30 40 31 L50 33 Q57 35 57 41 L57 44 Q57 46 55 46 L14 46 Q11 46 11 43 L11 24 Q11 19 14 17 L14 11 Q14 8 17 8 Z';
     body = `<defs>${gloss}<clipPath id="${id}c"><path d="${B}"/></clipPath></defs>
       <path d="${B}" fill="${c1}"/>
-      <g clip-path="url(#${id}c)"><rect x="0" y="40" width="64" height="7" fill="${c2}"/><rect x="0" y="10" width="64" height="5" fill="${c3}"/><path d="${B}" fill="url(#${id}g)"/></g>
+      <g clip-path="url(#${id}c)"><rect x="0" y="40" width="64" height="6" fill="${c2}"/><rect x="0" y="8" width="64" height="4" fill="${c3}"/><path d="${B}" fill="url(#${id}g)"/></g>
       <path d="${B}" fill="none" stroke="${dk}" stroke-width="1.5" stroke-linejoin="round"/>
-      <path d="M22 16 L30 18 M22 21 L30 23 M22 26 L31 28 M23 31 L33 33" stroke="${c3}" stroke-width="1.8" stroke-linecap="round"/>
-      <rect x="14" y="47" width="6" height="5" fill="#9aa4ae"/><rect x="44" y="47" width="6" height="5" fill="#9aa4ae"/>
-      <path d="M8 52 L58 52 Q60 52 59 55 L58 56 L9 56 Q6 56 6 54 Q6 52 8 52 Z" fill="#d7dde3" stroke="#7d8790" stroke-width="1"/>`;
+      <path d="M31 22 L37 23 M32 26 L40 28 M37 30 L44 31" stroke="${c3}" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M14 46 L18 52 L48 52 L53 46 Z" fill="${shade(c2, -.2)}" stroke="#2b2b2b" stroke-width="1"/>
+      <path d="M8 52 L58 52 Q61 52 60 55 Q59 57 56 57 L10 57 Q6 57 6 55 Q6 52 8 52 Z" fill="#dfe4ea" stroke="#7d8790" stroke-width="1"/>`;
   } else if (a.type === 'casque') {
-    const H = 'M8 36 Q8 10 32 9 Q55 10 57 32 L57 40 L46 40 Q44 46 38 46 L26 46 L22 52 L14 52 Q8 50 8 42 Z';
+    // Casque de hockey vu de côté, avec visière.
+    const H = 'M8 40 Q7 13 31 10 Q51 9 56 27 L56 31 L43 31 Q40 31 40 34 L40 43 Q40 46 37 46 L13 46 Q8 46 8 40 Z';
     body = `<defs>${gloss}<clipPath id="${id}c"><path d="${H}"/></clipPath></defs>
       <path d="${H}" fill="${c1}"/>
-      <g clip-path="url(#${id}c)"><rect x="29" y="0" width="6" height="64" fill="${c2}"/><rect x="0" y="36" width="64" height="3" fill="${c3}"/><path d="${H}" fill="url(#${id}g)"/></g>
+      <g clip-path="url(#${id}c)"><rect x="0" y="39" width="64" height="7" fill="${c2}"/><rect x="0" y="37" width="64" height="2" fill="${c3}"/><path d="${H}" fill="url(#${id}g)"/></g>
       <path d="${H}" fill="none" stroke="${dk}" stroke-width="1.5" stroke-linejoin="round"/>
-      <circle cx="22" cy="38" r="4.5" fill="${dk}"/><circle cx="22" cy="38" r="2" fill="${c3}"/>
-      <path d="M40 40 L60 40 L60 54 Q54 58 44 56 L40 54 Z" fill="none" stroke="#c7cdd3" stroke-width="2"/>
-      <path d="M46 40 L46 56 M52 40 L52 57 M40 47 L60 47" stroke="#c7cdd3" stroke-width="1.6"/>`;
+      <path d="M20 15 L26 14 M31 13 L37 13 M42 15 L47 17" stroke="${dk}" stroke-width="2.4" stroke-linecap="round"/>
+      <ellipse cx="27" cy="34" rx="4" ry="5" fill="${dk}"/><circle cx="27" cy="34" r="1.6" fill="${c3}"/>
+      <path d="M40 31 L60 31 Q61.5 31 61 33 L57 44 Q56 47 53 47 L42 47 Q40 47 40 45 Z" fill="#bfe3ff" fill-opacity=".45" stroke="#e8f4ff" stroke-width="1.4"/>
+      <path d="M44 33 L56 33" stroke="#fff" stroke-width="1.2" opacity=".8"/>
+      <path d="M30 46 Q33 54 41 52" fill="none" stroke="#1b1b1b" stroke-width="1.6"/>`;
+  } else if (a.type === 'masque') {
+    // Masque de gardien peint aux couleurs de l'équipe.
+    const M = 'M32 5 Q50 5 51 23 Q52 40 45 51 Q39 59 32 59 Q25 59 19 51 Q12 40 13 23 Q14 5 32 5 Z';
+    body = `<defs>${gloss}<clipPath id="${id}c"><path d="${M}"/></clipPath></defs>
+      <path d="${M}" fill="${c1}"/>
+      <g clip-path="url(#${id}c)">
+        <path d="M0 22 Q16 12 32 20 Q48 12 64 22 L64 26 Q48 17 32 25 Q16 17 0 26 Z" fill="${c2}"/>
+        <rect x="18" y="27" width="28" height="26" rx="9" fill="#141414"/><path d="${M}" fill="url(#${id}g)"/>
+      </g>
+      <path d="${M}" fill="none" stroke="${dk}" stroke-width="1.5"/>
+      <g stroke="#e9edf1" stroke-width="2" stroke-linecap="round" fill="none">
+        <path d="M18 31 Q32 27 46 31 M19 39 L45 39 M21 47 L43 47"/><path d="M26 28 L26 53 M32 27 L32 55 M38 28 L38 53"/>
+      </g>
+      <text x="32" y="17" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="${letter.length > 1 ? 8 : 10}" fill="${c3}">${letter}</text>`;
+  } else if (a.type === 'gants') {
+    // Gant de hockey (doigts vers le haut, manchette en bas).
+    body = `<defs>${gloss}</defs>
+      <g stroke="${dk}" stroke-width="1.3">
+        <rect x="15" y="7" width="8.5" height="26" rx="4" fill="${c1}"/><rect x="23.5" y="5" width="8.5" height="28" rx="4" fill="${c1}"/>
+        <rect x="32" y="6" width="8.5" height="27" rx="4" fill="${c1}"/><rect x="40.5" y="10" width="8" height="23" rx="4" fill="${c1}"/>
+        <rect x="6" y="24" width="10" height="20" rx="5" transform="rotate(-25 11 34)" fill="${c1}"/>
+        <path d="M14 30 L50 30 L49 48 L15 48 Z" fill="${c1}"/>
+        <rect x="13" y="47" width="38" height="12" rx="3" fill="${c2}"/>
+      </g>
+      <path d="M15.5 16 L22.5 16 M24 14 L31.5 14 M32.5 15 L40 15 M41 18 L48 18 M15.5 24 L22.5 24 M24 23 L31.5 23 M32.5 23 L40 23 M41 25 L48 25" stroke="${c2}" stroke-width="2.2"/>
+      <rect x="13" y="51.5" width="38" height="3" fill="${c3}"/>
+      <rect x="13" y="5" width="38" height="54" fill="url(#${id}g)" opacity=".5" rx="4"/>`;
+  } else if (a.type === 'baton') {
+    // Deux bâtons croisés et une rondelle.
+    const stick = (rot, c) => `<g transform="translate(32 30) scale(.8) rotate(${rot} 0 0) translate(-32 -30)">
+        <rect x="29.5" y="1" width="5" height="50" rx="1.5" fill="${c}" stroke="${shade(c, -.35)}" stroke-width="1.1"/>
+        <rect x="29.5" y="1" width="5" height="7" rx="1.5" fill="${c3}"/>
+        <path d="M29.5 49 L34.5 49 L34.5 55 Q34.5 60 29.5 60 L16 60 Q12 60 12 57 Q12 54 16 54 L29.5 54 Z" fill="${c}" stroke="${shade(c, -.35)}" stroke-width="1.1"/>
+        <path d="M17 54.4 L29 54.4 L29 59.6 L17 59.6 Z" fill="${c3}" opacity=".9"/></g>`;
+    body = `<defs>${gloss}</defs>${stick(28, c1)}${stick(-28, c2).replace('M29.5 49 L34.5 49 L34.5 55 Q34.5 60 29.5 60 L16 60 Q12 60 12 57 Q12 54 16 54 L29.5 54 Z', 'M29.5 49 L34.5 49 L34.5 54 L48 54 Q52 54 52 57 Q52 60 48 60 L34.5 60 Q29.5 60 29.5 55 Z').replace('M17 54.4 L29 54.4 L29 59.6 L17 59.6 Z', 'M35 54.4 L47 54.4 L47 59.6 L35 59.6 Z')}
+      <ellipse cx="32" cy="57" rx="6" ry="2.4" fill="#1b1b1b"/><rect x="26" y="54" width="12" height="3" fill="#2b2b2b"/><ellipse cx="32" cy="54" rx="6" ry="2.4" fill="#3a3a3a"/>`;
   } else if (a.type === 'rondelle') {
     body = `<defs>${gloss}</defs>
       <ellipse cx="32" cy="42" rx="25" ry="10" fill="#111"/><rect x="7" y="30" width="50" height="12" fill="#1b1b1b"/>
@@ -901,6 +930,71 @@ function teamIcon(av, size = 40, name = ''){
       <text x="32" y="33.2" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="8" fill="${c3}">${letter}</text>
       <path d="M8 36 L56 36" stroke="${c2}" stroke-width="1.2" opacity=".8"/>
       <path d="M44 14 L52 6 M48 18 L58 12 M38 13 L41 4" stroke="${c2}" stroke-width="2.4" stroke-linecap="round"/>`;
+  } else if (a.type === 'filet') {
+    // Filet de hockey avec la rondelle dedans.
+    body = `<defs>${gloss}<pattern id="${id}n" width="4" height="4" patternUnits="userSpaceOnUse"><path d="M0 0 L4 4 M4 0 L0 4" stroke="#e9edf1" stroke-width=".7"/></pattern></defs>
+      <path d="M10 16 L54 16 L50 6 Q32 2 14 6 Z" fill="url(#${id}n)" stroke="#c9d3dc" stroke-width="1"/>
+      <path d="M10 16 L10 50 Q32 58 54 50 L54 16 Z" fill="${shade(c1, -.55)}" fill-opacity=".35"/>
+      <path d="M10 16 L10 50 Q32 58 54 50 L54 16 Z" fill="url(#${id}n)"/>
+      <path d="M10 50 Q32 58 54 50" fill="none" stroke="${c2}" stroke-width="3"/>
+      <path d="M10 52 L10 16 L54 16 L54 52" fill="none" stroke="${c1}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M10 16 L54 16" stroke="${c3}" stroke-width="1" opacity=".7"/>
+      <ellipse cx="38" cy="49" rx="5.5" ry="2.2" fill="#111"/><rect x="32.5" y="46" width="11" height="3" fill="#222"/><ellipse cx="38" cy="46" rx="5.5" ry="2.2" fill="#3a3a3a"/>
+      <path d="M4 56 L60 56" stroke="${c1}" stroke-width="2.5" stroke-linecap="round" opacity=".9"/>`;
+  } else if (a.type === 'lumiere') {
+    // Lumière de but allumée.
+    body = `<defs>${gloss}<radialGradient id="${id}r"><stop offset="0" stop-color="${shade(c1, .6)}"/><stop offset="1" stop-color="${c1}"/></radialGradient></defs>
+      <g stroke="${c2}" stroke-width="3" stroke-linecap="round"><path d="M32 2 L32 8 M10 10 L14 15 M54 10 L50 15 M3 28 L9 29 M61 28 L55 29"/></g>
+      <path d="M17 44 L17 30 Q17 13 32 13 Q47 13 47 30 L47 44 Z" fill="url(#${id}r)" stroke="${dk}" stroke-width="1.5"/>
+      <path d="M22 26 Q24 18 31 17" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
+      <path d="M17 34 L47 34" stroke="${dk}" stroke-width="1" opacity=".5"/>
+      <rect x="12" y="44" width="40" height="8" rx="2" fill="#2b2f36" stroke="#111" stroke-width="1"/>
+      <rect x="12" y="47" width="40" height="2" fill="${c2}"/>
+      <rect x="20" y="52" width="24" height="6" rx="1.5" fill="#1b1e23"/>
+      <text x="32" y="38" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="7" fill="${c3}">BUT!</text>`;
+  } else if (a.type === 'coupe') {
+    // Coupe (trophée) argent, rubans aux couleurs de l'équipe.
+    const ag = '#d9dee4', ad = '#8a949e';
+    body = `<defs>${gloss}<linearGradient id="${id}s" x1="0" x2="1"><stop offset="0" stop-color="#9aa4ae"/><stop offset=".35" stop-color="#f4f6f8"/><stop offset=".6" stop-color="${ag}"/><stop offset="1" stop-color="#7d8790"/></linearGradient></defs>
+      <path d="M17 5 L47 5 Q47 19 32 21 Q17 19 17 5 Z" fill="url(#${id}s)" stroke="${ad}" stroke-width="1"/>
+      <ellipse cx="32" cy="5" rx="15" ry="2.4" fill="#eef1f4" stroke="${ad}" stroke-width="1"/>
+      <rect x="29" y="20" width="6" height="7" fill="url(#${id}s)" stroke="${ad}" stroke-width="1"/>
+      <rect x="22" y="27" width="20" height="8" rx="1" fill="url(#${id}s)" stroke="${ad}" stroke-width="1"/>
+      <rect x="19" y="35" width="26" height="9" rx="1" fill="url(#${id}s)" stroke="${ad}" stroke-width="1"/>
+      <rect x="16" y="44" width="32" height="13" rx="1.5" fill="url(#${id}s)" stroke="${ad}" stroke-width="1"/>
+      <rect x="16" y="48" width="32" height="4" fill="${c1}"/><rect x="19" y="38.5" width="26" height="2.2" fill="${c2}"/>
+      <path d="M20 8 Q22 15 28 18" fill="none" stroke="#fff" stroke-width="1.6" opacity=".8"/>`;
+  } else if (a.type === 'ecusson') {
+    // Écusson aux lettres de l'équipe.
+    const E = 'M32 4 L55 11 Q56 40 32 60 Q8 40 9 11 Z';
+    body = `<defs>${gloss}<clipPath id="${id}c"><path d="${E}"/></clipPath></defs>
+      <path d="${E}" fill="${c1}"/>
+      <g clip-path="url(#${id}c)"><path d="M0 46 L64 30 L64 37 L0 53 Z" fill="${c2}"/><path d="M0 54.5 L64 38.5 L64 40.5 L0 56.5 Z" fill="${c3}"/><path d="${E}" fill="url(#${id}g)"/></g>
+      <path d="${E}" fill="none" stroke="${c2}" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M32 7.5 L52 13.5 Q52.5 39 32 56.5 Q11.5 39 12 13.5 Z" fill="none" stroke="${c3}" stroke-width="1"/>
+      <text x="32" y="36" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="${letter.length > 1 ? 17 : 22}" fill="${c3}" stroke="${dk}" stroke-width="1.2" paint-order="stroke">${letter}</text>`;
+  } else if (a.type === 'lys') {
+    // Fleur de lys dans un médaillon.
+    const half = 'M50 3 C59 15 64 31 58 52 L50 52 Z M46 52 C40 36 25 26 14 32 C3 39 5 57 17 61 C25 64 31 58 29 52 C27 47 21 47 20 52 C15 46 20 38 28 40 C36 42 42 50 44 56 Z M47 65 C39 66 31 71 27 82 C36 79 43 75 48 69 Z';
+    body = `<defs>${gloss}</defs>
+      <circle cx="32" cy="32" r="28" fill="${c1}" stroke="${c2}" stroke-width="3"/><circle cx="32" cy="32" r="23.5" fill="none" stroke="${c3}" stroke-width="1"/>
+      <g fill="${c3}" stroke="${dk}" stroke-width="1.6" paint-order="stroke" transform="translate(13 12.5) scale(.38)"><path d="${half}"/><path d="${half}" transform="translate(100 0) scale(-1 1)"/>
+        <rect x="29" y="54" width="42" height="9" rx="2.5"/><path d="M50 62 C55 69 54 78 50 90 C46 78 45 69 50 62 Z"/></g>
+      <circle cx="32" cy="32" r="28" fill="url(#${id}g)"/>`;
+  } else if (a.type === 'surfaceuse') {
+    // Surfaceuse (la « Zamboni ») vue de côté.
+    body = `<defs>${gloss}</defs>
+      <rect x="2" y="54" width="60" height="4" rx="2" fill="#cfe8f7" opacity=".7"/>
+      <path d="M33 30 L33 15 Q33 12 36 12 L50 12 Q53 12 53 15 L53 30" fill="none" stroke="#9aa4ae" stroke-width="2.4"/>
+      <rect x="31" y="9" width="24" height="4.5" rx="2" fill="${c2}" stroke="${shade(c2, -.3)}" stroke-width="1"/>
+      <path d="M36 30 L36 24 Q36 21 40 21 L46 21 L46 30 Z" fill="#2b2f36"/><circle cx="43" cy="18" r="3.2" fill="#f1c9a5"/><path d="M39.8 17 Q43 12.5 46.2 17 Z" fill="${c3}"/>
+      <path d="M6 30 Q6 26 10 26 L55 26 Q59 26 59 30 L59 46 L6 46 Z" fill="${c1}" stroke="${dk}" stroke-width="1.4"/>
+      <rect x="6" y="35" width="53" height="4" fill="${c2}"/><rect x="6" y="39" width="53" height="1.5" fill="${c3}"/>
+      <rect x="6" y="26" width="53" height="20" fill="url(#${id}g)" opacity=".6"/>
+      <path d="M2 40 L6 40 L6 52 L2 52 Z" fill="#5b6570"/><path d="M59 34 L62 34 L62 48 L59 48 Z" fill="#5b6570"/>
+      <text x="22" y="34" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="6.5" fill="${c3}">${letter}</text>
+      <circle cx="18" cy="48" r="6" fill="#1b1b1b"/><circle cx="18" cy="48" r="2.4" fill="#9aa4ae"/>
+      <circle cx="47" cy="48" r="6" fill="#1b1b1b"/><circle cx="47" cy="48" r="2.4" fill="#9aa4ae"/>`;
   } else { // bière
     const G = 'M16 14 L44 14 L41 56 Q41 58 39 58 L21 58 Q19 58 19 56 Z';
     body = `<defs>${gloss}<clipPath id="${id}c"><path d="${G}"/></clipPath></defs>
@@ -928,16 +1022,17 @@ function openAvatarEditor(teamId){
 }
 function renderAvatarEditor(){
   const a = AVE.a, t = team(AVE.teamId);
-  const types = [['chandail', 'Chandail'], ['baton', 'Bâton'], ['patins', 'Patins'], ['casque', 'Casque'], ['rondelle', 'Rondelle'], ['biere', 'Bière']];
+  const types = [['chandail', 'Chandail'], ['casque', 'Casque'], ['masque', 'Masque de gardien'], ['patins', 'Patins'], ['baton', 'Bâtons'], ['gants', 'Gants'],
+    ['rondelle', 'Rondelle'], ['filet', 'Filet'], ['lumiere', 'Lumière de but'], ['coupe', 'Coupe'], ['ecusson', 'Écusson'], ['lys', 'Fleur de lys'], ['surfaceuse', 'Surfaceuse'], ['biere', 'Bière']];
   const sw = k => `<div class="swatches">${AV_PALETTE.map(c => `<button class="${a[k] === c ? 'on' : ''}" style="background:${c}" onclick="AVE.a.${k}='${c}';renderAvatarEditor()" aria-label="${c}"></button>`).join('')}</div>`;
   $('#sheetBody').innerHTML = `<h3>🎨 Logo de ${esc(t.name)}</h3>
     <div style="display:flex;justify-content:center;margin:6px 0 4px">${teamIcon(a, 120, t.name)}</div>
-    <label class="f">Modèle</label>
+    <label class="f">Modèle · <span class="muted">${esc((types.find(x => x[0] === a.type) || [])[1] || '')}</span></label>
     <div class="avgrid">${types.map(([k, l]) => `<button class="${a.type === k ? 'on' : ''}" title="${l}" onclick="AVE.a.type='${k}';renderAvatarEditor()">${teamIcon({ ...a, type: k }, 44, t.name)}</button>`).join('')}</div>
     <label class="f">Couleur principale</label>${sw('c1')}
     <label class="f">Bandes</label>${sw('c2')}
     <label class="f">Détails</label>${sw('c3')}
-    <label class="f">Lettres (chandail et rondelle, 2 max)</label>
+    <label class="f">Lettres (chandail, masque, rondelle, écusson, surfaceuse · 2 max)</label>
     <input id="aveL" maxlength="2" value="${esc(a.letter || '')}" style="text-transform:uppercase;margin-bottom:12px" oninput="AVE.a.letter=this.value.toUpperCase();">
     <div class="row"><button class="btn ghost" onclick="AVE.a={...defaultAvatar('${esc(t.name).replace(/'/g, "\\'")}'),type:AVE.a.type};renderAvatarEditor()">Couleurs au hasard</button><button class="btn" onclick="saveAvatar()">Enregistrer</button></div>`;
 }
