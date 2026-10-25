@@ -751,7 +751,7 @@ fun = createFun(app, admin, { pool, h, getConfig, seasonId, buildLeague, playoff
 const injuries = createInjuries({ pool, getConfig, setConfig, notify });
 const block = createBlock(app, { pool, h, notify, injuryOf: p => injuries.of(p) });
 // Contrats : import en lot et échéances du 1er juillet (lib/contracts.js).
-const contracts = createContracts(admin, { pool, h, inTransaction, getConfig, setConfig, notify });
+const contracts = createContracts(admin, { pool, h, inTransaction, getConfig, setConfig, notify, ageOf });
 
 // Salaires de référence (liste Fantrax des joueurs disponibles, data/salaires-reference.json) : donnent un salaire
 // aux joueurs qui n'en ont pas, y compris ceux qui apparaîtront plus tard dans les stats de la LNH.

@@ -12,6 +12,7 @@
   "dependencies": {
     "@simplewebauthn/server": "^13.3.3",
     "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
     "express": "^4.19.2",
     "pg": "^8.11.5",
     "web-push": "^3.6.7"

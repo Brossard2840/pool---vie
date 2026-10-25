@@ -2619,8 +2619,12 @@ const vAdmin = run(async () => {
     <div class="card" id="ctCard"><h3><span>📝 Contrats (salaire et fin)</span><span id="ctWatchN"></span></h3>
       <p class="muted">Colle une liste copiée de PuckPedia ou d'un tableur : <b>une ligne par joueur</b> avec le nom, le salaire (AAV) et la fin du contrat,
         dans n'importe quel format (ex. <code>Nick Suzuki 7,875,000 2030</code>, <code>Lane Hutson MTL 8.85M 2033-34</code>). Rien ne change avant que tu confirmes.</p>
-      <label class="btn small ghost" style="display:inline-block;margin-bottom:8px">📄 Choisir un fichier…
-        <input type="file" id="ctFile" accept=".txt,.csv,.tsv,text/plain" hidden></label>
+      <div class="issues" style="background:var(--ok-bg);border-color:var(--ok-line);color:var(--ok-ink)"><b>📊 Avec Excel</b>, chaque été :
+        1) télécharge la liste, 2) corrige les salaires et les fins de contrat (PuckPedia), 3) réimporte le fichier ici.
+        <div class="row" style="margin:8px 0 0;flex-wrap:wrap"><a class="btn small" style="text-decoration:none" href="/api/admin/contracts/export.xlsx" download>📥 Tous les joueurs (.xlsx)</a>
+          <a class="btn small ghost" style="text-decoration:none" href="/api/admin/contracts/export.xlsx?scope=owned" download>Seulement nos alignements</a></div></div>
+      <label class="btn small ghost" style="display:inline-block;margin-bottom:8px">📄 Importer un fichier (Excel, CSV ou texte)…
+        <input type="file" id="ctFile" accept=".xlsx,.txt,.csv,.tsv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></label>
       <textarea id="ctText" placeholder="Nick Suzuki	7875000	2030&#10;Cole Caufield, 7.85M, 2030-31"></textarea>
       <div style="height:8px"></div>
       <button class="btn small" onclick="contractsPreview(this)">Analyser la liste</button>
@@ -2673,7 +2677,17 @@ const vAdmin = run(async () => {
       <div class="row"><input id="npAav" inputmode="numeric" placeholder="AAV"><input id="npTeam" placeholder="Équipe LNH" autocapitalize="characters"></div>
       <button class="btn small" onclick="addPlayer()">Créer</button>
     </div>`;
-  $('#ctFile').onchange = async e => { const f = e.target.files[0]; if (f) $('#ctText').value = await f.text(); };
+  $('#ctFile').onchange = run(async e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (/\.xlsx$/i.test(f.name)) {
+      const bytes = new Uint8Array(await f.arrayBuffer());
+      let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      const r = await api('/api/admin/contracts/xlsx', { data: btoa(bin) });
+      $('#ctText').value = r.text; toast(`${r.rows} ligne(s) lues dans le fichier Excel`);
+      contractsPreview($('#ctCard .btn[onclick^="contractsPreview"]'));
+    } else $('#ctText').value = await f.text();
+    e.target.value = '';
+  });
   contractsWatch();
   $('#impFile').onchange = async e => {
     const f = e.target.files[0]; if (!f) return;
