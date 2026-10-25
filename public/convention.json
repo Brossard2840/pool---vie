@@ -1,0 +1,361 @@
+{
+ "title": "Convention collective",
+ "edition": "Saison 2025-2026",
+ "date": "2025-08-27",
+ "pdf": "/convention.pdf",
+ "sections": [
+  {
+   "id": "1",
+   "level": 1,
+   "title": "Nombre d’items",
+   "blocks": [
+    "Chaque pooler aura 23 items à la suite de chaque repêchage, à moins que celui-ci décide de libérer un joueur durant le repêchage."
+   ]
+  },
+  {
+   "id": "1.1",
+   "level": 2,
+   "title": "Nombre minimal d’éléments",
+   "blocks": [
+    "Chaque pooler doit avoir en tout temps un minimum de 9 attaquants, 4 défenseurs, 2 gardiens au sein de son équipe."
+   ]
+  },
+  {
+   "id": "1.2",
+   "level": 2,
+   "title": "Nombre maximal d’éléments",
+   "blocks": [
+    "Un pooler ne peut pas avoir plus que le double du minimum préétabli pour chaque élément. Par exemple, le minimum de défenseurs étant 4, un pooler ne peut en avoir plus de 8 en même temps."
+   ]
+  },
+  {
+   "id": "2",
+   "level": 1,
+   "title": "Système de pointage",
+   "blocks": []
+  },
+  {
+   "id": "2.1",
+   "level": 2,
+   "title": "Pointage en saison régulière",
+   "blocks": [
+    "Le système de pointage en saison régulière est le suivant :",
+    "Attaquants et défenseurs :",
+    [
+     "1 but = 1 point",
+     "1 passe = 1 point"
+    ],
+    "Gardiens :",
+    [
+     "1 but = 1 point",
+     "1 passe = 1 point",
+     "1 victoire = 2 points",
+     "1 défaite en prolongation ou en fusillade = 1 point",
+     "1 blanchissage = 1 point bonus (donc 3 points pour une victoire par blanchissage)"
+    ]
+   ]
+  },
+  {
+   "id": "2.2",
+   "level": 2,
+   "title": "Pointage en séries éliminatoires",
+   "blocks": [
+    "Le système de pointage en séries éliminatoires est le suivant:",
+    "Attaquants et défenseurs :",
+    [
+     "1 but = 1 point",
+     "1 passe = 1 point"
+    ],
+    "Gardiens :",
+    [
+     "1 but = 1 point",
+     "1 passe = 1 point",
+     "1 victoire = 2 points",
+     "1 blanchissage = 1 point bonus (donc 3 points pour une victoire par blanchissage)"
+    ]
+   ]
+  },
+  {
+   "id": "2.3",
+   "level": 2,
+   "title": "Items impliqués dans le calcul des points",
+   "blocks": [
+    "Seulement les 9 attaquants avec le plus de points, les 4 défenseurs avec le plus de points et les 2 gardiens avec les plus de points."
+   ]
+  },
+  {
+   "id": "3",
+   "level": 1,
+   "title": "Masse salariale",
+   "blocks": [
+    "Un cap salarial doit être respecté en tout temps. Ce cap salarial correspond à celui utilisé dans la NHL lors de la saison en cours."
+   ]
+  },
+  {
+   "id": "3.1",
+   "level": 2,
+   "title": "Calcul de la masse salariale",
+   "blocks": [
+    "La masse salariale d’une équipe est composée du salaire des 9 attaquants les mieux payés, du salaire des 4 défenseurs les mieux payés, et du salaire des 2 gardiens les mieux payés. Les autres joueurs ne sont pas inclus dans le calcul de la masse salariale. Ce règlement s’applique même si un joueur parmi les plus hauts salariés de sa position est blessé ou si ses points ne comptent pas. Le salaire des joueurs utilisé pour le pool est le AAV (annual average value). Le site puckpedia.com constitue la ressource à utiliser pour connaître le AAV d’un joueur.",
+    {
+     "nb": "N.B. : Certaines recrues ont un impact supérieur à leur salaire annuel, à cause de leurs bonis de performance."
+    }
+   ]
+  },
+  {
+   "id": "3.2",
+   "level": 2,
+   "title": "Dépassement de la masse salariale au cours d’une saison",
+   "blocks": [
+    "Lorsqu’une transaction est réalisée et annoncée, et que celle-ci entraîne un dépassement de la masse salariale pour un des poolers impliqués dans la transaction, le pooler fautif devra libérer un joueur pour que son équipe revienne sous la masse salariale."
+   ]
+  },
+  {
+   "id": "3.3",
+   "level": 2,
+   "title": "Plancher salarial",
+   "blocks": [
+    "Chaque pooler doit respecter le plancher salarial, qui est le même que celui de la LNH."
+   ]
+  },
+  {
+   "id": "4",
+   "level": 1,
+   "title": "Repêchage annuel",
+   "blocks": []
+  },
+  {
+   "id": "4.1",
+   "level": 2,
+   "title": "Date du repêchage",
+   "blocks": [
+    "Le repêchage a lieu à chaque année. Il se déroule quelques jours/semaines avant le début de la saison."
+   ]
+  },
+  {
+   "id": "4.2",
+   "level": 2,
+   "title": "Joueurs protégés par un pooler",
+   "blocks": [
+    "Quelques semaines avant le repêchage, chaque pooler doit soumettre la liste des 10 items qu’il protège pour la saison à venir en plus de trois (3) joueurs qui se protègent automatiquement."
+   ]
+  },
+  {
+   "id": "4.3",
+   "level": 2,
+   "title": "Joueurs qui se protègent automatiquement",
+   "blocks": []
+  },
+  {
+   "id": "4.3.1",
+   "level": 3,
+   "title": "Joueurs recrues",
+   "blocks": [
+    "Les joueurs recrues sont automatiquement protégés à la suite de la première année. Le critère pour être considéré comme étant une recrue est le même que celui utilisé par la NHL :",
+    {
+     "ol": [
+      "Être âgé de moins de 26 ans le 15 septembre de l'année du début de la saison de LNH. Un joueur âgé de 26 ans le 15 septembre précédant le début de saison ne sera donc automatiquement plus considéré comme recrue.",
+      "Ne pas avoir joué plus de 25 matchs lors d'une précédente saison.",
+      "Ne pas avoir joué plus de 6 matchs lors de chacune des deux précédentes saisons dans toute ligue professionnelle importante."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "4.3.2",
+   "level": 3,
+   "title": "Joueurs n’ayant pas joué le nombre minimal de parties",
+   "blocks": [
+    "Un attaquant ou un défenseur qui dispute 39 parties ou moins, ou un gardien qui dispute 20 parties ou moins est automatiquement protégé."
+   ]
+  },
+  {
+   "id": "4.3.3",
+   "level": 3,
+   "title": "Joueur recru étant admissible à une année de protection supplémentaire",
+   "blocks": [
+    "Les poolers auront la possibilité de protéger un joueur recrue ayant écoulé sa dernière année d'admissibilité. C’est donc dire, qu’un joueur ayant joué sa saison recrue selon les critères mentionnés à l’article 4.3.1 a la saison précédente de celle venant se terminer pourra se faire protéger automatiquement une seconde fois."
+   ]
+  },
+  {
+   "id": "4.3.4",
+   "level": 3,
+   "title": "Limite maximal d’items se protégeant automatiquement :",
+   "blocks": [
+    "Un maximum de 3 items peut être protégé automatiquement. De se lots, seule un (1) item peut rencontrer le critère mentionné à l’article 4.3.3. et seule deux (2) items peuvent rencontrer le critère mentionné à l’article 4.3.2. Cependant, au total 2 joueur maximum peuvent rencontrer les critère mentionné à l’article 4.3.2. ET 4.3.3. Le pooler devra choisir trois (3) items à protéger parmi ceux-ci s’il y a plus de trois (3) joueurs admissible.",
+    "Voir ci-dessous les possibilité de protection maximal :",
+    [
+     "3 Joueurs recrues",
+     "2 Joueurs recrues + 1 Joueur recru 2e année",
+     "1 Joueurs recrues + 2 joueurs permis l’article 4.3.2",
+     "1 Joueurs recrues + 1 joueurs permis l’article 4.3.2 + 1 Joueur recru 2 e année"
+    ]
+   ]
+  },
+  {
+   "id": "4.4",
+   "level": 2,
+   "title": "Ordre de sélection lors du repêchage",
+   "blocks": [
+    "Les cinq (5) premiers choix au total est déterminé par une loterie parmi les cinq (5) équipes ayant obtenu le moins de points lors de la saison précédente.",
+    "Les probabilités d’obtenir le premier choix sont les suivantes:",
+    [
+     "Dernière équipe : 25%",
+     "Avant-dernière équipe : 25%",
+     "3e avant dernière équipe : 20%",
+     "4e avant dernière équipe : 15%",
+     "5e avant dernière équipe : 10%"
+    ],
+    "À partir du sixième choix, la sélection se fait à partir des résultats des séries éliminatoire et des points de la saison précédente en priorisant les séries donc champion saison repêchera dernier.",
+    "L’ordre des rondes suivantes suit la même procédure.",
+    {
+     "nb": "N.B. : Dans le cas d’un repêchage d’expansion, les poolers qui font leur entrée dans le pool repêchent au dernier rang lors de la première ronde, mais ils repêchent au premier rang lors des rondes subséquentes."
+    }
+   ]
+  },
+  {
+   "id": "4.5",
+   "level": 2,
+   "title": "Durée du repêchage",
+   "blocks": [
+    "Le repêchage d’un pooler se termine lorsque celui-ci acquiert 23 items dans son équipe. Il n’y a donc pas de nombre maximal de rondes lors du repêchage."
+   ]
+  },
+  {
+   "id": "4.6",
+   "level": 2,
+   "title": "Choix de repêchage",
+   "blocks": [
+    "Durant la saison dans votre banque vous possèderez vos choix du prochain repêchage et c’est seulement après la remise de la liste de protection de chaque poolers que vos choix de la saison d’ensuite seront disponible.",
+    "Exemple : durant la saison 2025-2026 vous possèderez vos choix de 2025 et après la remise de la liste de protection des poolers vous possèderez les choix 2025 et 2026."
+   ]
+  },
+  {
+   "id": "5",
+   "level": 1,
+   "title": "Transactions / Mouvement de personnels",
+   "blocks": []
+  },
+  {
+   "id": "5.1",
+   "level": 2,
+   "title": "Date limite des transactions",
+   "blocks": [
+    "La date limite des transactions est deux jours plus tard que celle de la NHL. Lors de cette journée, les poolers ont jusqu’à 21h pour annoncer une transaction. Aucun mouvement de personnel n’est autorisé après la date limite des transactions.",
+    "Il est de nouveau possible de faire des transactions seulement après le dévoilement de la liste de protection pour la saison à venir, donc quelques semaines avant le début de la nouvelle saison."
+   ]
+  },
+  {
+   "id": "5.2",
+   "level": 2,
+   "title": "Annonce des transactions",
+   "blocks": [
+    "Chaque transaction sera écrite dans la section babillard de la page web du groupe du POOL sur le site www.facebook.com",
+    "Chaque pooler doit avoir un moyen de contacter tous les autres poolers (téléphone, SMS, Facebook, etc.)"
+   ]
+  },
+  {
+   "id": "5.3",
+   "level": 2,
+   "title": "Retenues de salaire",
+   "blocks": [
+    "La plus récente convention collective permet aux poolers de retenir un pourcentage du salaire d’un joueur qu’elle désire échanger, et ce jusqu’à l’échéance de la saison. Pour ce faire, les critères suivants doivent être respectés :",
+    {
+     "ol": [
+      "Le pourcentage retenu ne peut être supérieur à 50% du salaire (AAV).",
+      "Les poolers sont limitées à trois transactions par saison impliquant une retenue de salaire.",
+      "Les équipes ne peuvent retenir un montant total de plus de 15% de la limite du plafond salarial.",
+      "Le contrat d’un joueur est limité à un maximum de deux transactions qui impliquent une retenue de salaire."
+     ]
+    },
+    "De plus, une fois qu’une telle transaction est complétée, si une équipe transige un joueur dont elle retient une partie de son salaire, elle ne peut en refaire son acquisition durant la saison en cours, à moins que son contrat soit racheté d’ici-là."
+   ]
+  },
+  {
+   "id": "5.4",
+   "level": 2,
+   "title": "Agents libres",
+   "blocks": [
+    "Il est possible de sélectionner un agent libre après le repêchage et ce jusqu’à la date limite des transactions. Pour ce faire, un pooler doit se départir d’un choix de première ronde. Si le pooler détient son choix de première ronde pour le prochain repêchage, c’est ce choix qui doit être abandonné."
+   ]
+  },
+  {
+   "id": "5.5",
+   "level": 2,
+   "title": "Joueur soumis au ballotage",
+   "blocks": [
+    "Il est possible de libérer un joueur de son équipe à tout moment et ce jusqu’à la date limite des transactions. Ce joueur deviendra agent libre, mais passera avant par le ballotage. Après la date limite des transactions votre équipe restera la même jusqu’à la remise de la liste de protection pour la saison suivante."
+   ]
+  },
+  {
+   "id": "5.6",
+   "level": 2,
+   "title": "Priorité lorsqu’un joueur est soumis au ballotage",
+   "blocks": [
+    "Un ordre de priorité a été établi pour trancher entre deux poolers décidant de réclamer un même joueur. Avant le 1er novembre, le pooler qui a obtenu le pire pointage lors de la saison précédente possède la priorité. Après le 1er novembre, c’est le pooler qui affiche jusqu’à maintenant le pire pointage qui a la priorité.",
+    "En cas d’égalité, le ratio de point par match déterminera la priorité pour la sélection du joueur."
+   ]
+  },
+  {
+   "id": "6",
+   "level": 1,
+   "title": "Déroulement de la saison",
+   "blocks": []
+  },
+  {
+   "id": "6.1",
+   "level": 2,
+   "title": "Le champion de la saison",
+   "blocks": [
+    "Le champion de la saison remportera une bourse de 150$ qui sera amassé par une collecte de 40$ à chaque pooler. À noter que le finaliste (celui qui terminera 2e durant la saison) remportera une bourse de 70$, tandis que le poolers terminant 3 e remportera 40$"
+   ]
+  },
+  {
+   "id": "6.2",
+   "level": 2,
+   "title": "Égalité",
+   "blocks": [
+    "En cas d’égalité, le ratio de point par match déterminera le classement de la saison. S’il y a toujours impasse le nombre total de but marqués départagera l’égalité. Si l’égalité persiste, un tirage au sort sera effectué."
+   ]
+  },
+  {
+   "id": "7",
+   "level": 1,
+   "title": "Série éliminatoires",
+   "blocks": []
+  },
+  {
+   "id": "7.1",
+   "level": 2,
+   "title": "Critères pour participer aux séries éliminatoires",
+   "blocks": [
+    "Les huit premières équipes de la saison accèdent aux séries éliminatoires.",
+    "Les autres équipes sont donc automatiquement éliminés."
+   ]
+  },
+  {
+   "id": "7.2",
+   "level": 2,
+   "title": "Format des séries éliminatoires",
+   "blocks": [
+    "Pour la première ronde, les huit (8) équipes s’affronteront. Les six premières équipes qui amasserons le plus de point passera à la ronde suivante. Pour la 2e ronde, les six (6) équipes s’affronterons également en conservant les points amasser en première ronde. Cependant, durant cette ronde les points amassés seront multipliés par le facteur 1,5. Donc, si un joueur récolte 10 points durant cette série, la valeur réelle des points dans le pool sera de 15 points en plus de ses points accumulé en première ronde. Or, pour avoir un laisser passer à la ronde finale, les quatre (4) équipes qui auront amassés le plus de point obtiendront une place. Pour être sacré champion des séries du pool les quatre (4) équipes finaliste s’affronterons durant les séries de la final de conférences ainsi que durant la finale de la coupe Stanley de la LNH. En revanche, un facteur de 2 sera appliqué en final de conférence et un facteur de 3 sera appliqué en final de la coupe Stanley. Le pooler, permit les quatre pooler finaliste, qui amassera le plus de point cumulatif sur l’ensemble des séries sera sacré champion des séries du pool."
+   ]
+  },
+  {
+   "id": "7.3",
+   "level": 2,
+   "title": "Égalité",
+   "blocks": [
+    "En cas d’égalité, le ratio de point par match déterminera celui qui passera en ronde suivante. S’il y a toujours impasse le nombre total de but marqués départagera l’égalité. Si l’égalité persiste, un tirage au sort sera effectué."
+   ]
+  },
+  {
+   "id": "7.4",
+   "level": 2,
+   "title": "Le champion des séries éliminatoires",
+   "blocks": [
+    "Le champion des séries éliminatoires remportera une bourse de 150$ qui sera amassé par une collecte de 70$ à chaque pooler. À noter que le finaliste (celui qui terminera 2 e durant les séries) remportera une bourse de 40$, tandis que le poolers terminant 3 e remportera 40$."
+   ]
+  }
+ ]
+}

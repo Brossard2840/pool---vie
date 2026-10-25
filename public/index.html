@@ -140,6 +140,15 @@
   .annonce .tt{font-weight:800;font-size:16px;margin-bottom:4px;}
   .annonce .bd{white-space:pre-wrap;font-size:14px;line-height:1.4;}
   .annonce .x{position:absolute;top:8px;right:8px;background:transparent;border:none;color:var(--dim);font-size:18px;padding:4px 8px;}
+  .conv-toc a{display:block;padding:5px 0;color:var(--text);text-decoration:none;font-size:14px;}
+  .conv-toc a.l2{padding-left:16px;color:var(--dim);font-size:13px;} .conv-toc a.l3{padding-left:32px;color:var(--dim);font-size:13px;}
+  .conv h3.c1{font-size:19px;margin:22px 0 8px;color:var(--gold);text-transform:none;letter-spacing:0;}
+  .conv h4{font-size:15px;margin:16px 0 6px;} .conv h4.c3{font-size:14px;color:var(--dim);}
+  .conv p,.conv li{font-size:15px;line-height:1.5;margin:0 0 8px;} .conv ul,.conv ol{margin:0 0 10px;padding-left:22px;}
+  .conv .nb{font-size:13px;color:var(--dim);font-style:italic;border-left:3px solid var(--line);padding-left:10px;}
+  .conv .num{color:var(--gold);font-variant-numeric:tabular-nums;margin-right:6px;}
+  .conv mark{background:var(--gold-fill);color:var(--accent-ink);border-radius:3px;padding:0 2px;}
+  .conv section{scroll-margin-top:calc(var(--toph, 64px) + 12px);}
   .issues{background:var(--bad-bg);border:1px solid var(--bad-line);color:var(--bad-ink);border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px;}
   .okbox{background:var(--ok-bg);border:1px solid var(--ok-line);color:var(--ok-ink);border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px;}
   .muted{color:var(--dim);font-size:13px;}
@@ -629,13 +638,13 @@ function route(){
   const [, r = (localStorageGet('pav_home') || 'classement'), arg] = location.hash.split('/');
   document.querySelectorAll('.tabbar a').forEach(a => a.classList.toggle('on', a.dataset.r === r ||
     (r === 'equipe' && a.dataset.r === (Number(arg) === S.me.teamId ? 'mon-equipe' : 'classement')) ||
-    (['liste','historique','commissaire','equipes','protection','projections','projection','mur','trophees','temple','simulation','reglages'].includes(r) && a.dataset.r === 'plus') ||
+    (['liste','historique','commissaire','equipes','protection','projections','projection','mur','trophees','temple','simulation','reglages','convention'].includes(r) && a.dataset.r === 'plus') ||
     (['offre','choix','echange','bloc','marche'].includes(r) && a.dataset.r === 'echanges')));
   clearInterval(liveTimer); liveTimer = null; clearInterval(draftTimer); draftTimer = null;
   clearInterval(DCK.timer); DCK.timer = null; if (SIM) { clearTimeout(SIM.bot); SIM = null; }
   window.scrollTo(0, 0);
   const views = { classement: vStandings, 'mon-equipe': () => neutral() ? vTeams() : vTeam(S.me.teamId), equipe: () => vTeam(arg), equipes: vTeams, direct: () => vLive(arg),
-                  repechage: () => vDraft(arg), simulation: vDraftSim, protection: () => vProtection(arg), echanges: vTrades, echange: () => vTradeOne(arg), mur: vWall, reglages: vSettings, marche: vBlock, bloc: vBlock, trophees: vAwards, temple: vHall, projections: vProjections, projection: () => vProjection(arg), notifications: vNotifications, offre: () => vOffer(arg), choix: () => vPicks(arg),
+                  repechage: () => vDraft(arg), simulation: vDraftSim, protection: () => vProtection(arg), echanges: vTrades, echange: () => vTradeOne(arg), mur: vWall, reglages: vSettings, marche: vBlock, bloc: vBlock, trophees: vAwards, temple: vHall, projections: vProjections, projection: () => vProjection(arg), notifications: vNotifications, convention: () => vConvention(arg), offre: () => vOffer(arg), choix: () => vPicks(arg),
                   joueurs: vPlayers, plus: vMore, liste: vWatchlist, historique: vMoves, commissaire: vAdmin };
   (views[r] || vStandings)();
 }
@@ -2378,6 +2387,60 @@ const draftChoose = run(async (id) => {
   const prev = DR; DR = await api('/api/draft?year=' + DR.year); draftEvents(prev, DR, S.me.teamId); renderDraft();
 });
 
+// ---------- Convention collective (texte intégral, avec recherche) ----------
+let CONV = null;
+const vConvention = run(async (art) => {
+  if (!CONV) CONV = await (await pfetch('/convention.json')).json();
+  const tocHtml = CONV.sections.map(x => `<a class="l${x.level}" href="javascript:convGo('${x.id}')"><span class="num" style="margin-right:4px">${x.id}</span>${esc(x.title)}</a>`).join('');
+  $('#view').innerHTML = `<h2 class="title">📜 ${esc(CONV.title)}</h2>
+    <p class="muted" style="margin-top:-6px">Pool à vie · ${esc(CONV.edition)} · ${new Date(CONV.date + 'T12:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+    <input id="cvQ" type="search" placeholder="Rechercher : ballotage, plafond, recrue…" style="margin-bottom:10px">
+    <div id="cvHits" class="muted" style="font-size:13px;margin:-4px 0 10px" hidden></div>
+    <details class="card conv-toc" id="cvToc"><summary><b>Table des matières</b></summary><div style="margin-top:8px">${tocHtml}</div></details>
+    <div class="card conv" id="cvBody"></div>
+    <a class="btn ghost" style="width:100%;text-decoration:none;display:block;text-align:center;margin-bottom:12px" href="${CONV.pdf}" target="_blank" rel="noopener">📄 Ouvrir le PDF officiel</a>
+    <p class="muted" style="font-size:12px">Texte reproduit tel quel à partir du PDF officiel. En cas de doute, le PDF fait foi.</p>`;
+  const draw = q => {
+    const words = q.trim() ? norm(q).split(/\s+/).filter(Boolean) : [];
+    const hl = t => {
+      let h = esc(t);
+      if (!words.length) return h;
+      // Surligne sans tenir compte des accents : on cherche dans le texte « aplati », puis on reporte les positions.
+      const flat = norm(t), marks = [];
+      for (const w of words) { let i = 0; while ((i = flat.indexOf(w, i)) >= 0) { marks.push([i, i + w.length]); i += w.length; } }
+      if (!marks.length) return h;
+      marks.sort((a, b) => a[0] - b[0]);
+      let out = '', pos = 0;
+      for (const [a, b] of marks) { if (a < pos) continue; out += esc(t.slice(pos, a)) + '<mark>' + esc(t.slice(a, b)) + '</mark>'; pos = b; }
+      return out + esc(t.slice(pos));
+    };
+    const blockText = b => typeof b === 'string' ? b : Array.isArray(b) ? b.join(' ') : (b.ol || [b.nb]).join(' ');
+    const block = b => typeof b === 'string' ? `<p>${hl(b)}</p>` : Array.isArray(b) ? `<ul>${b.map(x => `<li>${hl(x)}</li>`).join('')}</ul>`
+      : b.ol ? `<ol>${b.ol.map(x => `<li>${hl(x)}</li>`).join('')}</ol>` : `<p class="nb">${hl(b.nb)}</p>`;
+    // En recherche : seulement les articles qui contiennent tous les mots (avec leur chapitre).
+    const match = x => words.every(w => norm(x.id + ' ' + x.title + ' ' + x.blocks.map(blockText).join(' ')).includes(w));
+    const keep = new Set();
+    if (words.length) for (const x of CONV.sections) if (match(x)) { keep.add(x.id); keep.add(x.id.split('.')[0]); }
+    const list = CONV.sections.filter(x => !words.length || keep.has(x.id));
+    $('#cvBody').innerHTML = list.map(x => `<section id="art-${x.id.replace(/\./g, '-')}">
+      ${x.level === 1 ? `<h3 class="c1"><span class="num">${x.id}.</span>${hl(x.title)}</h3>` : `<h4 class="c${x.level}"><span class="num">${x.id}</span>${hl(x.title)}</h4>`}
+      ${(!words.length || match(x)) ? x.blocks.map(block).join('') : ''}</section>`).join('') || '<div class="empty">Aucun article ne contient ces mots.</div>';
+    const n = list.filter(match).length, hits = $('#cvHits');
+    hits.hidden = !words.length; hits.textContent = n ? `${n} article${n > 1 ? 's' : ''} trouvé${n > 1 ? 's' : ''}` : '';
+  };
+  let t; $('#cvQ').oninput = e => { clearTimeout(t); t = setTimeout(() => draw(e.target.value), 150); };
+  draw('');
+  if (art) setTimeout(() => convGo(art), 50);
+});
+const norm = x => String(x).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+function convGo(id){
+  const el = document.getElementById('art-' + String(id).replace(/\./g, '-'));
+  if (!el) { const q = $('#cvQ'); if (q && q.value) { q.value = ''; q.oninput({ target: q }); setTimeout(() => convGo(id), 200); } return; }
+  $('#cvToc').open = false;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  el.style.transition = 'background .6s'; el.style.background = 'var(--warn-bg)'; setTimeout(() => el.style.background = '', 1400);
+}
+
 // ---------- Liste de protection ----------
 let PR = null;
 const vProtection = run(async (teamArg) => {
@@ -2496,6 +2559,7 @@ function vMore(){
       <div class="item" onclick="location.hash='#/trophees'"><div class="grow"><div class="name">🏅 Trophées de la semaine</div><div class="meta">Pooler et joueur de la semaine, votes de la gang</div></div>›</div>
       <div class="item" onclick="location.hash='#/temple'"><div class="grow"><div class="name">🏆 Temple de la renommée</div><div class="meta">Champions de chaque saison et records</div></div>›</div>
       ${neutral() ? '' : `<div class="item" onclick="location.hash='#/projections'"><div class="grow"><div class="name">🔮 Projections</div><div class="meta">Tes alignements des saisons à venir, avec la masse salariale de l'année</div></div>›</div>`}
+      <div class="item" onclick="location.hash='#/convention'"><div class="grow"><div class="name">📜 Convention collective</div><div class="meta">Les règlements du pool au complet</div></div>›</div>
       <div class="item" onclick="location.hash='#/repechage'"><div class="grow"><div class="name">🎲 Repêchage</div><div class="meta">Loterie, ordre et tableau des choix</div></div>›</div>
       <div class="item" onclick="location.hash='#/protection'"><div class="grow"><div class="name">🛡️ Liste de protection${S.pendingProtection ? ' <span class="tag" style="border-color:var(--red);color:var(--red)">à remettre</span>' : ''}</div><div class="meta">10 joueurs protégés + 3 automatiques (art. 4.2 et 4.3)</div></div>›</div>
       <div class="item" onclick="location.hash='#/equipes'"><div class="grow"><div class="name">Équipes</div><div class="meta">Tous les alignements et leur conformité</div></div>›</div>
@@ -3065,6 +3129,10 @@ const vSettings = run(async () => {
       <details style="margin-top:12px"><summary>Crédits des sons</summary>
         <p class="muted" style="margin:8px 0 4px">De vrais enregistrements libres de droits, coupés, mixés et accompagnés d'une réverbération d'aréna pour l'application.</p>
         ${SOUND_CREDITS.map(([what, who, lic]) => `<div class="meta" style="margin:4px 0;font-size:12px;color:var(--dim)">${esc(what)} : ${esc(who)} · <b>${esc(lic)}</b></div>`).join('')}</details></div>
+
+    <div class="sechd">📜 Règlements</div>
+    <div class="card"><div class="list"><div class="item" onclick="location.hash='#/convention'"><div class="grow"><div class="name">Convention collective</div>
+      <div class="meta">Le texte intégral, avec recherche, et le PDF officiel</div></div>›</div></div></div>
 
     <div class="sechd">👤 Compte</div>
     <div class="card">
