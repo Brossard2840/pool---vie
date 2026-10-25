@@ -252,7 +252,7 @@ async function linkUnlinked() {
       if (last) {
         const { rows } = await pool.query(`SELECT id, nhl_id, name_key, pos, nhl_team FROM players
           WHERE name_key LIKE $1 AND nhl_id IS NOT NULL AND id<>$2`, ['% ' + last, p.id]);
-        cands = rows.filter(r => rules.canonicalKey(r.name_key) === rules.canonicalKey(p.name_key));
+        cands = rows.filter(r => rules.sameFirstName(r.name_key, p.name_key));
         // Un diminutif ne suffit pas pour deviner : position identique exigée.
         if (p.pos) cands = cands.filter(r => r.pos === p.pos);
       }
@@ -309,6 +309,7 @@ async function refreshStats() {
       let pool1 = (byKey.get(p.name_key) || []).filter(r => !usedIds.has(r.nhl_id));
       // Diminutif (Dan / Daniel) : seulement à la même position.
       if (!pool1.length) pool1 = (byCanon.get(rules.canonicalKey(p.name_key)) || []).filter(r => !usedIds.has(r.nhl_id) && (!p.pos || r.pos === p.pos));
+      if (!pool1.length) pool1 = rows.filter(r => !usedIds.has(r.nhl_id) && (!p.pos || r.pos === p.pos) && rules.sameFirstName(r.name_key, p.name_key));
       const cands = findCandidates(pool1, p);
       if (cands.length === 1) {
         await pool.query(`UPDATE players SET nhl_id=$1 WHERE id=$2`, [cands[0].nhl_id, p.id]);
@@ -324,6 +325,9 @@ async function refreshStats() {
       FROM json_to_recordset($1::json) AS r(nhl_id INT, name TEXT, name_key TEXT, nhl_team TEXT, pos TEXT,
         gp INT, goals INT, assists INT, wins INT, ot_losses INT, shutouts INT)
       ON CONFLICT (nhl_id) DO UPDATE SET
+        -- Une fiche créée depuis une feuille de match porte une initiale (« D. Vladar ») : on prend le nom complet.
+        name = CASE WHEN players.name ~ '^[A-Z][.]' AND EXCLUDED.name !~ '^[A-Z][.]' THEN EXCLUDED.name ELSE players.name END,
+        name_key = CASE WHEN players.name ~ '^[A-Z][.]' AND EXCLUDED.name !~ '^[A-Z][.]' THEN EXCLUDED.name_key ELSE players.name_key END,
         nhl_team = CASE WHEN $3 THEN COALESCE(players.nhl_team, EXCLUDED.nhl_team) ELSE COALESCE(EXCLUDED.nhl_team, players.nhl_team) END,
         stats_season = CASE WHEN $3 THEN players.stats_season ELSE EXCLUDED.stats_season END,
         gp = CASE WHEN $3 THEN players.gp ELSE EXCLUDED.gp END,

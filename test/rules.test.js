@@ -129,3 +129,11 @@ test('diminutifs de prénoms : Dan Vladar = Daniel Vladar', () => {
   assert.notEqual(canonicalKey('Dan Vladar'), canonicalKey('Daniel Sprong'));
   assert.equal(canonicalKey('Connor McDavid'), 'connor mcdavid');
 });
+
+test('initiale des feuilles de match : D. Vladar = Daniel Vladar', () => {
+  const { sameFirstName } = require('../lib/rules');
+  assert.ok(sameFirstName('D. Vladar', 'Daniel Vladar'));
+  assert.ok(sameFirstName('Dan Vladar', 'Daniel Vladar'));
+  assert.ok(!sameFirstName('J. Vladar', 'Daniel Vladar'));
+  assert.ok(!sameFirstName('D. Vlader', 'Daniel Vladar'));
+});
