@@ -121,3 +121,11 @@ test('loterie du repêchage : tirage pondéré sans remise (art. 4.4)', () => {
   for (let i = 0; i < n; i++) { const t = drawLottery([1, 2, 3, 4, 5], [25, 25, 20, 15, 10])[0].team_id; wins[t] = (wins[t] || 0) + 1; }
   assert.ok(Math.abs(wins[1] / n - 25 / 95) < 0.02 && Math.abs(wins[5] / n - 10 / 95) < 0.02);
 });
+
+test('diminutifs de prénoms : Dan Vladar = Daniel Vladar', () => {
+  const { canonicalKey } = require('../lib/rules');
+  assert.equal(canonicalKey('Dan Vladar'), canonicalKey('Daniel Vladar'));
+  assert.equal(canonicalKey('Matt Boldy'), canonicalKey('Matthew Boldy'));
+  assert.notEqual(canonicalKey('Dan Vladar'), canonicalKey('Daniel Sprong'));
+  assert.equal(canonicalKey('Connor McDavid'), 'connor mcdavid');
+});

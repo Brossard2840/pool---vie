@@ -244,8 +244,19 @@ async function linkUnlinked() {
   const { rows: unlinked } = await pool.query(`SELECT id, name_key, pos, nhl_team FROM players WHERE nhl_id IS NULL`);
   let n = 0;
   for (const p of unlinked) {
-    const { rows: cands } = await pool.query(
+    let { rows: cands } = await pool.query(
       `SELECT id, nhl_id, pos, nhl_team FROM players WHERE name_key=$1 AND nhl_id IS NOT NULL AND id<>$2`, [p.name_key, p.id]);
+    // Second recours : même nom de famille et même prénom une fois les diminutifs ramenés (Dan = Daniel).
+    if (!cands.length) {
+      const last = p.name_key.split(' ').slice(1).join(' ');
+      if (last) {
+        const { rows } = await pool.query(`SELECT id, nhl_id, name_key, pos, nhl_team FROM players
+          WHERE name_key LIKE $1 AND nhl_id IS NOT NULL AND id<>$2`, ['% ' + last, p.id]);
+        cands = rows.filter(r => rules.canonicalKey(r.name_key) === rules.canonicalKey(p.name_key));
+        // Un diminutif ne suffit pas pour deviner : position identique exigée.
+        if (p.pos) cands = cands.filter(r => r.pos === p.pos);
+      }
+    }
     const c = findCandidates(cands, p);
     if (c.length !== 1) continue;
     // La fiche LNH existe déjà au catalogue : on y transfère le salaire, le contrat et l'équipe du pool.
@@ -279,11 +290,14 @@ async function refreshStats() {
     return result;
     }
 
-    const byKey = new Map();
+    const byKey = new Map(), byCanon = new Map();
     for (const r of rows) {
       r.name_key = rules.normalizeName(r.name);
       if (!byKey.has(r.name_key)) byKey.set(r.name_key, []);
       byKey.get(r.name_key).push(r);
+      const ck = rules.canonicalKey(r.name_key);
+      if (!byCanon.has(ck)) byCanon.set(ck, []);
+      byCanon.get(ck).push(r);
     }
     const { rows: known } = await pool.query(`SELECT nhl_id FROM players WHERE nhl_id IS NOT NULL`);
     const usedIds = new Set(known.map(r => r.nhl_id));
@@ -292,7 +306,10 @@ async function refreshStats() {
     const { rows: unlinkedPlayers } = await pool.query(
       `SELECT id, name, name_key, pos, nhl_team FROM players WHERE nhl_id IS NULL`);
     for (const p of unlinkedPlayers) {
-      const cands = findCandidates((byKey.get(p.name_key) || []).filter(r => !usedIds.has(r.nhl_id)), p);
+      let pool1 = (byKey.get(p.name_key) || []).filter(r => !usedIds.has(r.nhl_id));
+      // Diminutif (Dan / Daniel) : seulement à la même position.
+      if (!pool1.length) pool1 = (byCanon.get(rules.canonicalKey(p.name_key)) || []).filter(r => !usedIds.has(r.nhl_id) && (!p.pos || r.pos === p.pos));
+      const cands = findCandidates(pool1, p);
       if (cands.length === 1) {
         await pool.query(`UPDATE players SET nhl_id=$1 WHERE id=$2`, [cands[0].nhl_id, p.id]);
         usedIds.add(cands[0].nhl_id);
