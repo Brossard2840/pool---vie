@@ -344,6 +344,8 @@ async function refreshStats() {
       UPDATE players SET gp=0, goals=0, assists=0, wins=0, ot_losses=0, shutouts=0, stats_season=$1
       WHERE stats_season IS DISTINCT FROM $1`, [season]);
     await linkUnlinked();
+    // En direct, les totaux viennent des sommaires de match : on les compare au rapport officiel.
+    if (keepStats) await auditStats(season, rows).catch(e => console.warn('Vérification des points :', e.message));
 
     const { rows: stillUnlinked } = await pool.query(`
       SELECT p.name, t.name AS team FROM players p JOIN picks pk ON pk.player_id=p.id
@@ -361,6 +363,42 @@ async function refreshStats() {
     return result;
   })().finally(() => { refreshing = null; });
   return refreshing;
+}
+
+// Vérification des points des joueurs du pool : somme des matchs (game_log) contre le rapport officiel de la LNH.
+// Un écart vient presque toujours d'une passe de gardien (absente du sommaire de match) ou d'une correction
+// de la LNH après le match : on relit alors le journal de matchs officiel du joueur et on corrige ses matchs.
+async function auditStats(season, report, { max = 60 } = {}) {
+  const official = new Map(report.map(r => [r.nhl_id, r]));
+  const { rows: mine } = await pool.query(`
+    SELECT p.nhl_id, p.name, p.pos, t.name AS team,
+      COALESCE(SUM(l.gp),0)::int gp, COALESCE(SUM(l.goals),0)::int goals, COALESCE(SUM(l.assists),0)::int assists,
+      COALESCE(SUM(l.wins),0)::int wins, COALESCE(SUM(l.ot_losses),0)::int ot_losses, COALESCE(SUM(l.shutouts),0)::int shutouts
+    FROM picks pk JOIN players p ON p.id=pk.player_id JOIN teams t ON t.id=pk.team_id
+    LEFT JOIN game_log l ON l.player_nhl_id=p.nhl_id AND l.season=$1 AND l.game_type=2
+    WHERE p.nhl_id IS NOT NULL GROUP BY p.nhl_id, p.name, p.pos, t.name`, [season]);
+  const pts = r => rules.poolPoints(r);
+  const gaps = mine.filter(m => { const o = official.get(m.nhl_id); return o && (o.goals !== m.goals || o.assists !== m.assists || (m.pos === 'G' && o.shutouts !== m.shutouts)); });
+  const fixed = [], left = [];
+  for (const m of gaps.slice(0, max)) {
+    const o = official.get(m.nhl_id);
+    let changes = [];
+    try { changes = await live.patchPlayer(m.nhl_id, season, m.pos); } catch (e) { console.warn(`Journal de ${m.name} :`, e.message); }
+    const { rows: [a] } = await pool.query(`SELECT COALESCE(SUM(goals),0)::int goals, COALESCE(SUM(assists),0)::int assists, COALESCE(SUM(shutouts),0)::int shutouts,
+      COALESCE(SUM(wins),0)::int wins, COALESCE(SUM(ot_losses),0)::int ot_losses FROM game_log WHERE player_nhl_id=$1 AND season=$2 AND game_type=2`, [m.nhl_id, season]);
+    const after = { ...m, ...a };
+    const item = { name: m.name, team: m.team, pos: m.pos, before: pts(m), after: pts(after), official: pts({ ...o, pos: m.pos }),
+      detail: `${m.goals} B ${m.assists} A → ${a.goals} B ${a.assists} A (LNH : ${o.goals} B ${o.assists} A)`, games: changes.length };
+    if (changes.length) fixed.push(item);
+    if (a.goals !== o.goals || a.assists !== o.assists) left.push(item);
+  }
+  if (fixed.length) await live.recomputeSeason(season);
+  const prev = JSON.parse((await getConfig('stats_audit')) || 'null');
+  // On garde l'historique des corrections (les 100 dernières) pour le commissaire.
+  const history = [...fixed.map(f => ({ ...f, at: new Date().toISOString() })), ...((prev && prev.history) || [])].slice(0, 100);
+  await setConfig('stats_audit', JSON.stringify({ at: new Date().toISOString(), checked: mine.length, gaps: gaps.length, fixed: fixed.length, left, history }));
+  if (fixed.length) console.log(`Vérification des points : ${fixed.length} joueur(s) corrigé(s) : ${fixed.map(f => `${f.name} ${f.before}→${f.after}`).join(', ')}`);
+  return { checked: mine.length, gaps: gaps.length, fixed, left };
 }
 
 async function refreshIfStale() {
@@ -1042,6 +1080,10 @@ admin.post('/horn', h(async (req, res) => {
   await setConfig('horn_audio', data);
   await setConfig('horn_version', Date.now());
   res.json({ ok: true });
+}));
+
+admin.get('/stats/audit', h(async (req, res) => {
+  res.json(JSON.parse((await getConfig('stats_audit')) || 'null') || { at: null, history: [], left: [] });
 }));
 
 admin.post('/stats/refresh', h(async (req, res) => {

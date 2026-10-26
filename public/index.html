@@ -2629,9 +2629,21 @@ const removeAnnonce = run(async () => {
   await apiDelete('/api/admin/annonce');
   toast('Bannière retirée'); await loadState(); vAdmin();
 });
+// Vérification des points (sommaires de match contre le rapport officiel de la LNH).
+function renderAudit(A){
+  const el = $('#auditBox'); if (!el || !A) return;
+  if (!A.at) { el.innerHTML = '<p class="muted" style="font-size:13px">🔎 Vérification des points : pas encore faite (à la prochaine mise à jour des stats).</p>'; return; }
+  const row = x => `<div class="pl"><span><b>${esc(x.name)}</b> <span class="muted">(${esc(x.team)})</span><br><span class="muted" style="font-size:12px">${esc(x.detail)}${x.at ? ' · ' + ago(x.at) : ''}</span></span><span>${x.before} → <b>${x.after}</b> pts</span></div>`;
+  el.innerHTML = `<div class="issues" style="background:var(--ok-bg);border-color:var(--ok-line);color:var(--ok-ink)">
+    🔎 <b>Vérification des points</b> ${ago(A.at)} : ${A.checked} joueurs du pool comparés au rapport officiel de la LNH.
+    ${A.left && A.left.length ? `<br>⏳ ${A.left.length} écart(s) en attente (souvent un match qui vient de finir, le rapport LNH n'est pas encore à jour).` : '<br>✅ Aucun écart.'}</div>
+    ${A.history && A.history.length ? `<details style="margin-bottom:10px"><summary>Corrections faites (${A.history.length})</summary>${A.history.map(row).join('')}</details>` : ''}
+    ${A.left && A.left.length ? `<details style="margin-bottom:10px"><summary>Écarts en attente (${A.left.length})</summary>${A.left.map(row).join('')}</details>` : ''}`;
+}
 const vAdmin = run(async () => {
   if (!S.me.isAdmin) { location.hash = '#/plus'; return; }
   const teams = await api('/api/admin/teams');
+  api('/api/admin/stats/audit').then(renderAudit).catch(() => {});
   const c = S.config, lr = c.lastResult;
   const sorted = S.teams.slice().sort((a,b) => a.name.localeCompare(b.name, 'fr'));
   $('#view').innerHTML = `
@@ -2665,6 +2677,7 @@ const vAdmin = run(async () => {
       ${lr ? `Dernier passage : ${lr.nhlPlayers} joueurs LNH lus.` : ''}</p>
       ${lr && lr.unlinked && lr.unlinked.length ? `<div class="issues"><b>${lr.unlinked.length} joueur(s) du pool sans fiche LNH</b> (aucun match joué cette saison, ou nom différent).
         Ouvre leur fiche et utilise « Fusionner » si le nom diffère :<br>${lr.unlinked.map(esc).join('<br>')}</div>` : ''}
+      <div id="auditBox"></div>
       <button class="btn small" onclick="refreshStats(this)">Mettre à jour maintenant</button>
       <button class="btn small ghost" onclick="refreshInjuries(this)">❌ Mettre à jour les blessures</button>
     </div>

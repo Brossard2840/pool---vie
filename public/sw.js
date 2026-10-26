@@ -1,6 +1,6 @@
 // Service worker : rend l'application installable et garde la coquille en cache.
 // Les données (/api) ne sont jamais mises en cache : on veut toujours les stats à jour.
-const CACHE = 'pav-v34';
+const CACHE = 'pav-v35';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icons/icon-192-v5.png', '/logo.png', '/logo-mark.png'];
 
 self.addEventListener('install', e => {
