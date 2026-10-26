@@ -1437,6 +1437,7 @@ function tradeCard(t){
       <div><h5>${esc(t.from_team)} envoie</h5>${tradeItems(t.items.filter(i => i.from_team_id === t.from_team_id))}</div>
       <div><h5>${esc(t.to_team)} envoie</h5>${tradeItems(t.items.filter(i => i.from_team_id === t.to_team_id))}</div>
     </div>
+    ${t.status === 'accepted' && !S.me.isAdmin ? `<p style="margin:8px 0 0;font-size:13px;color:var(--gold)">⏳ Les joueurs changeront d'équipe quand le commissaire aura approuvé l'échange (compte 🔑 Commissaire, onglet Échanges).</p>` : ''}
     ${t.message ? `<p class="muted" style="margin:8px 0 0">💬 ${esc(t.message)}</p>` : ''}
     ${t.reply ? `<p class="muted" style="margin:4px 0 0">↩︎ ${esc(t.reply)}</p>` : ''}
     <div class="meta muted" style="margin-top:6px;font-size:11px">#${t.id} · ${new Date(t.updated_at).toLocaleString('fr-CA', { dateStyle:'medium', timeStyle:'short' })}</div>
@@ -1470,8 +1471,13 @@ const tradeAct = run(async (id, action) => {
   if (!confirm(labels[action])) return;
   const reply = ['refuse','reject'].includes(action) ? (prompt('Un mot pour l\'autre pooler ? (optionnel)') || '') : '';
   await api(`/api/trades/${id}/${action}`, { reply });
-  toast({ accept:'Offre acceptée', refuse:'Offre refusée', cancel:'Offre annulée', approve:'Échange complété', reject:'Échange rejeté' }[action]);
-  await loadState(); vTrades();
+  await loadState();
+  const T = await api('/api/trades').catch(() => null), t = T && T.trades.find(x => x.id === id);
+  // Acceptée mais pas encore complétée : les joueurs ne bougent qu'après l'approbation du commissaire.
+  const pending = action === 'accept' && t && t.status === 'accepted';
+  toast(pending ? '✅ Offre acceptée · en attente du commissaire : les joueurs changeront d\'équipe après son approbation'
+    : { accept:'Échange complété : alignements mis à jour', refuse:'Offre refusée', cancel:'Offre annulée', approve:'Échange complété : alignements mis à jour', reject:'Échange rejeté' }[action]);
+  vTrades();
 });
 
 function waiverSection(W){
@@ -3240,10 +3246,11 @@ async function renderPush(N, rebound){
   const st = sub ? await api('/api/push/status', { endpoint: sub.endpoint }) : { subscribed: false, kinds: [] };
   if (sub && st.subscribed && !st.mine && !rebound) { await syncPush().catch(() => {}); return renderPush(N, true); }
   const on = sub && st.subscribed;
-  const kinds = on ? st.kinds : Object.keys(N.kinds).filter(k => k !== 'admin' || S.me.isAdmin);
+  const showKind = k => k !== 'admin' || S.me.isAdmin || st.alsoAdmin;
+  const kinds = on ? st.kinds : Object.keys(N.kinds).filter(showKind);
   $('#pushBody').innerHTML = `
     <p class="muted">${on ? `✅ Les notifications sont activées sur ce téléphone, pour <b>${esc(myTeam() ? myTeam().name : '🔑 Commissaire')}</b>.` : 'Reçois les alertes même quand l\'application est fermée.'}</p>
-    ${Object.entries(N.kinds).filter(([k]) => k !== 'admin' || S.me.isAdmin).map(([k, l]) => `<label class="pick"><input type="checkbox" class="pkind" value="${k}" ${kinds.includes(k) ? 'checked' : ''}> ${esc(l)}</label>`).join('')}
+    ${Object.entries(N.kinds).filter(([k]) => showKind(k)).map(([k, l]) => `<label class="pick"><input type="checkbox" class="pkind" value="${k}" ${kinds.includes(k) ? 'checked' : ''}> ${esc(l)}</label>`).join('')}
     <div class="row" style="margin-top:8px">
       <button class="btn small" id="pushOn">${on ? 'Enregistrer mes choix' : '🔔 Activer les notifications'}</button>
       ${on ? '<button class="btn small ghost" id="pushTest">Tester</button><button class="btn small danger" id="pushOff">Désactiver</button>' : ''}
