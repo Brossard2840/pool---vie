@@ -1439,6 +1439,7 @@ function tradeCard(t){
     `<button class="btn small ghost" onclick="location.hash='#/offre/${t.from_team_id}-${t.id}'">Contre-offre</button>`,
     `<button class="btn small danger" onclick="tradeAct(${t.id},'refuse')">Refuser</button>`);
   if (mineFrom && ['proposed','accepted'].includes(t.status)) acts.push(`<button class="btn small danger" onclick="tradeAct(${t.id},'cancel')">Annuler</button>`);
+  if (S.me.isAdmin && t.status === 'completed') acts.push(`<button class="btn small danger" onclick="tradeAct(${t.id},'reverse')">↩️ Annuler l'échange (illégal)</button>`);
   if (S.me.isAdmin && t.status === 'accepted') acts.push(`<button class="btn small" onclick="tradeAct(${t.id},'approve')">✓ Approuver</button>`,
     `<button class="btn small danger" onclick="tradeAct(${t.id},'reject')">Rejeter</button>`);
   return `<div class="trade">
@@ -1447,6 +1448,7 @@ function tradeCard(t){
       <div><h5>${esc(t.from_team)} envoie</h5>${tradeItems(t.items.filter(i => i.from_team_id === t.from_team_id))}</div>
       <div><h5>${esc(t.to_team)} envoie</h5>${tradeItems(t.items.filter(i => i.from_team_id === t.to_team_id))}</div>
     </div>
+    ${t.warnings && t.warnings.length && t.status === 'completed' ? `<div class="issues" style="margin:8px 0 0;font-size:13px"><b>⚠️ Non conforme</b> au moment de l'échange :<br>${t.warnings.map(esc).join('<br>')}</div>` : ''}
     ${t.status === 'accepted' && !S.me.isAdmin ? `<p style="margin:8px 0 0;font-size:13px;color:var(--gold)">⏳ Les joueurs changeront d'équipe quand le commissaire aura approuvé l'échange (compte 🔑 Commissaire, onglet Échanges).</p>` : ''}
     ${t.message ? `<p class="muted" style="margin:8px 0 0">💬 ${esc(t.message)}</p>` : ''}
     ${t.reply ? `<p class="muted" style="margin:4px 0 0">↩︎ ${esc(t.reply)}</p>` : ''}
@@ -1454,21 +1456,42 @@ function tradeCard(t){
     ${acts.length ? `<div class="actions">${acts.join('')}</div>` : ''}
   </div>`;
 }
+// « lundi 2 mars à 21 h » et le temps qui reste (heure du Québec).
+function deadlineText(d){
+  if (!d) return '';
+  const [date, time = '21:00'] = d.split('T'), [hh, mm] = time.split(':');
+  return `${new Date(date + 'T12:00:00Z').toLocaleDateString('fr-CA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })} à ${Number(hh)} h${mm !== '00' ? ' ' + mm : ''}`;
+}
+function deadlineLeft(d){
+  // Écart entre maintenant (heure du Québec) et la date limite, en minutes.
+  const nowQc = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Toronto', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()).replace(' ', 'T');
+  const m = Math.round((Date.parse(d + ':00Z') - Date.parse(nowQc + ':00Z')) / 60000);
+  if (m <= 0) return null;
+  const j = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mi = m % 60;
+  return j ? `${j} j ${h} h` : h ? `${h} h ${mi} min` : `${mi} min`;
+}
+function deadlineBanner(T){
+  if (!T.deadlineAt) return '';
+  const left = deadlineLeft(T.deadlineAt);
+  return T.deadlinePassed || !left
+    ? `<div class="issues"><b>⛔ Date limite des échanges passée</b> (${esc(deadlineText(T.deadlineAt))}). Plus aucun échange, réclamation ni libération jusqu'aux listes de protection (art. 5.1).</div>`
+    : `<div class="issues" style="background:var(--warn-bg);border-color:var(--warn-line);color:var(--text)">📅 <b>Date limite des échanges : ${esc(deadlineText(T.deadlineAt))}</b> · encore <b>${left}</b> (art. 5.1).</div>`;
+}
 const vTrades = run(async () => {
   const [T, W] = await Promise.all([api('/api/trades'), api('/api/waivers')]);
   const me = S.me.teamId, list = T.trades;
   const todo = list.filter(t => (t.to_team_id === me && t.status === 'proposed') || (S.me.isAdmin && t.status === 'accepted'));
   const sent = list.filter(t => t.from_team_id === me && ['proposed','accepted'].includes(t.status) && !todo.includes(t));
   const pendingOthers = S.me.isAdmin ? list.filter(t => t.status === 'proposed' && t.from_team_id !== me && t.to_team_id !== me) : [];
-  const done = list.filter(t => t.status === 'completed');
+  const done = list.filter(t => t.status === 'completed' || t.status === 'reversed');
   const closed = list.filter(t => ['refused','cancelled','rejected','expired'].includes(t.status) && (t.from_team_id === me || t.to_team_id === me || S.me.isAdmin));
   const sec = (title, arr, empty) => `<h3 class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px">${title}${arr.length ? ' · ' + arr.length : ''}</h3>
     ${arr.length ? arr.map(tradeCard).join('') : `<p class="muted">${empty}</p>`}`;
   $('#view').innerHTML = `<h2 class="title">Échanges</h2>
-    ${neutral() ? '<p class="muted">🔑 Compte commissaire : tu approuves les échanges. Pour proposer un échange avec ton équipe, connecte-toi avec le code de ton équipe.</p>' : `<button class="btn" style="width:100%" onclick="location.hash='#/offre'">⇄ Proposer un échange</button>`}
+    ${deadlineBanner(T)}
+    ${neutral() ? `<p class="muted">🔑 Compte commissaire : ${T.approvalRequired ? 'tu approuves les échanges' : 'les échanges se font dès que l\'autre pooler accepte ; tu peux annuler un échange illégal (bouton ↩️ sur l\'échange)'}. Pour proposer un échange avec ton équipe, connecte-toi avec le code de ton équipe.</p>` : `<button class="btn" style="width:100%" onclick="location.hash='#/offre'">⇄ Proposer un échange</button>`}
     <div class="row" style="margin-top:8px"><a class="btn ghost small" style="text-align:center;text-decoration:none" href="#/marche">📣 Marché des transactions${S.block.length ? ' · ' + S.block.length : ''}</a><a class="btn ghost small" style="text-align:center;text-decoration:none" href="#/choix">🎟️ Choix de repêchage</a></div>
-    ${T.deadline ? `<p class="muted">Date limite des transactions : <b>${esc(T.deadline)} à 21 h</b>${T.deadlinePassed ? ' — <span style="color:var(--red)">passée</span>' : ''} (art. 5.1).</p>` : ''}
-    <p class="muted">${T.approvalRequired ? 'Une fois acceptée par l\'autre pooler, l\'offre est approuvée par le commissaire.' : 'Une offre acceptée est complétée immédiatement.'}</p>
+    <p class="muted">${T.approvalRequired ? 'Une fois acceptée par l\'autre pooler, l\'offre est approuvée par le commissaire.' : 'Une offre acceptée est complétée immédiatement. Si elle ne respecte pas un règlement, l\'application avertit les deux poolers et le commissaire, qui peut l\'annuler.'}</p>
     ${waiverSection(W)}
     ${sec('À traiter', todo, 'Rien en attente.')}
     ${sec('Mes offres envoyées', sent, 'Aucune offre en cours.')}
@@ -1477,16 +1500,19 @@ const vTrades = run(async () => {
     ${closed.length ? `<details><summary>Offres fermées (${closed.length})</summary>${closed.map(tradeCard).join('')}</details>` : ''}`;
 });
 const tradeAct = run(async (id, action) => {
-  const labels = { accept:'Accepter cette offre ?', refuse:'Refuser cette offre ?', cancel:'Annuler ton offre ?', approve:'Approuver et compléter l\'échange ?', reject:'Rejeter cet échange ?' };
+  const labels = { accept:'Accepter cette offre ? L\'échange se fera tout de suite.', refuse:'Refuser cette offre ?', cancel:'Annuler ton offre ?', approve:'Approuver et compléter l\'échange ?', reject:'Rejeter cet échange ?',
+    reverse:'Annuler cet échange ? Chaque joueur et chaque choix retourne à son équipe d\'origine, et tout le monde est avisé.' };
   if (!confirm(labels[action])) return;
-  const reply = ['refuse','reject'].includes(action) ? (prompt('Un mot pour l\'autre pooler ? (optionnel)') || '') : '';
-  await api(`/api/trades/${id}/${action}`, { reply });
+  const reply = ['refuse','reject','reverse'].includes(action) ? (prompt(action === 'reverse' ? 'Raison (ex. plafond dépassé, art. 3) ?' : 'Un mot pour l\'autre pooler ? (optionnel)') || '') : '';
+  const r = await api(`/api/trades/${id}/${action}`, { reply });
+  // Échange complété malgré une règle non respectée : on le dit clairement.
+  if (r && r.warnings && r.warnings.length) alert(`✅ Échange complété.\n\n⚠️ Mais il ne respecte pas un règlement du pool :\n• ${r.warnings.join('\n• ')}\n\nCorrige ton alignement (ex. libère un joueur). Le commissaire est avisé et peut annuler l'échange s'il est illégal.`);
   await loadState();
   const T = await api('/api/trades').catch(() => null), t = T && T.trades.find(x => x.id === id);
   // Acceptée mais pas encore complétée : les joueurs ne bougent qu'après l'approbation du commissaire.
   const pending = action === 'accept' && t && t.status === 'accepted';
   toast(pending ? '✅ Offre acceptée · en attente du commissaire : les joueurs changeront d\'équipe après son approbation'
-    : { accept:'Échange complété : alignements mis à jour', refuse:'Offre refusée', cancel:'Offre annulée', approve:'Échange complété : alignements mis à jour', reject:'Échange rejeté' }[action]);
+    : { accept:'Échange complété : alignements mis à jour', refuse:'Offre refusée', cancel:'Offre annulée', approve:'Échange complété : alignements mis à jour', reject:'Échange rejeté', reverse:'Échange annulé : chacun reprend ses joueurs' }[action]);
   vTrades();
 });
 
@@ -1584,7 +1610,8 @@ const submitOffer = run(async () => {
     give: { players: pick(OF.give, 'p'), picks: pick(OF.give, 'k'),
       retain: Object.fromEntries(Object.entries(OF.ret).filter(([k, v]) => v && OF.give.has(k)).map(([k, v]) => [k.slice(1), v])) }, get: { players: pick(OF.get, 'p'), picks: pick(OF.get, 'k') } };
   if (!confirm(`Envoyer l'offre à ${team(OF.partner).name} ?`)) return;
-  await api('/api/trades', body);
+  const r = await api('/api/trades', body);
+  if (r.warnings && r.warnings.length) alert(`Offre envoyée.\n\n⚠️ Attention, elle ne respecte pas un règlement du pool :\n• ${r.warnings.join('\n• ')}\n\nSi elle est acceptée, l'échange se fera quand même, mais le commissaire pourra l'annuler.`);
   toast('Offre envoyée'); location.hash = '#/echanges';
 });
 
@@ -2745,10 +2772,12 @@ const vAdmin = run(async () => {
     </div>
 
     <div class="card"><h3>Échanges et choix</h3>
-      <label class="pick"><input type="checkbox" id="trApproval"> Le commissaire approuve chaque échange accepté</label>
-      <div class="row" style="margin-top:8px">
-        <div><label class="f">Date limite des transactions (21 h)</label><input type="date" id="trDeadline"></div>
-      </div>
+      <label class="f">📅 Date et heure limites des échanges (heure du Québec, art. 5.1)</label>
+      <div class="row" style="margin-top:4px"><input type="date" id="trDeadline"><input type="time" id="trDeadlineTime" value="21:00" style="max-width:130px"></div>
+      <p class="muted" style="font-size:12px;margin:4px 0 8px">Après ce moment : plus aucun échange, réclamation ni libération pour les poolers. Laisse la date vide pour aucune limite.</p>
+      <label class="pick"><input type="checkbox" id="trTell" checked> Aviser tous les poolers (notification et mur) quand je fixe ou change la date</label>
+      <label class="pick"><input type="checkbox" id="trApproval"> Le commissaire approuve chaque échange avant qu'il se fasse</label>
+      <p class="muted" style="font-size:12px;margin:2px 0 8px">Décoché (recommandé) : l'échange se fait dès que l'autre pooler accepte. Un échange non conforme est signalé, et tu peux l'annuler.</p>
       <button class="btn small" onclick="saveTradeSettings()">Enregistrer</button>
       <hr style="border:none;border-top:1px solid var(--line);margin:14px 0">
       <p class="muted">Après la remise des listes de protection, les choix de l'année suivante deviennent disponibles (art. 4.6).</p>
@@ -2794,7 +2823,10 @@ const vAdmin = run(async () => {
     $('#wvRanks').innerHTML = S.teams.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr')).map(t => `<div class="row" style="align-items:center">
       <span style="flex:2">${esc(t.name)}</span><input style="flex:1" class="wvRank" data-t="${t.id}" inputmode="numeric" value="${ranks.get(t.id) ?? ''}" placeholder="rang"></div>`).join('');
   }).catch(() => {});
-  api('/api/trades').then(T => { $('#trApproval').checked = T.approvalRequired; $('#trDeadline').value = T.deadline || ''; }).catch(() => {});
+  api('/api/trades').then(T => {
+    $('#trApproval').checked = T.approvalRequired;
+    const [d = '', tm = '21:00'] = (T.deadlineAt || '').split('T'); $('#trDeadline').value = d; $('#trDeadlineTime').value = tm || '21:00';
+  }).catch(() => {});
   renderTradeLists();
 });
 
@@ -2911,8 +2943,9 @@ const saveWaiverSettings = run(async () => {
   toast('Réglages du ballottage enregistrés');
 });
 const saveTradeSettings = run(async () => {
-  await api('/api/admin/trade-settings', { approval: $('#trApproval').checked, deadline: $('#trDeadline').value });
-  toast('Réglages des échanges enregistrés');
+  const d = $('#trDeadline').value, tm = $('#trDeadlineTime').value || '21:00';
+  await api('/api/admin/trade-settings', { approval: $('#trApproval').checked, deadline: d ? `${d}T${tm}` : '', announce: $('#trTell').checked });
+  toast(d ? `Date limite : ${deadlineText(`${d}T${tm}`)}` : 'Réglages des échanges enregistrés');
 });
 const genPicks = run(async () => {
   const r = await api('/api/admin/picks/generate', { year: Number($('#pkYear').value) });

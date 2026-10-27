@@ -790,7 +790,8 @@ notifier = createNotify(app, { pool, h, getConfig, setConfig });
 const reminders = createReminders({ pool, getConfig, setConfig, notify, buildLeague, rules,
   postWall: (...a) => fun ? fun.autoPost(...a) : null });
 const trades = registerTrades(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, seasonId, rules, notify,
-  putOnWaivers: (...a) => waivers.putOnWaivers(...a) });
+  putOnWaivers: (...a) => waivers.putOnWaivers(...a), standings: async () => (await buildLeague()).teams,
+  postWall: (...a) => (fun ? fun.autoPost(...a) : Promise.resolve()) });
 // Ballottage (lib/waivers.js).
 const waivers = createWaivers(app, admin, { pool, h, inTransaction, movePlayers, getConfig, setConfig, seasonId, rules, notify,
   standings: async () => (await buildLeague()).teams, claimPicks: id => trades.claimPicks(id), deadlinePassed: () => trades.deadlinePassed() });
@@ -1132,6 +1133,13 @@ const PORT = process.env.PORT || 3000;
 initDb().then(() => {
   seedKnownSalaries().catch(e => console.warn('Salaires de référence :', e.message));
   app.listen(PORT, () => console.log(`Pool à vie en écoute sur le port ${PORT}`));
+  // Décision de la ligue : les échanges se complètent dès que l'autre pooler accepte (plus d'approbation du commissaire).
+  // Une seule fois ; le commissaire peut remettre l'approbation dans ses outils s'il le veut.
+  (async () => {
+    if ((await getConfig('trade_approval_v2')) !== '1') { await setConfig('trade_approval', '0'); await setConfig('trade_approval_v2', '1'); }
+    const n = await trades.completePending();
+    if (n) console.log(`${n} échange(s) accepté(s) complété(s) sans approbation`);
+  })().catch(e => console.warn('Échanges en attente :', e.message));
   // Mise à jour régulière des stats tant que le serveur est éveillé.
   if (process.env.NO_AUTO_REFRESH !== '1') {
     setInterval(() => {
