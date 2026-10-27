@@ -1073,6 +1073,76 @@ admin.post('/roster/import', h(async (req, res) => {
   res.json(report);
 }));
 
+// Retour aux alignements du départ : chaque équipe reprend exactement les joueurs de la liste d'origine
+// (data/import-alignements-2026.txt, ou une liste collée). Seule l'appartenance change : les points, les salaires
+// et les contrats des joueurs ne sont pas touchés. Le repêchage de la saison (un test, par exemple) est effacé,
+// les offres d'échange et les ballottages en cours sont fermés. Aperçu d'abord (apply: false), puis application.
+const ORIGINAL_ROSTER = path.join(__dirname, 'data', 'import-alignements-2026.txt');
+async function matchRosterLine(c, { name, pos, nhlTeam, teamId }) {
+  const key = rules.normalizeName(name);
+  let { rows } = await c.query(`SELECT p.id, p.name, p.pos, p.nhl_team, p.nhl_id, p.gp, pk.team_id FROM players p LEFT JOIN picks pk ON pk.player_id=p.id WHERE p.name_key=$1`, [key]);
+  if (!rows.length) {
+    // Prénom abrégé ou diminutif (« Daniel Vladar » dans la liste, « Dan Vladar » à la LNH).
+    const last = key.split(' ').slice(1).join(' ');
+    if (last) rows = (await c.query(`SELECT p.id, p.name, p.name_key, p.pos, p.nhl_team, p.nhl_id, p.gp, pk.team_id FROM players p LEFT JOIN picks pk ON pk.player_id=p.id WHERE p.name_key LIKE $1`, ['% ' + last]))
+      .rows.filter(r => rules.sameFirstName(r.name_key, key) && r.pos === pos);
+  }
+  let cands = findCandidates(rows, { pos, nhl_team: nhlTeam });
+  // Doublons du même joueur : la fiche reliée à la LNH, puis celle déjà dans cette équipe, puis celle qui a joué.
+  for (const keep of [r => r.nhl_id, r => r.team_id === teamId, r => r.team_id, r => r.gp > 0]) {
+    if (cands.length > 1) { const f = cands.filter(keep); if (f.length) cands = f; }
+  }
+  // Toujours plusieurs fiches du même nom, même position et même équipe LNH : la plus utilisée.
+  if (cands.length > 1) cands = [cands.slice().sort((a, b) => (b.gp || 0) - (a.gp || 0) || a.id - b.id)[0]];
+  return cands;
+}
+admin.post('/roster/reset', h(async (req, res) => {
+  const text = req.body.text ? String(req.body.text) : fs.readFileSync(ORIGINAL_ROSTER, 'utf8');
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+  const apply = !!req.body.apply;
+  const startYear = Number(String(await seasonId()).slice(4, 8));  // prochain repêchage (ex. 2027 en 2026-27)
+  const out = await inTransaction(async c => {
+    const report = { teams: {}, moved: 0, created: [], ambiguous: [], skipped: [], draftYears: [], waivers: 0, trades: 0 };
+    const target = new Map();
+    for (const line of lines) {
+      const [poolTeam, name, posRaw, aavRaw, ageRaw, endRaw, nhlTeam] = line.split(/[;\t]/).map(x => (x || '').trim());
+      const pos = rules.posGroup(posRaw);
+      if (!poolTeam || !name || !pos) { report.skipped.push(line); continue; }
+      const team = (await c.query(`SELECT id, name FROM teams WHERE LOWER(name)=LOWER($1)`, [poolTeam])).rows[0];
+      if (!team) { report.skipped.push(`${line} (équipe inconnue)`); continue; }
+      const cands = await matchRosterLine(c, { name, pos, nhlTeam, teamId: team.id });
+      if (cands.length > 1) { report.ambiguous.push(`${name} (${poolTeam})`); continue; }
+      let id = cands[0]?.id;
+      if (!id) {
+        report.created.push(`${name} (${poolTeam})`);
+        if (apply) id = (await c.query(`INSERT INTO players(name, name_key, pos, aav, age, contract_end, nhl_team) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+          [name, rules.normalizeName(name), pos, num(aavRaw), num(ageRaw), num(endRaw), nhlTeam || null])).rows[0].id;
+        else id = `new:${name}`;
+      }
+      target.set(id, team.id);
+      report.teams[team.name] = (report.teams[team.name] || 0) + 1;
+    }
+    const { rows: now } = await c.query(`SELECT player_id, team_id FROM picks`);
+    const cur = new Map(now.map(r => [r.player_id, r.team_id]));
+    for (const [id, t] of target) if (cur.get(id) !== t) report.moved++;
+    for (const [id] of cur) if (!target.has(id)) report.moved++;
+    report.draftYears = (await c.query(`SELECT DISTINCT year FROM draft_picks WHERE year >= $1 AND (player_id IS NOT NULL OR passed) ORDER BY year`, [startYear])).rows.map(r => r.year);
+    report.waivers = (await c.query(`SELECT COUNT(*)::int n FROM waivers WHERE status='open'`)).rows[0].n;
+    report.trades = (await c.query(`SELECT COUNT(*)::int n FROM trades WHERE status IN ('proposed','accepted')`)).rows[0].n;
+    if (!apply) return report;
+    for (const y of report.draftYears) await draft.resetDraft(c, y, { release: false, by: req.me.name });
+    await c.query(`UPDATE waivers SET status='cancelled', note='Alignements remis à l''état du départ' WHERE status='open'`);
+    await c.query(`UPDATE trades SET status='expired', reply=COALESCE(reply, 'Alignements remis à l''état du départ'), updated_at=NOW() WHERE status IN ('proposed','accepted')`);
+    await c.query(`DELETE FROM picks`);
+    for (const [id, t] of target) await c.query(`INSERT INTO picks(player_id, team_id) VALUES($1,$2) ON CONFLICT (player_id) DO UPDATE SET team_id=$2`, [id, t]);
+    await c.query(`INSERT INTO moves(player_name, kind, note, by_team) VALUES(NULL,'Import',$1,$2)`,
+      [`Alignements remis à l'état du départ : ${target.size} joueur(s)${report.draftYears.length ? `, repêchage ${report.draftYears.join(', ')} effacé` : ''}`, req.me.name]);
+    return report;
+  });
+  if (apply) await linkUnlinked().catch(() => {});
+  res.json({ applied: apply, ...out });
+}));
+
 admin.post('/horn', h(async (req, res) => {
   const data = String(req.body.data || '');
   if (!data) { await pool.query(`DELETE FROM config WHERE key IN ('horn_audio','horn_version')`); return res.json({ ok: true }); }

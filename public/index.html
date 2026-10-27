@@ -2683,6 +2683,22 @@ function renderAudit(A){
     ${A.history && A.history.length ? `<details style="margin-bottom:10px"><summary>Corrections faites (${A.history.length})</summary>${A.history.map(row).join('')}</details>` : ''}
     ${A.left && A.left.length ? `<details style="margin-bottom:10px"><summary>Écarts en attente (${A.left.length})</summary>${A.left.map(row).join('')}</details>` : ''}`;
 }
+const rosterReset = run(async (apply) => {
+  if (apply && !confirm('Remettre TOUS les alignements comme au départ ? Le repêchage de la saison sera effacé.')) return;
+  const r = await api('/api/admin/roster/reset', { apply });
+  const teams = Object.entries(r.teams).sort((a, b) => a[0].localeCompare(b[0], 'fr')).map(([t, n]) => `${esc(t)} : ${n}`).join(' · ');
+  $('#rsResult').innerHTML = `<div class="issues" style="margin-top:10px;${apply ? 'background:var(--ok-bg);border-color:var(--ok-line);color:var(--ok-ink)' : 'background:var(--warn-bg);border-color:var(--warn-line);color:var(--text)'}">
+    ${apply ? '✅ <b>Alignements remis comme au départ.</b>' : '<b>Aperçu</b> (rien n\'est encore changé) :'}<br>
+    ${r.moved} joueur(s) ${apply ? 'ont changé' : 'vont changer'} d'équipe ou ${apply ? 'sont redevenus' : 'redeviendront'} agents libres.<br>
+    ${r.draftYears.length ? `Repêchage ${r.draftYears.join(', ')} ${apply ? 'effacé' : 'effacé (sélections et tableau)'}.<br>` : 'Aucun repêchage à effacer.<br>'}
+    ${r.trades ? `${r.trades} offre(s) d'échange en cours ${apply ? 'fermée(s)' : 'seront fermées'}.<br>` : ''}${r.waivers ? `${r.waivers} ballottage(s) en cours ${apply ? 'fermé(s)' : 'seront fermés'}.<br>` : ''}
+    <span style="font-size:12px">${teams}</span>
+    ${r.created.length ? `<br><b>Pas trouvés dans la base (créés${apply ? '' : ' à l\'application'}) :</b> ${r.created.map(esc).join(', ')}` : ''}
+    ${r.ambiguous.length ? `<br><b>Homonymes à régler à la main :</b> ${r.ambiguous.map(esc).join(', ')}` : ''}
+    ${r.skipped.length ? `<br><b>Lignes ignorées :</b> ${r.skipped.map(esc).join(', ')}` : ''}
+    ${apply ? '' : '<div style="margin-top:10px"><button class="btn small danger" onclick="rosterReset(true)">↺ Remettre les alignements comme au départ</button></div>'}</div>`;
+  if (apply) { await loadState(); toast('Alignements remis comme au départ'); }
+});
 const vAdmin = run(async () => {
   if (!S.me.isAdmin) { location.hash = '#/plus'; return; }
   const teams = await api('/api/admin/teams');
@@ -2750,6 +2766,14 @@ const vAdmin = run(async () => {
       <button class="btn small" onclick="contractsPreview(this)">Analyser la liste</button>
       <div id="ctResult"></div>
       <details style="margin-top:12px" id="ctWatch"><summary>Contrats à surveiller (échus ou fin inconnue)</summary><div class="muted">Chargement…</div></details>
+    </div>
+
+    <div class="card"><h3>↺ Alignements du départ</h3>
+      <p class="muted">Remet chaque équipe exactement comme dans la liste d'origine 2026-27 (celle de l'import du début de saison).
+        <b>Seuls les joueurs changent d'équipe</b> : les points, les salaires et les contrats ne sont pas touchés.
+        Le repêchage de la saison (un test, par exemple) est effacé ; les offres d'échange et les ballottages en cours sont fermés.</p>
+      <button class="btn small ghost" onclick="rosterReset(false)">Voir ce qui va changer</button>
+      <div id="rsResult"></div>
     </div>
 
     <div class="card"><h3>Import des alignements</h3>
