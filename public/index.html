@@ -571,6 +571,16 @@ async function showLogin(){
         ${loadError ? `<p class="muted" style="color:var(--red)">Le serveur ne répond pas (${esc(loadError)}). Réessaie dans 30 secondes.</p>`
           : teamsCache.length ? '' : '<p class="muted">Aucune équipe n\'a encore de code. Le commissaire doit définir COMMISSAIRE_CODE dans Render.</p>'}
       </div>
+      ${(() => {
+        // Ouvert dans le navigateur d'un téléphone : on installe d'abord (sur iPhone, l'app installée ne garde pas la connexion de Safari).
+        const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+        const ios = /iPhone|iPad/.test(navigator.userAgent), android = /Android/.test(navigator.userAgent);
+        if (standalone || !(ios || android)) return '';
+        return `<div class="issues" style="background:var(--warn-bg);border-color:var(--warn-line);color:var(--text)"><b>📲 Installe d'abord l'application</b><br>
+          ${ios ? 'Touche Partager <b>⬆︎</b> (ou « ••• » puis Partager), puis « Sur l\'écran d\'accueil », puis « Ajouter ».'
+                : 'Touche le menu <b>⋮</b>, puis « Installer l\'application » (ou « Ajouter à l\'écran d\'accueil »).'}
+          <br>Ouvre ensuite Pool à vie avec la nouvelle icône et entre ton code.</div>`;
+      })()}
       <p class="muted" style="text-align:center">Ton code t'est remis par le commissaire.${passkeyOk() && !localStorageGet('pav_passkey') ? `<br>
         Pour entrer avec ${bioName()} : entre une première fois avec ton code, puis touche « Activer ».
         <a class="link" id="lgBio" style="display:block;margin-top:8px">Déjà activé ? Entrer avec ${bioName()}</a></p><p id="lgBioErr" class="muted" style="color:var(--red);text-align:center" hidden>` : ''}</p>
@@ -2795,11 +2805,34 @@ const newCode = run(async id => {
   showCode(t.name, code);
   $(`#code-${id}`).innerHTML = 'Code actif';
 });
+// Message d'invitation : le lien, l'installation sur l'écran d'accueil (iPhone et Android) et le code.
+// Sur iPhone, l'application installée ne partage pas la connexion de Safari : on installe d'abord, puis on entre le code.
+function inviteText(name, code){
+  return `🏒 Pool à vie : ton accès pour l'équipe ${name}
+
+1) Ouvre ce lien :
+${location.origin}
+
+2) Mets l'application sur ton écran d'accueil (avant d'entrer ton code) :
+
+📱 iPhone (dans Safari) : touche le bouton Partager ⬆️ (ou « ••• » puis Partager), puis « Sur l'écran d'accueil », puis « Ajouter ».
+
+🤖 Android (avec Chrome) : touche le menu ⋮ en haut à droite, puis « Installer l'application » (ou « Ajouter à l'écran d'accueil »), puis « Installer ».
+
+3) Ouvre Pool à vie avec la nouvelle icône sur ton écran d'accueil. Choisis l'équipe « ${name} » et entre ton code :
+🔑 ${code}
+
+4) L'application te proposera d'entrer avec Face ID (ou ton empreinte) et d'activer les notifications : dis oui !
+
+Garde ce message : ton code te sert si tu changes de téléphone.`;
+}
 function showCode(name, code){
-  const msg = `Pool à vie : ton accès pour l'équipe ${name}\n${location.origin}\nCode : ${code}`;
+  const msg = inviteText(name, code);
   $('#sheetBody').innerHTML = `<h3>${esc(name)}</h3><p class="muted">Note ce code maintenant : il ne sera plus affiché.</p>
     <div class="code" style="margin:14px 0">${code}</div>
-    <button class="btn" style="width:100%" id="shareCode">${navigator.share ? 'Envoyer au pooler' : 'Copier le message'}</button>`;
+    <button class="btn" style="width:100%" id="shareCode">${navigator.share ? '📤 Envoyer au pooler (texto, Messenger…)' : 'Copier le message'}</button>
+    <details style="margin-top:12px"><summary>Voir le message envoyé</summary>
+      <pre style="white-space:pre-wrap;font:inherit;font-size:13px;background:var(--panel-2);border-radius:10px;padding:10px;margin-top:8px">${esc(msg)}</pre></details>`;
   $('#shareCode').onclick = run(async () => {
     if (navigator.share) await navigator.share({ text: msg }).catch(() => {});
     else { await navigator.clipboard.writeText(msg); toast('Copié'); }
