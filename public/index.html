@@ -2175,6 +2175,7 @@ function renderDraft(){
     ${draftBoard(D)}
     <p class="muted">En vert « → équipe » : le choix appartient maintenant à une autre équipe. En orange : choix passé (temps écoulé), à faire en retard. Glisse le tableau de côté pour voir toutes les équipes.</p>
     <button class="btn ghost" style="width:100%;margin-bottom:12px" onclick="location.hash='#/simulation'">🧪 Simuler un repêchage (pour pratiquer)</button>
+    ${A && (D.status !== 'setup' || D.picks.some(p => p.player || p.passed)) ? `<button class="btn small danger" style="width:100%;margin-bottom:12px" onclick="draftReset()">🗑️ Effacer ce repêchage (test) : sélections retirées, tout repart à zéro</button>` : ''}
     ${last.length ? `<div class="card"><h3>Dernières sélections</h3>${last.map(p => `<div class="pl"><span>#${p.overall} <b>${esc(p.player.name)}</b> (${p.player.pos})</span><span>${esc(p.owner_team)}</span></div>`).join('')}</div>` : ''}
     ${orderCard}`;
   document.documentElement.style.setProperty('--toph', ($('#top').offsetHeight || 64) + 'px');
@@ -2224,6 +2225,15 @@ const draftStart = run(async stop => {
   await api('/api/admin/draft/start', { year: DR.year, stop });
   if (!stop) draftSound('start');
   await loadState(); vDraft(DR.year);
+});
+// Repêchage lancé pour tester : chaque joueur repêché redevient agent libre, les choix redeviennent disponibles,
+// le repêchage revient en préparation (l'ordre et la loterie sont gardés).
+const draftReset = run(async () => {
+  const n = DR.picks.filter(p => p.player).length;
+  if (!confirm(`Effacer le repêchage ${DR.year} ?\n\n${n} sélection(s) seront retirées : ces joueurs redeviennent agents libres et tous les choix redeviennent disponibles. L'ordre de sélection et la loterie sont gardés.`)) return;
+  const r = await api('/api/admin/draft/reset', { year: DR.year });
+  toast(`Repêchage ${r.year} effacé : ${r.players} joueur(s) remis agents libres`);
+  await loadState(); DR = await api('/api/draft?year=' + DR.year); renderDraft();
 });
 const draftUndo = run(async () => {
   if (!confirm('Annuler la dernière sélection ?')) return;
