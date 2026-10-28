@@ -1126,7 +1126,9 @@ admin.post('/roster/reset', h(async (req, res) => {
     const cur = new Map(now.map(r => [r.player_id, r.team_id]));
     for (const [id, t] of target) if (cur.get(id) !== t) report.moved++;
     for (const [id] of cur) if (!target.has(id)) report.moved++;
-    report.draftYears = (await c.query(`SELECT DISTINCT year FROM draft_picks WHERE year >= $1 AND (player_id IS NOT NULL OR passed) ORDER BY year`, [startYear])).rows.map(r => r.year);
+    // Repêchages à effacer : ceux qui ont des sélections, et ceux restés « en cours » ou « terminés » (un test sans sélection).
+    report.draftYears = (await c.query(`SELECT year FROM draft_picks WHERE year >= $1 AND (player_id IS NOT NULL OR passed)
+      UNION SELECT year FROM drafts WHERE year >= $1 AND status IN ('live','done') ORDER BY year`, [startYear])).rows.map(r => r.year);
     report.waivers = (await c.query(`SELECT COUNT(*)::int n FROM waivers WHERE status='open'`)).rows[0].n;
     report.trades = (await c.query(`SELECT COUNT(*)::int n FROM trades WHERE status IN ('proposed','accepted')`)).rows[0].n;
     if (!apply) return report;
